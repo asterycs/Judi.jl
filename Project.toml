@@ -1,0 +1,16 @@
+name = "MatrixCalculus"
+uuid = "ec55c3ff-feb8-4051-a6a4-2e9f18c613fc"
+authors = ["Jimmy Envall"]
+version = "1.0.0-DEV"
+
+[deps]
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
