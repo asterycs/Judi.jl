@@ -285,8 +285,17 @@ function to_string(arg::KrD)
     "δ" * "^(" * upper_indices * ")_(" * lower_indices * ")"
 end
 
+function to_string(arg::Zero)
+    "0"
+end
+
 function to_string(arg::BinaryOperation)
-    "(" * to_string(arg.arg1) * " " * string(*) * " " * to_string(arg.arg2) * ")"
+    "(" * to_string(arg.arg1) * " " * string(arg.op) * " " * to_string(arg.arg2) * ")"
+end
+
+function to_string(arg::Transpose)
+    @warn "Parentheses missing when showing transpose"
+    "^T"
 end
 
 function record(expr::SymbolicValue)
