@@ -230,11 +230,19 @@ function evaluate(*, arg1::Sym, arg2::KrD)
     newarg
 end
 
+function evaluate(*, arg1::KrD, arg2::Sym)
+    evaluate(*, arg2, arg1)
+end
+
 function evaluate(*, arg1::BinaryOperation, arg2::KrD)
     BinaryOperation(*, arg1, arg2)
 end
 
 function evaluate(*, arg1::BinaryOperation, arg2::Sym)
+    BinaryOperation(*, arg1, arg2)
+end
+
+function evaluate(*, arg1::Sym, arg2::BinaryOperation)
     BinaryOperation(*, arg1, arg2)
 end
 
