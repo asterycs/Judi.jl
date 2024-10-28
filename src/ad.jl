@@ -3,6 +3,7 @@ using Revise
 import Base.*
 import Base.+
 import Base.adjoint
+import Base.:(==)
 
 export Upper, Lower
 export Sym
@@ -105,20 +106,20 @@ function has_index_type(arg, T)
 end
 
 function are_dimensions_valid(arg1, arg2)
-    has_index_type(arg1, Lower) && has_index_type(arg2, Upper)
+    if isempty(get_indices(arg1)) && isempty(get_indices(arg2))
+        return true
+    else
+        return has_index_type(arg1, Lower) && has_index_type(arg2, Upper)
+    end
 end
 
 function *(arg1::SymbolicValue, arg2::SymbolicValue)
-    println("binary op mul")
-    @show arg1
-    @show typeof(simplify(arg1))
-    @show arg2
-    @show typeof(simplify(arg2))
     @assert are_dimensions_valid(simplify(arg1), simplify(arg2))
-    println("updating to index:")
-    @show arg1
-    @show flip(arg2.indices[1])
-    BinaryOperation(*, update_index(arg1, flip(arg2.indices[1])), arg2)
+    if isempty(get_indices(arg1)) || isempty(get_indices(arg2))
+        return BinaryOperation(*, arg1, arg2)
+    else
+        return BinaryOperation(*, update_index(arg1, flip(arg2.indices[1])), arg2)
+    end
 end
 
 function lower(indices::IndexSet)
@@ -175,11 +176,11 @@ function update_index(arg::BinaryOperation, index::LowerOrUpperIndex)
 end
 
 function adjoint(arg::SymbolicValue)
-    if length(arg.indices) == 1
-        BinaryOperation(*, arg, Transpose())
-    else
-        @assert false
-    end
+    BinaryOperation(*, arg, Transpose())
+end
+
+function ==(l::Sym, r::Sym)
+    return l.id == r.id && l.indices == r.indices
 end
 
 function simplify(sym::Sym)
@@ -198,13 +199,18 @@ end
 
 function evaluate(*, arg1::BinaryOperation, arg2::Transpose)
     BinaryOperation(*, arg1, arg2)
-end 
+end
+
+function evaluate(*, arg1::BinaryOperation, arg2::BinaryOperation)
+    BinaryOperation(*, arg1, arg2)
+end
 
 function evaluate(*, arg1::Sym, arg2::KrD)
     println("sym times KrD")
     @show arg1
     @show arg2
     contracting_index = lower(arg1.indices) ∩ lower(arg2.indices)
+    @show contracting_index
     @assert length(contracting_index) == 1
 
     contracting_index = contracting_index[1]
@@ -280,6 +286,12 @@ function record(expr::SymbolicValue)
     graph = []
 
     function track(arg::Union{Sym, KrD, Transpose})
+        for (index, (value, _)) ∈ enumerate(graph)
+            if arg == value
+                return index
+            end
+        end
+
         op_index += 1
         index = op_index
 
