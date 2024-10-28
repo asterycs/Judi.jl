@@ -345,15 +345,15 @@ function backprop_rule(::typeof(Sym), arg)
 end
 
 function backprop_rule(::typeof(*), arg1, arg2)
-    z = evaluate(*, arg1, arg2)
+    z = BinaryOperation(*, arg1, arg2)
 
-    pullback = z_cot -> (evaluate(*, z_cot, arg2), evaluate(*, z_cot, arg1))
+    pullback = z_cot -> (BinaryOperation(*, arg2, z_cot), BinaryOperation(*, arg1, z_cot))
 
     z, pullback
 end
 
 function backprop_rule(::typeof(+), arg1, arg2)
-    z = evaluate(+, arg1, arg2)
+    z = BinaryOperation(+, arg1, arg2)
 
     pullback = z_cot -> (z_cot, z_cot)
 
