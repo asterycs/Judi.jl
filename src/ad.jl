@@ -234,20 +234,20 @@ function evaluate(*, arg1::KrD, arg2::Sym)
     evaluate(*, arg2, arg1)
 end
 
-function evaluate(*, arg1::BinaryOperation, arg2::KrD)
+function evaluate(*, arg1, arg2)
     BinaryOperation(*, arg1, arg2)
 end
 
-function evaluate(*, arg1::BinaryOperation, arg2::Sym)
-    BinaryOperation(*, arg1, arg2)
+function evaluate(*, arg1::Real, arg2::Sym)
+    if arg1 == 1
+        return arg2
+    else
+        BinaryOperation(*, arg1, arg2)
+    end
 end
 
-function evaluate(*, arg1::Sym, arg2::BinaryOperation)
-    BinaryOperation(*, arg1, arg2)
-end
-
-function evaluate(*, arg1::Sym, arg2::Sym)
-    BinaryOperation(*, arg1, arg2)
+function evaluate(*, arg1::Sym, arg2::Real)
+    evaluate(*, arg2, arg1)
 end
 
 function evaluate(+, arg1::Zero, arg2)
@@ -262,6 +262,10 @@ function simplify(op::BinaryOperation)
     evaluate(op.op, simplify(op.arg1), simplify(op.arg2))
 end
 
+function simplify(arg::Real)
+    arg
+end
+
 # TODO: Rename all simplify to evaluate
 function simplify(sym::Union{Sym, KrD, Transpose, Zero})
     sym
@@ -269,11 +273,18 @@ end
 
 function to_string(arg::Sym)
     upper_indices = [i.letter for i ∈ arg.indices if typeof(i) == Upper]
-    upper_indices = string(upper_indices...)
-    lower_indices = [i.letter for i ∈ arg.indices if typeof(i) == Lower]
-    lower_indices = string(lower_indices...)
+    upper_tag = ""
+    if !isempty(upper_indices)
+        upper_tag = "^(" * string(upper_indices...) * ")"
+    end
 
-    arg.id * "^(" * upper_indices * ")_(" * lower_indices * ")"
+    lower_indices = [i.letter for i ∈ arg.indices if typeof(i) == Lower]
+    lower_tag = ""
+    if !isempty(lower_indices)
+        lower_tag = "_(" * string(lower_indices...) * ")"
+    end
+
+    arg.id * upper_tag * lower_tag
 end
 
 function to_string(arg::KrD)
@@ -283,6 +294,10 @@ function to_string(arg::KrD)
     lower_indices = string(lower_indices...)
 
     "δ" * "^(" * upper_indices * ")_(" * lower_indices * ")"
+end
+
+function to_string(arg::Real)
+    string(arg)
 end
 
 function to_string(arg::Zero)
