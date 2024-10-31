@@ -69,8 +69,8 @@ end
 end
 
 @testset "get_free_indices 1" begin
-    xt = Sym("x", [Lower(1)], []) # row vector
-    A = Sym("A", [Upper(1); Lower(2)], [])
+    xt = Sym("x", [Lower(1)], Zero()) # row vector
+    A = Sym("A", [Upper(1); Lower(2)], Zero())
 
     op1 = MatrixCalculus.BinaryOperation(*, xt, A)
     op2 = MatrixCalculus.BinaryOperation(*, A, xt)
@@ -80,7 +80,7 @@ end
 end
 
 @testset "get_free_indices 2" begin
-    x = Sym("x", [Upper(1)], [])
+    x = Sym("x", [Upper(1)], Zero())
     δ = KrD([Lower(1); Lower(2)])
 
     op1 = MatrixCalculus.BinaryOperation(*, x, δ)
@@ -91,7 +91,7 @@ end
 end
 
 @testset "get_free_indices 3" begin
-    x = Sym("x", [Upper(1)], [])
+    x = Sym("x", [Upper(1)], Zero())
     δ = KrD([Lower(1); Lower(1)])
 
     op1 = MatrixCalculus.BinaryOperation(*, x, δ)
@@ -102,7 +102,7 @@ end
 end
 
 @testset "get_free_indices 4" begin
-    x = Sym("x", [], [])
+    x = Sym("x", [], Zero())
     δ = KrD([Lower(1); Lower(1)])
 
     op1 = MatrixCalculus.BinaryOperation(*, x, δ)
@@ -113,32 +113,32 @@ end
 end
 
 @testset "can_contract 1" begin
-    x = Sym("x", [Upper(1)], [])
-    y = Sym("y", [Lower(1)], [])
+    x = Sym("x", [Upper(1)], Zero())
+    y = Sym("y", [Lower(1)], Zero())
 
     @test MatrixCalculus.can_contract(x, y)
     @test MatrixCalculus.can_contract(y, x)
 end
 
 @testset "can_contract 2" begin
-    x = Sym("x", [Lower(1)], [])
-    y = Sym("y", [Lower(1)], [])
+    x = Sym("x", [Lower(1)], Zero())
+    y = Sym("y", [Lower(1)], Zero())
 
     @test !MatrixCalculus.can_contract(x, y)
     @test !MatrixCalculus.can_contract(y, x)
 end
 
 @testset "can_contract 3" begin
-    x = Sym("x", [Upper(2)], [])
-    A = Sym("A", [Upper(1); Lower(2)], [])
+    x = Sym("x", [Upper(2)], Zero())
+    A = Sym("A", [Upper(1); Lower(2)], Zero())
 
     @test MatrixCalculus.can_contract(A, x)
     @test MatrixCalculus.can_contract(x, A)
 end
 
 @testset "can_contract 4" begin
-    x = Sym("x", [Lower(3)], [])
-    A = Sym("A", [Upper(1); Lower(2)], [])
+    x = Sym("x", [Lower(3)], Zero())
+    A = Sym("A", [Upper(1); Lower(2)], Zero())
 
     @test !MatrixCalculus.can_contract(A, x)
     @test !MatrixCalculus.can_contract(x, A)
@@ -146,10 +146,10 @@ end
 
 
 @testset "create BinaryOperation with matching indices" begin
-    x = Sym("x", [Upper(2)], [])
-    y = Sym("y", [Lower(1)], [])
-    z = Sym("z", [], [])
-    A = Sym("A", [Upper(1); Lower(2)], [])
+    x = Sym("x", [Upper(2)], Zero())
+    y = Sym("y", [Lower(1)], Zero())
+    z = Sym("z", [], Zero())
+    A = Sym("A", [Upper(1); Lower(2)], Zero())
 
     @test typeof(A * x) == MatrixCalculus.BinaryOperation
     @test typeof(y * A) == MatrixCalculus.BinaryOperation
@@ -158,7 +158,7 @@ end
 end
 
 @testset "update_index column vector" begin
-    x = Sym("x", [Upper(3)], [])
+    x = Sym("x", [Upper(3)], Zero())
 
     @test MatrixCalculus.update_index(x, Upper(3)) == x
 
@@ -173,7 +173,7 @@ end
 end
 
 @testset "update_index row vector" begin
-    x = Sym("x", [Lower(3)], [])
+    x = Sym("x", [Lower(3)], Zero())
 
     @test MatrixCalculus.update_index(x, Lower(3)) == x
 
@@ -188,7 +188,7 @@ end
 end
 
 @testset "update_index matrix" begin
-    A = Sym("A", [Upper(1); Lower(2)], [])
+    A = Sym("A", [Upper(1); Lower(2)], Zero())
 
     @test MatrixCalculus.update_index(A, Lower(2)) == A
 
@@ -197,8 +197,8 @@ end
 end
 
 @testset "adjoint vector" begin
-    x = Sym("x", [Upper(1)], [])
-    y = Sym("y", [Lower(1)], [])
+    x = Sym("x", [Upper(1)], Zero())
+    y = Sym("y", [Lower(1)], Zero())
 
     expected_shift = KrD([Lower(1); Lower(1)])
     @test x' == MatrixCalculus.UnaryOperation(expected_shift, x)
@@ -208,7 +208,7 @@ end
 end
 
 @testset "combined update_index and adjoint vector" begin
-    x = Sym("x", [Upper(2)], [])
+    x = Sym("x", [Upper(2)], Zero())
 
     updated_adjoint = MatrixCalculus.update_index(x', Upper(1))
 
@@ -216,7 +216,8 @@ end
     expected_second_shift = KrD([Lower(1); Lower(1)])
     @test typeof(updated_adjoint) == MatrixCalculus.UnaryOperation
     @test updated_adjoint.op == expected_second_shift
-    @test typeof(updated_adjoint.op.arg) == MatrixCalculus.UnaryOperation
+    @test typeof(updated_adjoint.arg) == MatrixCalculus.UnaryOperation
+    @test updated_adjoint.arg.arg == x
     @test updated_adjoint.arg.op == expected_first_shift
 end
 
@@ -234,14 +235,84 @@ end
 #     @test typeof(A_adjoint.arg.arg) == A
 # end
 
-# @testset "create BinaryOperation with non-matching indices" begin
-#     x = Sym("x", [Upper(3)], [])
-#     y = Sym("y", [Lower(1)], [])
-#     z = Sym("z", [], [])
-#     A = Sym("A", [Upper(1); Lower(2)], [])
+@testset "create BinaryOperation with non-matching indices matrix-vector" begin
+    x = Sym("x", [Upper(3)], Zero())
+    A = Sym("A", [Upper(1); Lower(2)], Zero())
 
-#     op1 = A * x
+    op1 = A * x
 
-#     @test typeof(op1) == MatrixCalculus.BinaryOperation
-#     @test MatrixCalculus.can_contract(op1.arg1, op1.arg2)
-# end
+    @test typeof(op1) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op1.arg1, op1.arg2)
+    @test op1.op == *
+    @test typeof(op1.arg1) == MatrixCalculus.UnaryOperation
+    @test op1.arg2 == x
+
+    op2 = x' * A
+
+    @test typeof(op2) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op2.arg1, op2.arg2)
+    @test op2.op == *
+    @test typeof(op2.arg1) == MatrixCalculus.UnaryOperation
+    @test op2.arg2 == A
+end
+
+@testset "create BinaryOperation with non-matching indices vector-vector" begin
+    x = Sym("x", [Upper(2)], Zero())
+    y = Sym("y", [Upper(1)], Zero())
+
+    op1 = x' * y
+
+    @test typeof(op1) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op1.arg1, op1.arg2)
+    @test op1.op == *
+    @test typeof(op1.arg1) == MatrixCalculus.UnaryOperation
+    @test op1.arg2 == y
+
+    op2 = y' * x
+
+    @test typeof(op2) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op2.arg1, op2.arg2)
+    @test op2.op == *
+    @test typeof(op2.arg1) == MatrixCalculus.UnaryOperation
+    @test op2.arg2 == x
+end
+
+@testset "create BinaryOperation with non-matching indices scalar-matrix" begin
+    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    z = Sym("z", [], Zero())
+
+    op1 = A * z
+    op2 = z * A
+
+    @test typeof(op1) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op1.arg1, op1.arg2)
+    @test op1.op == *
+    @test op1.arg1 == A
+    @test op1.arg2 == z
+
+    @test typeof(op2) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op2.arg1, op2.arg2)
+    @test op2.op == *
+    @test op2.arg1 == z
+    @test op2.arg2 == A
+end
+
+@testset "create BinaryOperation with non-matching indices scalar-vector" begin
+    x = Sym("x", [Upper(3)], Zero())
+    z = Sym("z", [], Zero())
+
+    op1 = z * x
+    op2 = x * z
+
+    @test typeof(op1) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op1.arg1, op1.arg2)
+    @test op1.op == *
+    @test op1.arg1 == z
+    @test op1.arg2 == x
+
+    @test typeof(op2) == MatrixCalculus.BinaryOperation
+    @test MatrixCalculus.can_contract(op2.arg1, op2.arg2)
+    @test op2.op == *
+    @test op2.arg1 == x
+    @test op2.arg2 == z
+end

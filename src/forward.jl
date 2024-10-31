@@ -7,7 +7,7 @@ import Base.+
 import Base.adjoint
 
 export Upper, Lower
-export Sym, KrD
+export Sym, KrD, Zero
 
 export flip
 export eliminate_indices, eliminated_indices
@@ -79,7 +79,7 @@ IndexSet = Vector{LowerOrUpperIndex}
 struct Sym <: SymbolicValue
     id::String
     indices::IndexSet
-    derivative
+    derivative::SymbolicValue
 end
 
 function ==(left::Sym, right::Sym)
@@ -95,18 +95,17 @@ function ==(left::KrD, right::KrD)
 end
 
 struct Zero <: SymbolicValue
-    indices::IndexSet
 end
 
 mutable struct BinaryOperation <: SymbolicValue
     op
-    arg1
-    arg2
+    arg1::SymbolicValue
+    arg2::SymbolicValue
 end
 
 mutable struct UnaryOperation <: SymbolicValue
-    op
-    arg
+    op::SymbolicValue
+    arg::SymbolicValue
 end
 
 function ==(left::UnaryOperation, right::UnaryOperation)
@@ -244,9 +243,9 @@ end
 function update_index_impl(arg::UnaryOperation, index::LowerOrUpperIndex)
     new_arg,index_map = update_index_impl(arg.arg, index)
 
-    new_op = update_index_impl(arg.op, index_map)
+    new_op,_ = update_index_impl(arg.op, index_map)
 
-    return UnaryOperation(new_op, new_arg)
+    return (UnaryOperation(new_op, new_arg), index_map)
 end
 
 function update_index_impl(arg::Sym, index::LowerOrUpperIndex)
@@ -267,7 +266,7 @@ function update_index_impl(arg::KrD, index_map::Dict)
         end
     end
 
-    newarg
+    (newarg, index_map)
 end
     
 function adjoint(arg::SymbolicValue)
