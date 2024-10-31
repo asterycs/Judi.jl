@@ -162,46 +162,46 @@ end
     @test typeof(A * z) == MC.BinaryOperation
 end
 
-@testset "match_index column vector" begin
+@testset "update_index column vector" begin
     x = Sym("x", [Upper(3)], Zero())
 
-    @test MC.match_index(x, Upper(3)) == x
+    @test MC.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD([Lower(3); Upper(1)])
-    @test MC.match_index(x, Lower(1)) == MC.UnaryOperation(expected_shift, x)
+    @test MC.update_index(x, Upper(3), Upper(1)) == MC.UnaryOperation(expected_shift, x)
 
     expected_shift = KrD([Lower(3); Upper(2)])
-    @test MC.match_index(x, Lower(2)) == MC.UnaryOperation(expected_shift, x)
+    @test MC.update_index(x, Upper(3), Upper(2)) == MC.UnaryOperation(expected_shift, x)
 
-    # match_index shall not transpose
-    @test_throws DomainError MC.match_index(x, Upper(1))
+    # update_index shall not transpose
+    @test_throws DomainError MC.update_index(x, Upper(3), Lower(1))
 end
 
-@testset "match_index row vector" begin
+@testset "update_index row vector" begin
     x = Sym("x", [Lower(3)], Zero())
 
-    @test MC.match_index(x, Lower(3)) == x
+    @test MC.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD([Upper(3); Lower(1)])
-    @test MC.match_index(x, Upper(1)) == MC.UnaryOperation(expected_shift, x)
+    @test MC.update_index(x, Lower(3), Lower(1)) == MC.UnaryOperation(expected_shift, x)
 
     expected_shift = KrD([Upper(3); Lower(2)])
-    @test MC.match_index(x, Upper(2)) == MC.UnaryOperation(expected_shift, x)
+    @test MC.update_index(x, Lower(3), Lower(2)) == MC.UnaryOperation(expected_shift, x)
 
-    # match_index shall not transpose
-    @test_throws DomainError MC.match_index(x, Lower(1))
+    # update_index shall not transpose
+    @test_throws DomainError MC.update_index(x, Lower(3), Upper(1))
 end
 
-@testset "match_index matrix" begin
+@testset "update_index matrix" begin
     A = Sym("A", [Upper(1); Lower(2)], Zero())
 
-    @test MC.match_index(A, Lower(2)) == A
+    @test MC.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD([Upper(2); Lower(3)])
-    @test MC.match_index(A, Upper(3)) == MC.UnaryOperation(expected_shift, A)
+    @test MC.update_index(A, Lower(2), Lower(3)) == MC.UnaryOperation(expected_shift, A)
 
-    # match_index shall not transpose
-    @test_throws DomainError MC.match_index(A, Lower(3))
+    # update_index shall not transpose
+    @test_throws DomainError MC.update_index(A, Lower(2), Upper(3))
 end
 
 @testset "transpose vector" begin
@@ -215,10 +215,10 @@ end
     @test y' == MC.UnaryOperation(expected_shift, y)
 end
 
-@testset "combined match_index and transpose vector" begin
+@testset "combined update_index and transpose vector" begin
     x = Sym("x", [Upper(2)], Zero())
 
-    updated_transpose = MC.match_index(x', Lower(1))
+    updated_transpose = MC.update_index(x', Lower(2), Lower(1))
 
     expected_first_shift = KrD([Lower(2); Upper(1)])
     expected_second_shift = KrD([Lower(1); Lower(1)])

@@ -263,7 +263,9 @@ function *(arg1::SymbolicValue, arg2::SymbolicValue)
             throw(DomainError((arg1, arg2), "Invalid multiplication"))
         end
 
-        return BinaryOperation(*, match_index(arg1, arg2.indices[1]), arg2)
+        arg1_free_indices = get_free_indices(arg1)
+
+        return BinaryOperation(*, update_index(arg1, arg1_free_indices[end], flip(arg2.indices[1])), arg2)
     end
 end
 
@@ -271,42 +273,50 @@ function +(arg1::SymbolicValue, arg2::SymbolicValue)
     BinaryOperation(+, arg1, arg2)
 end
 
-# TODO: Wrong index might be updated for matrices!!!
-function match_index(arg, index::LowerOrUpperIndex)
+function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     indices = get_free_indices(arg)
 
     @assert !isempty(indices)
 
-    if index == indices[end]
-        arg
-    else
-        match_index_impl(arg, index)[1]
+    if from == to
+        return arg
     end
+
+    update_index_impl(arg, from, to)[1]
 end
 
-function match_index_impl(arg::UnaryOperation, index::LowerOrUpperIndex)
-    new_arg,index_map = match_index_impl(arg.arg, index)
+function update_index_impl(arg::UnaryOperation, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
+    @assert typeof(arg.op) == KrD # only KrD supported for now
 
-    new_op,_ = match_index_impl(arg.op, index_map)
+    # TODO: Simplify this; verify that the order of the KrD:s can be changed
+
+    if arg.op.indices[1] == from # this UnaryOperation alters the index that should be changed
+        if arg.op.indices[1] == arg.op.indices[2] # is a transpose
+            from = flip(from)
+            to = flip(to)
+        end
+    end
+
+    new_arg,index_map = update_index_impl(arg.arg, from, to)
+
+    new_op,_ = update_index_impl(arg.op, index_map)
 
     return (UnaryOperation(new_op, new_arg), index_map)
 end
 
-function match_index_impl(arg::Sym, index::LowerOrUpperIndex)
-    old_index = arg.indices[end]
-
-    if typeof(old_index) == typeof(index)
-        throw(DomainError((old_index, index), "matching the indices would require a transpose"))
+function update_index_impl(arg::Sym, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
+    if typeof(from) == typeof(flip(to))
+        throw(DomainError((from, to), "requested a transpose which isn't allowed"))
     end
 
-    if flip(old_index) == index
+    if flip(from) == to
         return arg, Dict{Letter, Letter}()
     end
 
-    return UnaryOperation(KrD([flip(old_index); flip(index)]), arg), Dict{Letter, Letter}(old_index.letter => index.letter)
+    return UnaryOperation(KrD([flip(from); to]), arg), Dict{Letter, Letter}(from.letter => to.letter)
 end
 
-function match_index_impl(arg::KrD, index_map::Dict)
+function update_index_impl(arg::KrD, index_map::Dict)
     newarg = deepcopy(arg)
 
     for i ∈ eachindex(newarg.indices)
@@ -465,9 +475,9 @@ function to_string(arg::BinaryOperation)
 end
 
 # x = Sym("x", [Upper(2)], KrD([Upper(2); Lower(3)]))
-# A = Sym("A", [Upper(1); Lower(2)], Zero([]))
+# A = Sym("A", [Upper(1); Lower(2)], Zero())
 
-# to_string(x' * A)
+# to_string(x' * A * x)
 
-# to_string((diff(x' * A)))
-# to_string(evaluate(diff(x' * A)))
+# to_string((diff(x' * A * x)))
+# to_string(evaluate(diff(x' * A * x)))
