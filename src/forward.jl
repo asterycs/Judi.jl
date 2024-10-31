@@ -34,6 +34,14 @@ function flipnext(index::Upper)
     return Lower(index.letter + 1)
 end
 
+function lowernext(index::Upper)
+    return Lower(index.letter + 1)
+end
+
+function lowernext(index::Lower)
+    return Lower(index.letter + 1)
+end
+
 function flip(index::Lower)
     return Upper(index.letter)
 end
@@ -79,11 +87,10 @@ IndexSet = Vector{LowerOrUpperIndex}
 struct Sym <: SymbolicValue
     id::String
     indices::IndexSet
-    derivative::SymbolicValue
 end
 
 function ==(left::Sym, right::Sym)
-    return left.id == right.id && left.indices == right.indices && left.derivative == right.derivative
+    return left.id == right.id && left.indices == right.indices
 end
 
 struct KrD <: SymbolicValue
@@ -334,20 +341,26 @@ function adjoint(arg::SymbolicValue)
     UnaryOperation(KrD([flip(ids[1]); flip(ids[1])]), arg)
 end
 
-function diff(sym::Sym)
-    sym.derivative
+function diff(sym::Sym, wrt::Sym)
+    @assert length(sym.indices) <= 1 # Only scalars and vectors supported for now
+
+    if sym == wrt
+        return KrD([sym.indices; lowernext(sym.indices[end])])
+    else
+        return Zero()
+    end
 end
 
-function diff(arg::UnaryOperation)
-    UnaryOperation(arg.op, diff(arg.arg))
+function diff(arg::UnaryOperation, wrt::Sym)
+    UnaryOperation(arg.op, diff(arg.arg, wrt))
 end
 
-function diff(arg::BinaryOperation)
-    diff(arg.op, arg.arg1, arg.arg2)
+function diff(arg::BinaryOperation, wrt::Sym)
+    diff(arg.op, arg.arg1, arg.arg2, wrt)
 end
 
-function diff(*, arg1, arg2)
-    BinaryOperation(*, arg1, diff(arg2)) + BinaryOperation(*, diff(arg1), arg2)
+function diff(*, arg1, arg2, wrt::Sym)
+    BinaryOperation(*, arg1, diff(arg2, wrt)) + BinaryOperation(*, diff(arg1, wrt), arg2)
 end
 
 function evaluate(sym::Sym)
@@ -474,8 +487,8 @@ function to_string(arg::BinaryOperation)
     "(" * to_string(arg.arg1) * " " * string(arg.op) * " " * to_string(arg.arg2) * ")"
 end
 
-# x = Sym("x", [Upper(2)], KrD([Upper(2); Lower(3)]))
-# A = Sym("A", [Upper(1); Lower(2)], Zero())
+# x = Sym("x", [Upper(2)])
+# A = Sym("A", [Upper(1); Lower(2)])
 
 # to_string(x' * A * x)
 

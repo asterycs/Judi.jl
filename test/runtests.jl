@@ -3,29 +3,6 @@ using Test
 
 MC = MatrixCalculus
 
-# @testset "End-to-end simple" begin
-#     x = Sym("x", [Upper(3)])
-#     A = Sym("A", [Upper(1); Lower(2)])
-
-#     graph = record(A * x)
-#     p = assemble_pullback(graph)
-
-#     @test to_string.(simplify.(p(Sym("I", [])))) == "A"
-
-
-#     graph = record(x' * A)
-#     p = assemble_pullback(graph)
-
-#     @test to_string.(simplify.(p(Sym("I", [])))) == "A"
-# end
-
-# @testset "Invalid product" begin
-#     x = Sym("x", [Upper(3)])
-#     A = Sym("A", [Upper(1); Lower(2)])
-
-#     @test_throws DomainError x * A
-# end
-
 @testset "index equality operator" begin
     left = Lower(3)
     right = Lower(3)
@@ -71,8 +48,8 @@ end
 end
 
 @testset "get_free_indices 1" begin
-    xt = Sym("x", [Lower(1)], Zero()) # row vector
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    xt = Sym("x", [Lower(1)]) # row vector
+    A = Sym("A", [Upper(1); Lower(2)])
 
     op1 = MC.BinaryOperation(*, xt, A)
     op2 = MC.BinaryOperation(*, A, xt)
@@ -82,7 +59,7 @@ end
 end
 
 @testset "get_free_indices 2" begin
-    x = Sym("x", [Upper(1)], Zero())
+    x = Sym("x", [Upper(1)])
     δ = KrD([Lower(1); Lower(2)])
 
     op1 = MC.BinaryOperation(*, x, δ)
@@ -93,7 +70,7 @@ end
 end
 
 @testset "get_free_indices 3" begin
-    x = Sym("x", [Upper(1)], Zero())
+    x = Sym("x", [Upper(1)])
     δ = KrD([Lower(1); Lower(1)])
 
     op1 = MC.BinaryOperation(*, x, δ)
@@ -104,7 +81,7 @@ end
 end
 
 @testset "get_free_indices 4" begin
-    x = Sym("x", [], Zero())
+    x = Sym("x", [])
     δ = KrD([Lower(1); Lower(1)])
 
     op1 = MC.BinaryOperation(*, x, δ)
@@ -115,35 +92,32 @@ end
 end
 
 @testset "can_contract 1" begin
-    x = Sym("x", [Upper(1)], Zero())
-    y = Sym("y", [Lower(1)], Zero())
+    x = Sym("x", [Upper(1)])
+    y = Sym("y", [Lower(1)])
 
     @test MC.can_contract(x, y)
     @test MC.can_contract(y, x)
 end
 
-# TODO: can_contract == true for
-# BinaryOperation(*, UnaryOperation(KrD(Union{Lower, Upper}[Lower(1), Lower(1)]), UnaryOperation(KrD(Union{Lower, Upper}[Lower(3), Lower(1)]), Sym("x", Union{Lower, Upper}[Upper(3)], KrD(Union{Lower, Upper}[Upper(2), Lower(3)])))), Sym("A", Union{Lower, Upper}[Upper(1), Lower(2)], Zero()))
-
 @testset "can_contract 2" begin
-    x = Sym("x", [Lower(1)], Zero())
-    y = Sym("y", [Lower(1)], Zero())
+    x = Sym("x", [Lower(1)])
+    y = Sym("y", [Lower(1)])
 
     @test !MC.can_contract(x, y)
     @test !MC.can_contract(y, x)
 end
 
 @testset "can_contract 3" begin
-    x = Sym("x", [Upper(2)], Zero())
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    x = Sym("x", [Upper(2)])
+    A = Sym("A", [Upper(1); Lower(2)])
 
     @test MC.can_contract(A, x)
     @test MC.can_contract(x, A)
 end
 
 @testset "can_contract 4" begin
-    x = Sym("x", [Lower(3)], Zero())
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    x = Sym("x", [Lower(3)])
+    A = Sym("A", [Upper(1); Lower(2)])
 
     @test !MC.can_contract(A, x)
     @test !MC.can_contract(x, A)
@@ -151,10 +125,10 @@ end
 
 
 @testset "create BinaryOperation with matching indices" begin
-    x = Sym("x", [Upper(2)], Zero())
-    y = Sym("y", [Lower(1)], Zero())
-    z = Sym("z", [], Zero())
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    x = Sym("x", [Upper(2)])
+    y = Sym("y", [Lower(1)])
+    z = Sym("z", [])
+    A = Sym("A", [Upper(1); Lower(2)])
 
     @test typeof(A * x) == MC.BinaryOperation
     @test typeof(y * A) == MC.BinaryOperation
@@ -163,7 +137,7 @@ end
 end
 
 @testset "update_index column vector" begin
-    x = Sym("x", [Upper(3)], Zero())
+    x = Sym("x", [Upper(3)])
 
     @test MC.update_index(x, Upper(3), Upper(3)) == x
 
@@ -178,7 +152,7 @@ end
 end
 
 @testset "update_index row vector" begin
-    x = Sym("x", [Lower(3)], Zero())
+    x = Sym("x", [Lower(3)])
 
     @test MC.update_index(x, Lower(3), Lower(3)) == x
 
@@ -193,7 +167,7 @@ end
 end
 
 @testset "update_index matrix" begin
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    A = Sym("A", [Upper(1); Lower(2)])
 
     @test MC.update_index(A, Lower(2), Lower(2)) == A
 
@@ -205,8 +179,8 @@ end
 end
 
 @testset "transpose vector" begin
-    x = Sym("x", [Upper(1)], Zero())
-    y = Sym("y", [Lower(1)], Zero())
+    x = Sym("x", [Upper(1)])
+    y = Sym("y", [Lower(1)])
 
     expected_shift = KrD([Lower(1); Lower(1)])
     @test x' == MC.UnaryOperation(expected_shift, x)
@@ -216,7 +190,7 @@ end
 end
 
 @testset "combined update_index and transpose vector" begin
-    x = Sym("x", [Upper(2)], Zero())
+    x = Sym("x", [Upper(2)])
 
     updated_transpose = MC.update_index(x', Lower(2), Lower(1))
 
@@ -232,8 +206,8 @@ end
 # TODO: This is actually vector * diag(matrix) (or trace(matrix))
 # Should implement
 @testset "create BinaryOperation with ambigous indices fails" begin
-    x = Sym("x", [Upper(2)], Zero())
-    A = Sym("A", [Upper(2); Lower(2)], Zero())
+    x = Sym("x", [Upper(2)])
+    A = Sym("A", [Upper(2); Lower(2)])
 
     @test_throws DomainError A * x
     @test_throws DomainError x' * A
@@ -254,8 +228,8 @@ end
 # end
 
 @testset "create BinaryOperation with non-matching indices matrix-vector" begin
-    x = Sym("x", [Upper(3)], Zero())
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    x = Sym("x", [Upper(3)])
+    A = Sym("A", [Upper(1); Lower(2)])
 
     op1 = A * x
 
@@ -280,15 +254,15 @@ end
 end
 
 @testset "create BinaryOperation with non-compatible matrix-vector fails" begin
-    x = Sym("x", [Upper(3)], Zero())
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
+    x = Sym("x", [Upper(3)])
+    A = Sym("A", [Upper(1); Lower(2)])
 
     @test_throws DomainError x * A
 end
 
 @testset "create BinaryOperation with non-matching indices vector-vector" begin
-    x = Sym("x", [Upper(2)], Zero())
-    y = Sym("y", [Upper(1)], Zero())
+    x = Sym("x", [Upper(2)])
+    y = Sym("y", [Upper(1)])
 
     op1 = x' * y
 
@@ -308,8 +282,8 @@ end
 end
 
 @testset "create BinaryOperation with non-matching indices scalar-matrix" begin
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
-    z = Sym("z", [], Zero())
+    A = Sym("A", [Upper(1); Lower(2)])
+    z = Sym("z", [])
 
     op1 = A * z
     op2 = z * A
@@ -328,8 +302,8 @@ end
 end
 
 @testset "create BinaryOperation with non-matching indices scalar-vector" begin
-    x = Sym("x", [Upper(3)], Zero())
-    z = Sym("z", [], Zero())
+    x = Sym("x", [Upper(3)])
+    z = Sym("z", [])
 
     op1 = z * x
     op2 = x * z
@@ -348,9 +322,9 @@ end
 end
 
 @testset "evaluate Sym" begin
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
-    x = Sym("x", [Upper(3)], Zero())
-    z = Sym("z", [], Zero())
+    A = Sym("A", [Upper(1); Lower(2)])
+    x = Sym("x", [Upper(3)])
+    z = Sym("z", [])
 
     @test evaluate(A) == A
     @test evaluate(x) == x
@@ -358,35 +332,35 @@ end
 end
 
 @testset "evaluate KrD simple" begin
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
-    x = Sym("x", [Upper(1)], Zero())
-    z = Sym("z", [], Zero())
+    A = Sym("A", [Upper(1); Lower(2)])
+    x = Sym("x", [Upper(1)])
+    z = Sym("z", [])
 
     d1 = KrD([Lower(1); Upper(3)])
     d2 = KrD([Upper(2); Lower(3)])
 
-    @test evaluate(MC.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(2)], Zero())
-    @test evaluate(MC.UnaryOperation(d1, x)) == Sym("x", [Upper(3)], Zero())
-    # @test evaluate(MC.UnaryOperation(d1, z)) == Sym("z", [], Zero()) # Not implemented
+    @test evaluate(MC.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(2)])
+    @test evaluate(MC.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
+    # @test evaluate(MC.UnaryOperation(d1, z)) == MC.UnaryOperation(d1, z)
 
-    @test evaluate(MC.UnaryOperation(d2, A)) == Sym("A", [Upper(1); Lower(3)], Zero())
+    @test evaluate(MC.UnaryOperation(d2, A)) == Sym("A", [Upper(1); Lower(3)])
 end
 
 @testset "evaluate transpose simple" begin
-    A = Sym("A", [Upper(1); Lower(2)], Zero())
-    x = Sym("x", [Upper(1)], Zero())
-    z = Sym("z", [], Zero())
+    A = Sym("A", [Upper(1); Lower(2)])
+    x = Sym("x", [Upper(1)])
+    z = Sym("z", [])
 
     # @test evaluate(A') == Sym("A", [Upper(2); Lower(1)], Zero()) # Not implemented
-    @test evaluate(x') == Sym("x", [Lower(1)], Zero())
-    # @test evaluate(z') == Sym("z", [], Zero()) # Not implemented
+    @test evaluate(x') == Sym("x", [Lower(1)])
+    # @test evaluate(z') == Sym("z", []) # Not implemented
 end
 
 # TODO: Not implemented
 # @testset "evaluate KrD 2" begin
-#     B = Sym("B", [Upper(2); Lower(1)], Zero())
-#     x = Sym("x", [Upper(2)], Zero())
-#     z = Sym("z", [], Zero())
+#     B = Sym("B", [Upper(2); Lower(1)])
+#     x = Sym("x", [Upper(2)])
+#     z = Sym("z", [])
 
 #     d1 = KrD([Lower(1); Upper(3)])
 
