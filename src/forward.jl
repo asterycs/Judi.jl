@@ -10,7 +10,7 @@ export Upper, Lower
 export Sym, KrD, Zero
 
 export flip
-export eliminate_indices, eliminated_indices
+export evaluate
 
 export to_string
 
@@ -178,6 +178,15 @@ function get_free_indices(arg::BinaryOperation)
     eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
 end
 
+function are_letters_unique(indices::IndexSet)
+    counts = unique([count(i -> i.letter == ref.letter, indices) for ref in indices])
+    if length(counts) == 1 && counts[1] == 1
+        return true
+    end
+
+    return false
+end
+
 function can_contract(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
@@ -186,13 +195,22 @@ function can_contract(arg1, arg2)
         return true
     end
 
+    pairs = Dict{Letter, Int64}()
 
     for i ∈ arg1_indices
         for j ∈ arg2_indices
             if flip(i) == j
-                return true
+                if haskey(pairs, i.letter)
+                    pairs[i.letter] += 1
+                else
+                    pairs[i.letter] = 1
+                end
             end
         end
+    end
+
+    if length(pairs) == 1 && first(values(pairs)) == 1
+        return true
     end
 
     return false
@@ -215,11 +233,37 @@ function can_contract(arg1, arg2, index::Letter)
     return false
 end
 
+function is_contraction_unambigous(arg1, arg2)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    # Multi contractions are not supported, check that letters are unique
+    if !are_letters_unique(arg1_indices) || !are_letters_unique(arg2_indices)
+        return false
+    end
+
+    # Otherwise, if there is an unambigous Upper/Lower pair then the
+    # contraction can be done with updated indices.
+    # We don't updated the indices here.
+
+    if length(arg1_indices) == 1 || length(arg2_indices) == 1
+        if typeof(arg1_indices[end]) == Lower && typeof(arg2_indices[1]) == Upper
+            return true
+        end
+    end
+
+    return false
+end
+
 function *(arg1::SymbolicValue, arg2::SymbolicValue)
     if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
         return BinaryOperation(*, arg1, arg2)
     else
-        return BinaryOperation(*, update_index(arg1, flip(arg2.indices[1])), arg2)
+        if can_contract(arg1, arg2) && !is_contraction_unambigous(arg1, arg2)
+            throw(DomainError((arg1, arg2), "Invalid multiplication"))
+        end
+
+        return BinaryOperation(*, match_index(arg1, arg2.indices[1]), arg2)
     end
 end
 
@@ -228,7 +272,7 @@ function +(arg1::SymbolicValue, arg2::SymbolicValue)
 end
 
 # TODO: Wrong index might be updated for matrices!!!
-function update_index(arg, index::LowerOrUpperIndex)
+function match_index(arg, index::LowerOrUpperIndex)
     indices = get_free_indices(arg)
 
     @assert !isempty(indices)
@@ -236,28 +280,33 @@ function update_index(arg, index::LowerOrUpperIndex)
     if index == indices[end]
         arg
     else
-        update_index_impl(arg, index)[1]
+        match_index_impl(arg, index)[1]
     end
 end
 
-function update_index_impl(arg::UnaryOperation, index::LowerOrUpperIndex)
-    new_arg,index_map = update_index_impl(arg.arg, index)
+function match_index_impl(arg::UnaryOperation, index::LowerOrUpperIndex)
+    new_arg,index_map = match_index_impl(arg.arg, index)
 
-    new_op,_ = update_index_impl(arg.op, index_map)
+    new_op,_ = match_index_impl(arg.op, index_map)
 
     return (UnaryOperation(new_op, new_arg), index_map)
 end
 
-function update_index_impl(arg::Sym, index::LowerOrUpperIndex)
+function match_index_impl(arg::Sym, index::LowerOrUpperIndex)
     old_index = arg.indices[end]
-    if old_index == index
+
+    if typeof(old_index) == typeof(index)
+        throw(DomainError((old_index, index), "matching the indices would require a transpose"))
+    end
+
+    if flip(old_index) == index
         return arg, Dict{Letter, Letter}()
     end
 
-    return UnaryOperation(KrD([flip(old_index); index]), arg), Dict{Letter, Letter}(old_index.letter => index.letter)
+    return UnaryOperation(KrD([flip(old_index); flip(index)]), arg), Dict{Letter, Letter}(old_index.letter => index.letter)
 end
 
-function update_index_impl(arg::KrD, index_map::Dict)
+function match_index_impl(arg::KrD, index_map::Dict)
     newarg = deepcopy(arg)
 
     for i ∈ eachindex(newarg.indices)
