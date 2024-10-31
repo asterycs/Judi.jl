@@ -356,14 +356,28 @@ end
     # @test evaluate(z') == Sym("z", []) # Not implemented
 end
 
-# TODO: Not implemented
-# @testset "evaluate KrD 2" begin
-#     B = Sym("B", [Upper(2); Lower(1)])
-#     x = Sym("x", [Upper(2)])
-#     z = Sym("z", [])
+@testset "evaluate UnaryOperation vector-KrD" begin
+    x = Sym("x", [Upper(2)])
+    d1 = KrD([Lower(2); Upper(3)])
+    d2 = KrD([Lower(2); Lower(2)])
 
-#     d1 = KrD([Lower(1); Upper(3)])
+    @test evaluate(MC.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
+    @test evaluate(MC.UnaryOperation(d2, x)) == Sym("x", [Lower(2)])
+end
 
-#     @test evaluate(MC.UnaryOperation(d1, B)) == MC.UnaryOperation(d1, B)
-#     @test evaluate(MC.UnaryOperation(d1, x)) == MC.UnaryOperation(d1, x)
-# end
+@testset "evaluate UnaryOperation KrD-KrD" begin
+    d1 = KrD([Upper(1); Lower(2)])
+    d2 = KrD([Upper(2); Lower(3)])
+
+    @test evaluate(MC.UnaryOperation(d1, d2)) == KrD([Upper(1); Lower(3)])
+    @test evaluate(MC.UnaryOperation(d2, d1)) == KrD([Upper(1); Lower(3)])
+end
+
+@testset "evaluate BinaryOperation*" begin
+    A = Sym("A", [Upper(1); Lower(2)])
+    x = Sym("x", [Upper(2)])
+    y = Sym("y", [Upper(3)])
+
+    @test evaluate(MC.BinaryOperation(*, A, x)) == MC.BinaryOperation(*, A, x)
+    # @test evaluate(MC.BinaryOperation(*, A, y)) == MC.BinaryOperation(*, A, y) # TODO: Should this really fail?
+end

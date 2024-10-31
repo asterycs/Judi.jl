@@ -110,6 +110,10 @@ mutable struct BinaryOperation <: SymbolicValue
     arg2::SymbolicValue
 end
 
+function ==(left::BinaryOperation, right::BinaryOperation)
+    return left.op == right.op && left.arg1 == right.arg1 && left.arg2 == right.arg2
+end
+
 mutable struct UnaryOperation <: SymbolicValue
     op::SymbolicValue
     arg::SymbolicValue
