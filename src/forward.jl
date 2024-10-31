@@ -382,6 +382,10 @@ end
 function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
     contracting_index = eliminated_indices([arg1.indices; arg2.indices])
 
+    if isempty(contracting_index)
+        return UnaryOperation(arg2, arg1)
+    end
+
     @assert length(contracting_index) == 1
 
     contracting_index = contracting_index[1]

@@ -341,7 +341,7 @@ end
 
     @test evaluate(MC.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(2)])
     @test evaluate(MC.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
-    # @test evaluate(MC.UnaryOperation(d1, z)) == MC.UnaryOperation(d1, z)
+    @test evaluate(MC.UnaryOperation(d1, z)) == MC.UnaryOperation(d1, z)
 
     @test evaluate(MC.UnaryOperation(d2, A)) == Sym("A", [Upper(1); Lower(3)])
 end
