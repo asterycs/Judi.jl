@@ -13,6 +13,45 @@ MC = MatrixCalculus
     @test left != Lower(1)
 end
 
+@testset "KrD equality operator" begin
+    left = KrD([Upper(1); Lower(2)])
+    @test KrD([Upper(1); Lower(2)]) == KrD([Upper(1); Lower(2)])
+    @test !(KrD([Upper(1); Lower(2)]) === KrD([Upper(1); Lower(2)]))
+    @test left == KrD([Upper(1); Lower(2)])
+    @test left != KrD([Upper(1); Upper(2)])
+    @test left != KrD([Lower(1); Lower(2)])
+    @test left != KrD([Upper(2); Lower(2)])
+    @test left != KrD([Upper(1); Lower(3)])
+    @test left != KrD([Upper(1)])
+    @test left != KrD([Upper(1); Lower(2); Lower(3)])
+end
+
+
+@testset "UnaryOperation equality operator" begin
+    a = KrD([Upper(1); Upper(1)])
+    b = Sym("b", [Lower(1)])
+
+    left = MC.UnaryOperation(a, b)
+
+    @test MC.UnaryOperation(a, b) == MC.UnaryOperation(a, b)
+    @test !(MC.UnaryOperation(a, b) === MC.UnaryOperation(a, b))
+    @test left == MC.UnaryOperation(a, b)
+    @test left != MC.UnaryOperation(b, a)
+end
+
+@testset "BinaryOperation equality operator" begin
+    a = Sym("a", [Upper(1)])
+    b = Sym("b", [Lower(1)])
+
+    left = MC.BinaryOperation(*, a, b)
+
+    @test MC.BinaryOperation(*, a, b) == MC.BinaryOperation(*, a, b)
+    @test !(MC.BinaryOperation(*, a, b) === MC.BinaryOperation(*, a, b))
+    @test left == MC.BinaryOperation(*, a, b)
+    @test left == MC.BinaryOperation(*, b, a)
+    @test left != MC.BinaryOperation(+, a, b)
+end
+
 @testset "index hash function" begin
     @test hash(Lower(3)) == hash(Lower(3))
     @test hash(Lower(3)) != hash(Lower(1))

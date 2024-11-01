@@ -58,7 +58,7 @@ function same(old::Upper, letter::Letter)
     return Upper(letter)
 end
 
-function (==)(left::LowerOrUpperIndex, right::LowerOrUpperIndex)
+function ==(left::LowerOrUpperIndex, right::LowerOrUpperIndex)
     if typeof(left) == typeof(right)
         if left.letter == right.letter
             return true
@@ -111,7 +111,9 @@ mutable struct BinaryOperation <: SymbolicValue
 end
 
 function ==(left::BinaryOperation, right::BinaryOperation)
-    return left.op == right.op && left.arg1 == right.arg1 && left.arg2 == right.arg2
+    same_args = left.arg1 == right.arg1 && left.arg2 == right.arg2
+    same_args = same_args || (left.arg1 == right.arg2 && left.arg2 == right.arg1)
+    return left.op == right.op && same_args
 end
 
 mutable struct UnaryOperation <: SymbolicValue
