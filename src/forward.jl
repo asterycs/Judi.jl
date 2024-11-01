@@ -87,6 +87,15 @@ IndexSet = Vector{LowerOrUpperIndex}
 struct Sym <: SymbolicValue
     id::String
     indices::IndexSet
+
+    function Sym(id, indices)
+        indices = LowerOrUpperIndex[i for i ∈ indices]
+        if !isempty(eliminated_indices(indices))
+            throw(DomainError(indices, "Indices of $id are invalid"))
+        end
+
+        new(id, indices)
+    end
 end
 
 function ==(left::Sym, right::Sym)
@@ -157,26 +166,30 @@ function eliminate_indices(arg::IndexSet)
 end
 
 function eliminated_indices(arg::IndexSet)
-    output = Letter[]
+    available = Union{Nothing, Lower, Upper}[i for i ∈ arg]
+    eliminated = LowerOrUpperIndex[]
 
-    for i ∈ arg
-        has_pair = false
-        for j ∈ arg
-            if i === j
+    for i ∈ eachindex(available)
+        if isnothing(available[i])
+            continue
+        end
+
+        for j ∈ eachindex(available)
+            if isnothing(available[j])
                 continue
             end
 
-            if flip(i) == j
-                has_pair = true
-            end
-        end
+            if flip(available[j]) == available[i]
+                push!(eliminated, available[i])
+                push!(eliminated, available[j])
 
-        if has_pair
-            push!(output, i.letter)
+                available[i] = nothing
+                available[j] = nothing
+            end
         end
     end
 
-    return unique(output)
+    return eliminated
 end
 
 function get_free_indices(arg::Union{Sym, KrD})
@@ -191,23 +204,93 @@ function get_free_indices(arg::BinaryOperation)
     eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
 end
 
-function are_letters_unique(indices::IndexSet)
-    counts = unique([count(i -> i.letter == ref.letter, indices) for ref in indices])
-    if length(counts) == 1 && counts[1] == 1
+function are_indices_unique(indices::IndexSet)
+    return length(unique(indices)) == length(indices)
+end
+
+function can_contract(arg1, arg2, index::Letter)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    for i ∈ arg1_indices
+        if i.letter == index
+            for j ∈ arg2_indices
+                if flip(i) == j
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+function can_contract(arg1::KrD, arg2::Sym)
+    return can_contract_weak(arg2, arg1)
+end
+
+function can_contract(arg1::Sym, arg2::KrD)
+    return can_contract_weak(arg1, arg2)
+end
+
+function can_contract(arg1::KrD, arg2::KrD)
+    return can_contract_weak(arg1, arg2) || can_contract_weak(arg2, arg1)
+end
+
+function can_contract_weak(arg1, arg2::KrD)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    # If there is a matching index pair then the contraction is unambigous.
+    # Duplicate pairs such that several indices in arg2 matches one index in
+    # arg1 are allowed.
+
+    pairs = Dict{Letter, Int64}()
+
+    for j ∈ arg2_indices
+        pairs_in_sweep = Dict{Letter, Int64}()
+
+        for i ∈ arg1_indices
+            if flip(i) == j
+                if haskey(pairs_in_sweep, i.letter)
+                    return false
+                else
+                    pairs_in_sweep[i.letter] = 1
+
+                    if haskey(pairs, i.letter)
+                        pairs[i.letter] += 1
+                    else
+                        pairs[i.letter] = 0
+                    end
+                end
+            end
+        end
+    end
+
+    if length(pairs) == 1
         return true
     end
 
     return false
 end
 
-function can_contract(arg1, arg2)
+function can_contract(arg1::Sym, arg2::Sym)
+    return can_contract_strong(arg2, arg1)
+end
+
+function can_contract(arg1, arg2::Sym)
+    return can_contract_strong(arg2, arg1)
+end
+
+function can_contract(arg1::Sym, arg2)
+    return can_contract_strong(arg1, arg2)
+end
+
+function can_contract_strong(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    if isempty(arg1_indices) || isempty(arg2_indices)
-        return true
-    end
-
+    # If there is exactly one matching index pair then the contraction is unambigous.
     pairs = Dict{Letter, Int64}()
 
     for i ∈ arg1_indices
@@ -229,14 +312,46 @@ function can_contract(arg1, arg2)
     return false
 end
 
-function can_contract(arg1, arg2, index::Letter)
+function is_contraction_unambigous(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
+    # Check that indices are unique.
+    if !are_indices_unique(arg1_indices) || !are_indices_unique(arg2_indices)
+        return false
+    end
+
+    # Check that there are no contractions within the arguments.
+    if !isempty(eliminated_indices(arg1_indices)) || !isempty(eliminated_indices(arg2_indices))
+        return false
+    end
+
+    # Otherwise, if there is exactly one matching index pair then the contraction is unambigous.
+    pairs = Dict{Letter, Int64}()
+
     for i ∈ arg1_indices
-        if i.letter == index
+        for j ∈ arg2_indices
+            if flip(i) == j
+                if haskey(pairs, i.letter)
+                    pairs[i.letter] += 1
+                else
+                    pairs[i.letter] = 1
+                end
+            end
+        end
+    end
+
+    if length(pairs) == 1 && first(values(pairs)) == 1
+        return true
+    end
+
+    # Otherwise, if there is an unambigous Upper/Lower pair then the
+    # contraction can be done with updated indices.
+    # We don't updated the indices here.
+    if length(arg1_indices) == 1 || length(arg2_indices) == 1
+        for i ∈ arg1_indices
             for j ∈ arg2_indices
-                if flip(i) == j
+                if typeof(flip(i)) == typeof(j)
                     return true
                 end
             end
@@ -246,39 +361,18 @@ function can_contract(arg1, arg2, index::Letter)
     return false
 end
 
-function is_contraction_unambigous(arg1, arg2)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    # Multi contractions are not supported, check that letters are unique
-    if !are_letters_unique(arg1_indices) || !are_letters_unique(arg2_indices)
-        return false
-    end
-
-    # Otherwise, if there is an unambigous Upper/Lower pair then the
-    # contraction can be done with updated indices.
-    # We don't updated the indices here.
-
-    if length(arg1_indices) == 1 || length(arg2_indices) == 1
-        if typeof(arg1_indices[end]) == Lower && typeof(arg2_indices[1]) == Upper
-            return true
-        end
-    end
-
-    return false
-end
-
-function *(arg1::SymbolicValue, arg2::SymbolicValue)
+function *(arg1, arg2)
     if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
         return BinaryOperation(*, arg1, arg2)
     else
-        if can_contract(arg1, arg2) && !is_contraction_unambigous(arg1, arg2)
+        if !is_contraction_unambigous(arg1, arg2)
             throw(DomainError((arg1, arg2), "Invalid multiplication"))
         end
 
         arg1_free_indices = get_free_indices(arg1)
+        arg2_free_indices = get_free_indices(arg2)
 
-        return BinaryOperation(*, update_index(arg1, arg1_free_indices[end], flip(arg2.indices[1])), arg2)
+        return BinaryOperation(*, update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])), arg2)
     end
 end
 
@@ -348,9 +442,8 @@ function adjoint(arg::SymbolicValue)
 end
 
 function diff(sym::Sym, wrt::Sym)
-    @assert length(sym.indices) <= 1 # Only scalars and vectors supported for now
-
     if sym == wrt
+        @assert length(sym.indices) <= 1 # Only scalars and vectors supported for now
         return KrD([sym.indices; lowernext(sym.indices[end])])
     else
         return Zero()
@@ -389,18 +482,18 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
     evaluate(*, arg2, arg1)
 end
 
-function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
+function evaluate(::typeof(*), arg1, arg2::KrD)
     contracting_index = eliminated_indices([arg1.indices; arg2.indices])
 
     if isempty(contracting_index)
         return UnaryOperation(arg2, arg1)
     end
 
-    @assert length(contracting_index) == 1
+    @assert length(contracting_index) == 2
 
-    contracting_index = contracting_index[1]
+    contracting_letter = contracting_index[1].letter
 
-    @assert can_contract(arg1, arg2, contracting_index)
+    @assert can_contract(arg1, arg2)
 
     @assert length(arg2.indices) == 2
 
@@ -511,5 +604,5 @@ end
 
 # to_string(x' * A * x)
 
-# to_string((diff(x' * A * x)))
+# to_string((diff(x' * A * x, x)))
 # to_string(evaluate(diff(x' * A * x)))

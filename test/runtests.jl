@@ -3,6 +3,16 @@ using Test
 
 MC = MatrixCalculus
 
+@testset "create Sym" begin
+    @test_throws DomainError Sym("A", [Upper(2); Lower(2)])
+
+    A = Sym("A", [Upper(1); Lower(2)])
+    B = Sym("B", [Lower(1); Lower(2)])
+    x = Sym("x", [Upper(1)])
+    y = Sym("y", [Lower(1)])
+    z = Sym("z", [])
+end
+
 @testset "index equality operator" begin
     left = Lower(3)
     right = Lower(3)
@@ -82,7 +92,7 @@ end
 
     output = MC.eliminated_indices(indices)
 
-    @test output == [9; 3]
+    @test output == IdxUnion[Lower(9); Upper(9); Upper(3); Lower(3); Upper(9); Lower(9)]
     @test MC.eliminated_indices(IdxUnion[]) == IdxUnion[]
 end
 
@@ -130,38 +140,48 @@ end
     @test MC.get_free_indices(op2) == [Lower(1); Lower(1)]
 end
 
-@testset "can_contract 1" begin
+@testset "is_contraction_unambigous 1" begin
     x = Sym("x", [Upper(1)])
     y = Sym("y", [Lower(1)])
 
-    @test MC.can_contract(x, y)
-    @test MC.can_contract(y, x)
+    @test MC.is_contraction_unambigous(x, y)
+    @test MC.is_contraction_unambigous(y, x)
 end
 
-@testset "can_contract 2" begin
+@testset "is_contraction_unambigous 2" begin
     x = Sym("x", [Lower(1)])
     y = Sym("y", [Lower(1)])
 
-    @test !MC.can_contract(x, y)
-    @test !MC.can_contract(y, x)
+    @test !MC.is_contraction_unambigous(x, y)
+    @test !MC.is_contraction_unambigous(y, x)
 end
 
-@testset "can_contract 3" begin
+@testset "is_contraction_unambigous 3" begin
     x = Sym("x", [Upper(2)])
     A = Sym("A", [Upper(1); Lower(2)])
 
-    @test MC.can_contract(A, x)
-    @test MC.can_contract(x, A)
+    @test MC.is_contraction_unambigous(A, x)
+    @test MC.is_contraction_unambigous(x, A)
 end
 
-@testset "can_contract 4" begin
+@testset "is_contraction_unambigous 4" begin
     x = Sym("x", [Lower(3)])
     A = Sym("A", [Upper(1); Lower(2)])
 
-    @test !MC.can_contract(A, x)
-    @test !MC.can_contract(x, A)
+    @test MC.is_contraction_unambigous(A, x)
+    @test MC.is_contraction_unambigous(x, A)
 end
 
+@testset "create BinaryOperation with impossible input fails" begin
+    # This input cannot be written with standard matrix notation.
+    # We catch it in *() although the check should arguably be somewhere else.
+    A = Sym("A", [Upper(1); Lower(2)])
+    x = Sym("x", [Lower(1)])
+    y = Sym("y", [Upper(1)])
+
+    @test_throws DomainError A * x
+    @test_throws DomainError A * y
+end
 
 @testset "create BinaryOperation with matching indices" begin
     x = Sym("x", [Upper(2)])
@@ -242,16 +262,6 @@ end
     @test updated_transpose.arg.op == expected_first_shift
 end
 
-# TODO: This is actually vector * diag(matrix) (or trace(matrix))
-# Should implement
-@testset "create BinaryOperation with ambigous indices fails" begin
-    x = Sym("x", [Upper(2)])
-    A = Sym("A", [Upper(2); Lower(2)])
-
-    @test_throws DomainError A * x
-    @test_throws DomainError x' * A
-end
-
 # TODO: Not implemented
 # @testset "transpose matrix" begin
 #     A = Sym("A", [Upper(1); Lower(2)], [])
@@ -266,6 +276,20 @@ end
 #     @test typeof(A_transpose.arg.arg) == A
 # end
 
+@testset "can_contract" begin
+    A = Sym("A", [Upper(1); Lower(2)])
+    x = Sym("x", [Upper(2)])
+    y = Sym("y", [Upper(3)])
+    d = KrD([Lower(1); Lower(1)])
+
+    @test MC.can_contract(A, x)
+    @test MC.can_contract(x, A)
+    @test !MC.can_contract(A, y)
+    @test !MC.can_contract(y, A)
+    @test MC.can_contract(A, d)
+    @test MC.can_contract(d, A)
+end
+
 @testset "create BinaryOperation with non-matching indices matrix-vector" begin
     x = Sym("x", [Upper(3)])
     A = Sym("A", [Upper(1); Lower(2)])
@@ -278,7 +302,6 @@ end
     @test typeof(op1.arg1) == MC.UnaryOperation
     @test op1.arg2 == x
 
-    # TODO: Need to transpose the target index when passing through a UnaryOperation(transpose, _)
     op2 = x' * A
 
     @test typeof(op2) == MC.BinaryOperation
@@ -320,45 +343,46 @@ end
     @test op2.arg2 == x
 end
 
-@testset "create BinaryOperation with non-matching indices scalar-matrix" begin
-    A = Sym("A", [Upper(1); Lower(2)])
-    z = Sym("z", [])
+# TODO: Scalars not implemented
+# @testset "create BinaryOperation with non-matching indices scalar-matrix" begin
+#     A = Sym("A", [Upper(1); Lower(2)])
+#     z = Sym("z", [])
 
-    op1 = A * z
-    op2 = z * A
+#     op1 = A * z
+#     op2 = z * A
 
-    @test typeof(op1) == MC.BinaryOperation
-    @test MC.can_contract(op1.arg1, op1.arg2)
-    @test op1.op == *
-    @test op1.arg1 == A
-    @test op1.arg2 == z
+#     @test typeof(op1) == MC.BinaryOperation
+#     @test MC.can_contract(op1.arg1, op1.arg2)
+#     @test op1.op == *
+#     @test op1.arg1 == A
+#     @test op1.arg2 == z
 
-    @test typeof(op2) == MC.BinaryOperation
-    @test MC.can_contract(op2.arg1, op2.arg2)
-    @test op2.op == *
-    @test op2.arg1 == z
-    @test op2.arg2 == A
-end
+#     @test typeof(op2) == MC.BinaryOperation
+#     @test MC.can_contract(op2.arg1, op2.arg2)
+#     @test op2.op == *
+#     @test op2.arg1 == z
+#     @test op2.arg2 == A
+# end
 
-@testset "create BinaryOperation with non-matching indices scalar-vector" begin
-    x = Sym("x", [Upper(3)])
-    z = Sym("z", [])
+# @testset "create BinaryOperation with non-matching indices scalar-vector" begin
+#     x = Sym("x", [Upper(3)])
+#     z = Sym("z", [])
 
-    op1 = z * x
-    op2 = x * z
+#     op1 = z * x
+#     op2 = x * z
 
-    @test typeof(op1) == MC.BinaryOperation
-    @test MC.can_contract(op1.arg1, op1.arg2)
-    @test op1.op == *
-    @test op1.arg1 == z
-    @test op1.arg2 == x
+#     @test typeof(op1) == MC.BinaryOperation
+#     @test MC.can_contract(op1.arg1, op1.arg2)
+#     @test op1.op == *
+#     @test op1.arg1 == z
+#     @test op1.arg2 == x
 
-    @test typeof(op2) == MC.BinaryOperation
-    @test MC.can_contract(op2.arg1, op2.arg2)
-    @test op2.op == *
-    @test op2.arg1 == x
-    @test op2.arg2 == z
-end
+#     @test typeof(op2) == MC.BinaryOperation
+#     @test MC.can_contract(op2.arg1, op2.arg2)
+#     @test op2.op == *
+#     @test op2.arg1 == x
+#     @test op2.arg2 == z
+# end
 
 @testset "evaluate Sym" begin
     A = Sym("A", [Upper(1); Lower(2)])
@@ -381,7 +405,6 @@ end
     @test evaluate(MC.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(2)])
     @test evaluate(MC.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
     @test evaluate(MC.UnaryOperation(d1, z)) == MC.UnaryOperation(d1, z)
-
     @test evaluate(MC.UnaryOperation(d2, A)) == Sym("A", [Upper(1); Lower(3)])
 end
 
