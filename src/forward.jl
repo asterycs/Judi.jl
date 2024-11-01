@@ -383,6 +383,10 @@ function evaluate(arg::UnaryOperation)
     return arg
 end
 
+function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
+    evaluate(*, arg2, arg1)
+end
+
 function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
     contracting_index = eliminated_indices([arg1.indices; arg2.indices])
 
@@ -399,10 +403,15 @@ function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
     @assert length(arg2.indices) == 2
 
     newarg = deepcopy(arg1)
+    empty!(newarg.indices)
 
-    for i ∈ eachindex(newarg.indices)
-        if newarg.indices[i].letter == arg2.indices[1].letter
-            newarg.indices[i] = arg2.indices[2]
+    for i ∈ arg1.indices
+        if flip(i) == arg2.indices[1]
+            push!(newarg.indices, arg2.indices[2])
+        elseif flip(i) == arg2.indices[2]
+            push!(newarg.indices, arg2.indices[1])
+        else
+            push!(newarg.indices, i)
         end
     end
 
