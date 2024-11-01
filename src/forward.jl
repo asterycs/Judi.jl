@@ -361,12 +361,41 @@ function is_contraction_unambigous(arg1, arg2)
     return false
 end
 
+# If any other except arg1.indices[end] and arg2.indices[1] match
+# then the input does not correspond to valid standard notation.
+function is_valid_standard_notation(arg1, arg2)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    if length(arg1_indices) == 1
+        arg1_indices = [arg1_indices; arg1_indices]
+    end
+
+    if length(arg2_indices) == 1
+        arg2_indices = [arg2_indices; arg2_indices]
+    end
+
+    for i ∈ arg1_indices[1:end-1]
+        for j ∈ arg2_indices[2:end]
+            if i.letter == j.letter
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
 function *(arg1, arg2)
     if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
         return BinaryOperation(*, arg1, arg2)
     else
         if !is_contraction_unambigous(arg1, arg2)
             throw(DomainError((arg1, arg2), "Invalid multiplication"))
+        end
+
+        if !is_valid_standard_notation(arg1, arg2)
+            throw(DomainError("Input operands do not correspond to valid standard notation"))
         end
 
         arg1_free_indices = get_free_indices(arg1)
