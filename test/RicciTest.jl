@@ -192,7 +192,7 @@ end
     y = Sym("y", [Upper(1)])
 
     @test_throws DomainError A * x
-    # @test_throws DomainError A * y
+    @test_throws DomainError A * y
 end
 
 @testset "create BinaryOperation with matching indices" begin
@@ -265,8 +265,8 @@ end
 
     updated_transpose = MD.update_index(x', Lower(2), Lower(1))
 
-    expected_first_shift = KrD([Lower(2); Upper(1)])
-    expected_second_shift = KrD([Lower(1); Lower(1)])
+    expected_first_shift = KrD([Lower(2); Lower(2)])
+    expected_second_shift = KrD([Upper(2); Lower(1)])
     @test typeof(updated_transpose) == MD.UnaryOperation
     @test updated_transpose.op == expected_second_shift
     @test typeof(updated_transpose.arg) == MD.UnaryOperation
@@ -325,8 +325,8 @@ end
     @test typeof(op2.arg1) == MD.UnaryOperation
     @test typeof(op2.arg1.arg) == MD.UnaryOperation
     @test op2.arg1.arg.arg == x
-    @test op2.arg1.arg.op == KrD([Lower(3); Upper(1)])
-    @test op2.arg1.op == KrD([Lower(1); Lower(1)])
+    @test op2.arg1.arg.op == KrD([Lower(3); Lower(3)])
+    @test op2.arg1.op == KrD([Upper(3); Lower(1)])
     @test op2.arg2 == A
 end
 

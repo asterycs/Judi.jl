@@ -421,56 +421,17 @@ end
 function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     indices = get_free_indices(arg)
 
-    @assert !isempty(indices)
-
     if from == to
         return arg
     end
 
-    update_index_impl(arg, from, to)[1]
-end
+    @assert from ∈ indices
 
-function update_index_impl(arg::UnaryOperation, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
-    @assert typeof(arg.op) == KrD # only KrD supported for now
-
-    # TODO: Simplify this; verify that the order of the KrD:s can be changed
-
-    if arg.op.indices[1] == from # this UnaryOperation alters the index that should be changed
-        if arg.op.indices[1] == arg.op.indices[2] # is a transpose
-            from = flip(from)
-            to = flip(to)
-        end
-    end
-
-    new_arg,index_map = update_index_impl(arg.arg, from, to)
-
-    new_op,_ = update_index_impl(arg.op, index_map)
-
-    return (UnaryOperation(new_op, new_arg), index_map)
-end
-
-function update_index_impl(arg::Sym, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     if typeof(from) == typeof(flip(to))
         throw(DomainError((from, to), "requested a transpose which isn't allowed"))
     end
 
-    if flip(from) == to
-        return arg, Dict{Letter, Letter}()
-    end
-
-    return UnaryOperation(KrD([flip(from); to]), arg), Dict{Letter, Letter}(from.letter => to.letter)
-end
-
-function update_index_impl(arg::KrD, index_map::Dict)
-    newarg = deepcopy(arg)
-
-    for i ∈ eachindex(newarg.indices)
-        if haskey(index_map, newarg.indices[i].letter)
-            newarg.indices[i].letter = index_map[newarg.indices[i].letter]
-        end
-    end
-
-    (newarg, index_map)
+    return UnaryOperation(KrD([flip(from); to]), arg)
 end
     
 function adjoint(arg::SymbolicValue)
