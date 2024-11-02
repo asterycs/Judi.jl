@@ -510,7 +510,7 @@ function evaluate(sym::Sym)
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation, arg2::BinaryOperation)
-    BinaryOperation(*, evaluate(arg1), evaluate(arg2))
+    evaluate(*, evaluate(arg1), evaluate(arg2))
 end
 
 function evaluate(arg::UnaryOperation)
@@ -561,6 +561,10 @@ function evaluate(::typeof(*), arg1, arg2)
     return BinaryOperation(*, arg1, arg2)
 end
 
+function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
+    evaluate(*, arg2, arg1)
+end
+
 function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
     if arg1 == 1
         return arg2
@@ -569,16 +573,12 @@ function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
     end
 end
 
-function evaluate(::typeof(*), arg1::Sym, arg2::Real)
+function evaluate(::typeof(*), arg1, arg2::Zero)
     evaluate(*, arg2, arg1)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2)
     arg1
-end
-
-function evaluate(::typeof(*), arg1, arg2::Zero)
-    evaluate(*, arg2, arg1)
 end
 
 function evaluate(::typeof(+), arg1::Zero, arg2)
