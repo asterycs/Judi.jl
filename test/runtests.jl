@@ -3,7 +3,7 @@ using Test
 
 MD = MatrixDiff
 
-@testset "create Sym" begin
+@testset "Sym constructor throws on invalid input" begin
     @test_throws DomainError Sym("A", [Upper(2); Lower(2)])
     @test_throws DomainError Sym("A", [Lower(2); Lower(2)])
 
@@ -75,7 +75,7 @@ end
     @test flip(Upper(3)) == Lower(3)
 end
 
-@testset "eliminate_indices" begin
+@testset "eliminate_indices removes correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
     indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
@@ -86,7 +86,7 @@ end
     @test MD.eliminate_indices(IdxUnion[]) == IdxUnion[]
 end
 
-@testset "eliminated_indices" begin
+@testset "eliminated_indices retains correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
     indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
@@ -97,7 +97,7 @@ end
     @test MD.eliminated_indices(IdxUnion[]) == IdxUnion[]
 end
 
-@testset "get_free_indices 1" begin
+@testset "get_free_indices with Sym-Sym and one matching pair" begin
     xt = Sym("x", [Lower(1)]) # row vector
     A = Sym("A", [Upper(1); Lower(2)])
 
@@ -108,7 +108,7 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices 2" begin
+@testset "get_free_indices with Sym-KrD and one matching pair" begin
     x = Sym("x", [Upper(1)])
     δ = KrD([Lower(1); Lower(2)])
 
@@ -119,7 +119,7 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices 3" begin
+@testset "get_free_indices with Sym-KrD and two matching pairs" begin
     x = Sym("x", [Upper(1)])
     δ = KrD([Lower(1); Lower(1)])
 
@@ -130,7 +130,7 @@ end
     @test MD.get_free_indices(op2) == [Lower(1)]
 end
 
-@testset "get_free_indices 4" begin
+@testset "get_free_indices with scalar Sym-KrD" begin
     x = Sym("x", [])
     δ = KrD([Lower(1); Lower(1)])
 
@@ -141,7 +141,18 @@ end
     @test MD.get_free_indices(op2) == [Lower(1); Lower(1)]
 end
 
-@testset "is_contraction_unambigous 1" begin
+@testset "get_free_indices with Sym-Sym and no matching pairs" begin
+    x = Sym("x", [Upper(1)])
+    A = Sym("A", [Upper(1); Lower(2)])
+
+    op1 = MD.BinaryOperation(*, x, A)
+    op2 = MD.BinaryOperation(*, A, x)
+
+    @test MD.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
+    @test MD.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
+end
+
+@testset "is_contraction_unambigous vector-vector with matching pair" begin
     x = Sym("x", [Upper(1)])
     y = Sym("y", [Lower(1)])
 
@@ -149,7 +160,7 @@ end
     @test MD.is_contraction_unambigous(y, x)
 end
 
-@testset "is_contraction_unambigous 2" begin
+@testset "is_contraction_unambigous vector-vector with non-matching pair" begin
     x = Sym("x", [Lower(1)])
     y = Sym("y", [Lower(1)])
 
@@ -157,7 +168,7 @@ end
     @test !MD.is_contraction_unambigous(y, x)
 end
 
-@testset "is_contraction_unambigous 3" begin
+@testset "is_contraction_unambigous matrix-vector with matching pair" begin
     x = Sym("x", [Upper(2)])
     A = Sym("A", [Upper(1); Lower(2)])
 
@@ -165,7 +176,7 @@ end
     @test MD.is_contraction_unambigous(x, A)
 end
 
-@testset "is_contraction_unambigous 4" begin
+@testset "is_contraction_unambigous matrix-vector with non-matching pair" begin
     x = Sym("x", [Lower(3)])
     A = Sym("A", [Upper(1); Lower(2)])
 
