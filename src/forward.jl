@@ -89,8 +89,14 @@ struct Sym <: SymbolicValue
     indices::IndexSet
 
     function Sym(id, indices)
+        # Convert type
         indices = LowerOrUpperIndex[i for i ∈ indices]
         if !isempty(eliminated_indices(indices))
+            throw(DomainError(indices, "Indices of $id are invalid"))
+        end
+
+        letters = unique([i.letter for i ∈ indices])
+        if length(letters) != length(indices)
             throw(DomainError(indices, "Indices of $id are invalid"))
         end
 

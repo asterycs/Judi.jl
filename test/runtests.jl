@@ -5,6 +5,7 @@ MD = MatrixDiff
 
 @testset "create Sym" begin
     @test_throws DomainError Sym("A", [Upper(2); Lower(2)])
+    @test_throws DomainError Sym("A", [Lower(2); Lower(2)])
 
     A = Sym("A", [Upper(1); Lower(2)])
     B = Sym("B", [Lower(1); Lower(2)])
