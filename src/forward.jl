@@ -1,5 +1,3 @@
-using Revise
-
 import Base.==
 import Base.hash
 import Base.*
@@ -11,6 +9,8 @@ export Sym, KrD, Zero
 
 export flip
 export evaluate
+
+export diff
 
 export to_string
 
@@ -641,11 +641,3 @@ end
 function to_string(arg::BinaryOperation)
     "(" * to_string(arg.arg1) * " " * string(arg.op) * " " * to_string(arg.arg2) * ")"
 end
-
-# x = Sym("x", [Upper(2)])
-# A = Sym("A", [Upper(1); Lower(2)])
-
-# to_string(x' * A * x)
-
-# to_string((diff(x' * A * x, x)))
-# to_string(evaluate(diff(x' * A * x)))
