@@ -231,6 +231,14 @@ function can_contract(arg1, arg2, index::Letter)
     return false
 end
 
+function can_contract(arg1::KrD, arg2)
+    return can_contract_weak(arg2, arg1)
+end
+
+function can_contract(arg1, arg2::KrD)
+    return can_contract_weak(arg1, arg2)
+end
+
 function can_contract(arg1::KrD, arg2::Sym)
     return can_contract_weak(arg2, arg1)
 end
@@ -517,10 +525,10 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
     evaluate(*, arg2, arg1)
 end
 
-function evaluate(::typeof(*), arg1, arg2::KrD)
-    contracting_index = eliminated_indices([arg1.indices; arg2.indices])
+function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
+    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
-    if isempty(contracting_index)
+    if isempty(contracting_index) # One arg is a scalar
         return UnaryOperation(arg2, arg1)
     end
 
