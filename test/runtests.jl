@@ -1,7 +1,7 @@
-using MatrixCalculus
+using MatrixDiff
 using Test
 
-MC = MatrixCalculus
+MD = MatrixDiff
 
 @testset "create Sym" begin
     @test_throws DomainError Sym("A", [Upper(2); Lower(2)])
@@ -41,25 +41,25 @@ end
     a = KrD([Upper(1); Upper(1)])
     b = Sym("b", [Lower(1)])
 
-    left = MC.UnaryOperation(a, b)
+    left = MD.UnaryOperation(a, b)
 
-    @test MC.UnaryOperation(a, b) == MC.UnaryOperation(a, b)
-    @test !(MC.UnaryOperation(a, b) === MC.UnaryOperation(a, b))
-    @test left == MC.UnaryOperation(a, b)
-    @test left != MC.UnaryOperation(b, a)
+    @test MD.UnaryOperation(a, b) == MD.UnaryOperation(a, b)
+    @test !(MD.UnaryOperation(a, b) === MD.UnaryOperation(a, b))
+    @test left == MD.UnaryOperation(a, b)
+    @test left != MD.UnaryOperation(b, a)
 end
 
 @testset "BinaryOperation equality operator" begin
     a = Sym("a", [Upper(1)])
     b = Sym("b", [Lower(1)])
 
-    left = MC.BinaryOperation(*, a, b)
+    left = MD.BinaryOperation(*, a, b)
 
-    @test MC.BinaryOperation(*, a, b) == MC.BinaryOperation(*, a, b)
-    @test !(MC.BinaryOperation(*, a, b) === MC.BinaryOperation(*, a, b))
-    @test left == MC.BinaryOperation(*, a, b)
-    @test left == MC.BinaryOperation(*, b, a)
-    @test left != MC.BinaryOperation(+, a, b)
+    @test MD.BinaryOperation(*, a, b) == MD.BinaryOperation(*, a, b)
+    @test !(MD.BinaryOperation(*, a, b) === MD.BinaryOperation(*, a, b))
+    @test left == MD.BinaryOperation(*, a, b)
+    @test left == MD.BinaryOperation(*, b, a)
+    @test left != MD.BinaryOperation(+, a, b)
 end
 
 @testset "index hash function" begin
@@ -75,101 +75,101 @@ end
 end
 
 @testset "eliminate_indices" begin
-    IdxUnion = MC.LowerOrUpperIndex
+    IdxUnion = MD.LowerOrUpperIndex
 
     indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
 
-    output = MC.eliminate_indices(indices)
+    output = MD.eliminate_indices(indices)
 
     @test output == [Lower(2); Lower(1); Lower(2); Upper(3)]
-    @test MC.eliminate_indices(IdxUnion[]) == IdxUnion[]
+    @test MD.eliminate_indices(IdxUnion[]) == IdxUnion[]
 end
 
 @testset "eliminated_indices" begin
-    IdxUnion = MC.LowerOrUpperIndex
+    IdxUnion = MD.LowerOrUpperIndex
 
     indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
 
-    output = MC.eliminated_indices(indices)
+    output = MD.eliminated_indices(indices)
 
     @test output == IdxUnion[Lower(9); Upper(9); Upper(3); Lower(3); Upper(9); Lower(9)]
-    @test MC.eliminated_indices(IdxUnion[]) == IdxUnion[]
+    @test MD.eliminated_indices(IdxUnion[]) == IdxUnion[]
 end
 
 @testset "get_free_indices 1" begin
     xt = Sym("x", [Lower(1)]) # row vector
     A = Sym("A", [Upper(1); Lower(2)])
 
-    op1 = MC.BinaryOperation(*, xt, A)
-    op2 = MC.BinaryOperation(*, A, xt)
+    op1 = MD.BinaryOperation(*, xt, A)
+    op2 = MD.BinaryOperation(*, A, xt)
 
-    @test MC.get_free_indices(op1) == [Lower(2)]
-    @test MC.get_free_indices(op2) == [Lower(2)]
+    @test MD.get_free_indices(op1) == [Lower(2)]
+    @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
 @testset "get_free_indices 2" begin
     x = Sym("x", [Upper(1)])
     δ = KrD([Lower(1); Lower(2)])
 
-    op1 = MC.BinaryOperation(*, x, δ)
-    op2 = MC.BinaryOperation(*, δ, x)
+    op1 = MD.BinaryOperation(*, x, δ)
+    op2 = MD.BinaryOperation(*, δ, x)
 
-    @test MC.get_free_indices(op1) == [Lower(2)]
-    @test MC.get_free_indices(op2) == [Lower(2)]
+    @test MD.get_free_indices(op1) == [Lower(2)]
+    @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
 @testset "get_free_indices 3" begin
     x = Sym("x", [Upper(1)])
     δ = KrD([Lower(1); Lower(1)])
 
-    op1 = MC.BinaryOperation(*, x, δ)
-    op2 = MC.BinaryOperation(*, δ, x)
+    op1 = MD.BinaryOperation(*, x, δ)
+    op2 = MD.BinaryOperation(*, δ, x)
 
-    @test MC.get_free_indices(op1) == [Lower(1)]
-    @test MC.get_free_indices(op2) == [Lower(1)]
+    @test MD.get_free_indices(op1) == [Lower(1)]
+    @test MD.get_free_indices(op2) == [Lower(1)]
 end
 
 @testset "get_free_indices 4" begin
     x = Sym("x", [])
     δ = KrD([Lower(1); Lower(1)])
 
-    op1 = MC.BinaryOperation(*, x, δ)
-    op2 = MC.BinaryOperation(*, δ, x)
+    op1 = MD.BinaryOperation(*, x, δ)
+    op2 = MD.BinaryOperation(*, δ, x)
 
-    @test MC.get_free_indices(op1) == [Lower(1); Lower(1)]
-    @test MC.get_free_indices(op2) == [Lower(1); Lower(1)]
+    @test MD.get_free_indices(op1) == [Lower(1); Lower(1)]
+    @test MD.get_free_indices(op2) == [Lower(1); Lower(1)]
 end
 
 @testset "is_contraction_unambigous 1" begin
     x = Sym("x", [Upper(1)])
     y = Sym("y", [Lower(1)])
 
-    @test MC.is_contraction_unambigous(x, y)
-    @test MC.is_contraction_unambigous(y, x)
+    @test MD.is_contraction_unambigous(x, y)
+    @test MD.is_contraction_unambigous(y, x)
 end
 
 @testset "is_contraction_unambigous 2" begin
     x = Sym("x", [Lower(1)])
     y = Sym("y", [Lower(1)])
 
-    @test !MC.is_contraction_unambigous(x, y)
-    @test !MC.is_contraction_unambigous(y, x)
+    @test !MD.is_contraction_unambigous(x, y)
+    @test !MD.is_contraction_unambigous(y, x)
 end
 
 @testset "is_contraction_unambigous 3" begin
     x = Sym("x", [Upper(2)])
     A = Sym("A", [Upper(1); Lower(2)])
 
-    @test MC.is_contraction_unambigous(A, x)
-    @test MC.is_contraction_unambigous(x, A)
+    @test MD.is_contraction_unambigous(A, x)
+    @test MD.is_contraction_unambigous(x, A)
 end
 
 @testset "is_contraction_unambigous 4" begin
     x = Sym("x", [Lower(3)])
     A = Sym("A", [Upper(1); Lower(2)])
 
-    @test MC.is_contraction_unambigous(A, x)
-    @test MC.is_contraction_unambigous(x, A)
+    @test MD.is_contraction_unambigous(A, x)
+    @test MD.is_contraction_unambigous(x, A)
 end
 
 @testset "create BinaryOperation with impossible input fails" begin
@@ -189,52 +189,52 @@ end
     z = Sym("z", [])
     A = Sym("A", [Upper(1); Lower(2)])
 
-    @test typeof(A * x) == MC.BinaryOperation
-    @test typeof(y * A) == MC.BinaryOperation
-    @test typeof(z * A) == MC.BinaryOperation
-    @test typeof(A * z) == MC.BinaryOperation
+    @test typeof(A * x) == MD.BinaryOperation
+    @test typeof(y * A) == MD.BinaryOperation
+    @test typeof(z * A) == MD.BinaryOperation
+    @test typeof(A * z) == MD.BinaryOperation
 end
 
 @testset "update_index column vector" begin
     x = Sym("x", [Upper(3)])
 
-    @test MC.update_index(x, Upper(3), Upper(3)) == x
+    @test MD.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD([Lower(3); Upper(1)])
-    @test MC.update_index(x, Upper(3), Upper(1)) == MC.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Upper(3), Upper(1)) == MD.UnaryOperation(expected_shift, x)
 
     expected_shift = KrD([Lower(3); Upper(2)])
-    @test MC.update_index(x, Upper(3), Upper(2)) == MC.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Upper(3), Upper(2)) == MD.UnaryOperation(expected_shift, x)
 
     # update_index shall not transpose
-    @test_throws DomainError MC.update_index(x, Upper(3), Lower(1))
+    @test_throws DomainError MD.update_index(x, Upper(3), Lower(1))
 end
 
 @testset "update_index row vector" begin
     x = Sym("x", [Lower(3)])
 
-    @test MC.update_index(x, Lower(3), Lower(3)) == x
+    @test MD.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD([Upper(3); Lower(1)])
-    @test MC.update_index(x, Lower(3), Lower(1)) == MC.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Lower(3), Lower(1)) == MD.UnaryOperation(expected_shift, x)
 
     expected_shift = KrD([Upper(3); Lower(2)])
-    @test MC.update_index(x, Lower(3), Lower(2)) == MC.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Lower(3), Lower(2)) == MD.UnaryOperation(expected_shift, x)
 
     # update_index shall not transpose
-    @test_throws DomainError MC.update_index(x, Lower(3), Upper(1))
+    @test_throws DomainError MD.update_index(x, Lower(3), Upper(1))
 end
 
 @testset "update_index matrix" begin
     A = Sym("A", [Upper(1); Lower(2)])
 
-    @test MC.update_index(A, Lower(2), Lower(2)) == A
+    @test MD.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD([Upper(2); Lower(3)])
-    @test MC.update_index(A, Lower(2), Lower(3)) == MC.UnaryOperation(expected_shift, A)
+    @test MD.update_index(A, Lower(2), Lower(3)) == MD.UnaryOperation(expected_shift, A)
 
     # update_index shall not transpose
-    @test_throws DomainError MC.update_index(A, Lower(2), Upper(3))
+    @test_throws DomainError MD.update_index(A, Lower(2), Upper(3))
 end
 
 @testset "transpose vector" begin
@@ -242,22 +242,22 @@ end
     y = Sym("y", [Lower(1)])
 
     expected_shift = KrD([Lower(1); Lower(1)])
-    @test x' == MC.UnaryOperation(expected_shift, x)
+    @test x' == MD.UnaryOperation(expected_shift, x)
 
     expected_shift = KrD([Upper(1); Upper(1)])
-    @test y' == MC.UnaryOperation(expected_shift, y)
+    @test y' == MD.UnaryOperation(expected_shift, y)
 end
 
 @testset "combined update_index and transpose vector" begin
     x = Sym("x", [Upper(2)])
 
-    updated_transpose = MC.update_index(x', Lower(2), Lower(1))
+    updated_transpose = MD.update_index(x', Lower(2), Lower(1))
 
     expected_first_shift = KrD([Lower(2); Upper(1)])
     expected_second_shift = KrD([Lower(1); Lower(1)])
-    @test typeof(updated_transpose) == MC.UnaryOperation
+    @test typeof(updated_transpose) == MD.UnaryOperation
     @test updated_transpose.op == expected_second_shift
-    @test typeof(updated_transpose.arg) == MC.UnaryOperation
+    @test typeof(updated_transpose.arg) == MD.UnaryOperation
     @test updated_transpose.arg.arg == x
     @test updated_transpose.arg.op == expected_first_shift
 end
@@ -269,9 +269,9 @@ end
 #     expected_first_shift = KrD([Upper(2); Upper(2)])
 #     expected_second_shift = KrD([Lower(1); Lower(1)])
 #     A_transpose = A'
-#     @test typeof(A_transpose) == MC.UnaryOperation
+#     @test typeof(A_transpose) == MD.UnaryOperation
 #     @test typeof(A_transpose.op) == expected_second_shift
-#     @test typeof(A_transpose.arg) == MC.UnaryOperation
+#     @test typeof(A_transpose.arg) == MD.UnaryOperation
 #     @test typeof(A_transpose.arg.op) == expected_first_shift
 #     @test typeof(A_transpose.arg.arg) == A
 # end
@@ -280,14 +280,17 @@ end
     A = Sym("A", [Upper(1); Lower(2)])
     x = Sym("x", [Upper(2)])
     y = Sym("y", [Upper(3)])
+    z = Sym("z", [Lower(1)])
     d = KrD([Lower(1); Lower(1)])
 
-    @test MC.can_contract(A, x)
-    @test MC.can_contract(x, A)
-    @test !MC.can_contract(A, y)
-    @test !MC.can_contract(y, A)
-    @test MC.can_contract(A, d)
-    @test MC.can_contract(d, A)
+    @test MD.can_contract(A, x)
+    @test MD.can_contract(x, A)
+    @test !MD.can_contract(A, y)
+    @test !MD.can_contract(y, A)
+    @test MD.can_contract(A, d)
+    @test MD.can_contract(d, A)
+    @test MD.can_contract(A, z)
+    @test MD.can_contract(z, A)
 end
 
 @testset "create BinaryOperation with non-matching indices matrix-vector" begin
@@ -296,19 +299,19 @@ end
 
     op1 = A * x
 
-    @test typeof(op1) == MC.BinaryOperation
-    @test MC.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1) == MD.BinaryOperation
+    @test MD.can_contract(op1.arg1, op1.arg2)
     @test op1.op == *
-    @test typeof(op1.arg1) == MC.UnaryOperation
+    @test typeof(op1.arg1) == MD.UnaryOperation
     @test op1.arg2 == x
 
     op2 = x' * A
 
-    @test typeof(op2) == MC.BinaryOperation
-    @test MC.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2) == MD.BinaryOperation
+    @test MD.can_contract(op2.arg1, op2.arg2)
     @test op2.op == *
-    @test typeof(op2.arg1) == MC.UnaryOperation
-    @test typeof(op2.arg1.arg) == MC.UnaryOperation
+    @test typeof(op2.arg1) == MD.UnaryOperation
+    @test typeof(op2.arg1.arg) == MD.UnaryOperation
     @test op2.arg1.arg.arg == x
     @test op2.arg1.arg.op == KrD([Lower(3); Upper(1)])
     @test op2.arg1.op == KrD([Lower(1); Lower(1)])
@@ -328,18 +331,18 @@ end
 
     op1 = x' * y
 
-    @test typeof(op1) == MC.BinaryOperation
-    @test MC.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1) == MD.BinaryOperation
+    @test MD.can_contract(op1.arg1, op1.arg2)
     @test op1.op == *
-    @test typeof(op1.arg1) == MC.UnaryOperation
+    @test typeof(op1.arg1) == MD.UnaryOperation
     @test op1.arg2 == y
 
     op2 = y' * x
 
-    @test typeof(op2) == MC.BinaryOperation
-    @test MC.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2) == MD.BinaryOperation
+    @test MD.can_contract(op2.arg1, op2.arg2)
     @test op2.op == *
-    @test typeof(op2.arg1) == MC.UnaryOperation
+    @test typeof(op2.arg1) == MD.UnaryOperation
     @test op2.arg2 == x
 end
 
@@ -351,14 +354,14 @@ end
 #     op1 = A * z
 #     op2 = z * A
 
-#     @test typeof(op1) == MC.BinaryOperation
-#     @test MC.can_contract(op1.arg1, op1.arg2)
+#     @test typeof(op1) == MD.BinaryOperation
+#     @test MD.can_contract(op1.arg1, op1.arg2)
 #     @test op1.op == *
 #     @test op1.arg1 == A
 #     @test op1.arg2 == z
 
-#     @test typeof(op2) == MC.BinaryOperation
-#     @test MC.can_contract(op2.arg1, op2.arg2)
+#     @test typeof(op2) == MD.BinaryOperation
+#     @test MD.can_contract(op2.arg1, op2.arg2)
 #     @test op2.op == *
 #     @test op2.arg1 == z
 #     @test op2.arg2 == A
@@ -371,14 +374,14 @@ end
 #     op1 = z * x
 #     op2 = x * z
 
-#     @test typeof(op1) == MC.BinaryOperation
-#     @test MC.can_contract(op1.arg1, op1.arg2)
+#     @test typeof(op1) == MD.BinaryOperation
+#     @test MD.can_contract(op1.arg1, op1.arg2)
 #     @test op1.op == *
 #     @test op1.arg1 == z
 #     @test op1.arg2 == x
 
-#     @test typeof(op2) == MC.BinaryOperation
-#     @test MC.can_contract(op2.arg1, op2.arg2)
+#     @test typeof(op2) == MD.BinaryOperation
+#     @test MD.can_contract(op2.arg1, op2.arg2)
 #     @test op2.op == *
 #     @test op2.arg1 == x
 #     @test op2.arg2 == z
@@ -402,10 +405,10 @@ end
     d1 = KrD([Lower(1); Upper(3)])
     d2 = KrD([Upper(2); Lower(3)])
 
-    @test evaluate(MC.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(2)])
-    @test evaluate(MC.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
-    @test evaluate(MC.UnaryOperation(d1, z)) == MC.UnaryOperation(d1, z)
-    @test evaluate(MC.UnaryOperation(d2, A)) == Sym("A", [Upper(1); Lower(3)])
+    @test evaluate(MD.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(2)])
+    @test evaluate(MD.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
+    @test evaluate(MD.UnaryOperation(d1, z)) == MD.UnaryOperation(d1, z)
+    @test evaluate(MD.UnaryOperation(d2, A)) == Sym("A", [Upper(1); Lower(3)])
 end
 
 @testset "evaluate transpose simple" begin
@@ -423,8 +426,8 @@ end
     d1 = KrD([Lower(2); Upper(3)])
     d2 = KrD([Lower(2); Lower(2)])
 
-    @test evaluate(MC.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
-    @test evaluate(MC.UnaryOperation(d2, x)) == Sym("x", [Lower(2)])
+    @test evaluate(MD.UnaryOperation(d1, x)) == Sym("x", [Upper(3)])
+    @test evaluate(MD.UnaryOperation(d2, x)) == Sym("x", [Lower(2)])
 end
 
 @testset "evaluate UnaryOperation matrix-KrD" begin
@@ -432,16 +435,16 @@ end
     d1 = KrD([Lower(2); Upper(3)])
     d2 = KrD([Lower(2); Lower(2)])
 
-    @test evaluate(MC.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(4)])
-    @test evaluate(MC.UnaryOperation(d2, A)) == Sym("A", [Lower(2); Lower(4)])
+    @test evaluate(MD.UnaryOperation(d1, A)) == Sym("A", [Upper(3); Lower(4)])
+    @test evaluate(MD.UnaryOperation(d2, A)) == Sym("A", [Lower(2); Lower(4)])
 end
 
 @testset "evaluate UnaryOperation KrD-KrD" begin
     d1 = KrD([Upper(1); Lower(2)])
     d2 = KrD([Upper(2); Lower(3)])
 
-    @test evaluate(MC.UnaryOperation(d1, d2)) == KrD([Upper(1); Lower(3)])
-    @test evaluate(MC.UnaryOperation(d2, d1)) == KrD([Upper(1); Lower(3)])
+    @test evaluate(MD.UnaryOperation(d1, d2)) == KrD([Upper(1); Lower(3)])
+    @test evaluate(MD.UnaryOperation(d2, d1)) == KrD([Upper(1); Lower(3)])
 end
 
 @testset "evaluate BinaryOperation vector-KrD" begin
@@ -449,10 +452,10 @@ end
     d1 = KrD([Lower(2); Upper(3)])
     d2 = KrD([Lower(2); Lower(2)])
 
-    @test evaluate(MC.BinaryOperation(*, d1, x)) == Sym("x", [Upper(3)])
-    @test evaluate(MC.BinaryOperation(*, x, d1)) == Sym("x", [Upper(3)])
-    @test evaluate(MC.BinaryOperation(*, d2, x)) == Sym("x", [Lower(2)])
-    @test evaluate(MC.BinaryOperation(*, x, d2)) == Sym("x", [Lower(2)])
+    @test evaluate(MD.BinaryOperation(*, d1, x)) == Sym("x", [Upper(3)])
+    @test evaluate(MD.BinaryOperation(*, x, d1)) == Sym("x", [Upper(3)])
+    @test evaluate(MD.BinaryOperation(*, d2, x)) == Sym("x", [Lower(2)])
+    @test evaluate(MD.BinaryOperation(*, x, d2)) == Sym("x", [Lower(2)])
 end
 
 @testset "evaluate BinaryOperation matrix-KrD" begin
@@ -460,18 +463,18 @@ end
     d1 = KrD([Lower(2); Upper(3)])
     d2 = KrD([Lower(2); Lower(2)])
 
-    @test evaluate(MC.BinaryOperation(*, d1, A)) == Sym("A", [Upper(3); Lower(4)])
-    @test evaluate(MC.BinaryOperation(*, A, d1)) == Sym("A", [Upper(3); Lower(4)])
-    @test evaluate(MC.BinaryOperation(*, d2, A)) == Sym("A", [Lower(2); Lower(4)])
-    @test evaluate(MC.BinaryOperation(*, A, d2)) == Sym("A", [Lower(2); Lower(4)])
+    @test evaluate(MD.BinaryOperation(*, d1, A)) == Sym("A", [Upper(3); Lower(4)])
+    @test evaluate(MD.BinaryOperation(*, A, d1)) == Sym("A", [Upper(3); Lower(4)])
+    @test evaluate(MD.BinaryOperation(*, d2, A)) == Sym("A", [Lower(2); Lower(4)])
+    @test evaluate(MD.BinaryOperation(*, A, d2)) == Sym("A", [Lower(2); Lower(4)])
 end
 
 @testset "evaluate BinaryOperation KrD-KrD" begin
     d1 = KrD([Upper(1); Lower(2)])
     d2 = KrD([Upper(2); Lower(3)])
 
-    @test evaluate(MC.BinaryOperation(*, d1, d2)) == KrD([Upper(1); Lower(3)])
-    @test evaluate(MC.BinaryOperation(*, d2, d1)) == KrD([Upper(1); Lower(3)])
+    @test evaluate(MD.BinaryOperation(*, d1, d2)) == KrD([Upper(1); Lower(3)])
+    @test evaluate(MD.BinaryOperation(*, d2, d1)) == KrD([Upper(1); Lower(3)])
 end
 
 @testset "evaluate BinaryOperation*" begin
@@ -479,6 +482,6 @@ end
     x = Sym("x", [Upper(2)])
     y = Sym("y", [Upper(3)])
 
-    @test evaluate(MC.BinaryOperation(*, A, x)) == MC.BinaryOperation(*, A, x)
-    # @test evaluate(MC.BinaryOperation(*, A, y)) == MC.BinaryOperation(*, A, y) # TODO: Should this really fail?
+    @test evaluate(MD.BinaryOperation(*, A, x)) == MD.BinaryOperation(*, A, x)
+    # @test evaluate(MD.BinaryOperation(*, A, y)) == MD.BinaryOperation(*, A, y) # TODO: Should this really fail?
 end

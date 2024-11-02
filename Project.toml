@@ -1,4 +1,4 @@
-name = "MatrixCalculus"
+name = "MatrixDiff"
 uuid = "ec55c3ff-feb8-4051-a6a4-2e9f18c613fc"
 authors = ["Jimmy Envall"]
 version = "1.0.0-DEV"

@@ -1,1 +1,1 @@
-# MatrixCalculus
+# MatrixDiff.jl
