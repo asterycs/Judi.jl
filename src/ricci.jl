@@ -124,6 +124,13 @@ function ==(left::KrD, right::KrD)
 end
 
 struct Zero <: SymbolicValue
+    indices::IndexSet
+
+    function Zero(indices::LowerOrUpperIndex...)
+        indices = LowerOrUpperIndex[i for i ∈ indices]
+
+        new(indices)
+    end
 end
 
 struct BinaryOperation <: SymbolicValue
@@ -205,7 +212,7 @@ function eliminated_indices(arg::IndexSet)
     return eliminated
 end
 
-function get_free_indices(arg::Union{Sym, KrD})
+function get_free_indices(arg::Union{Sym, KrD, Zero})
     arg.indices
 end
 

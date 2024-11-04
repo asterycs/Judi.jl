@@ -7,7 +7,7 @@ function diff(sym::Sym, wrt::Sym)
         @assert length(sym.indices) <= 1 # Only scalars and vectors supported for now
         return KrD(sym.indices..., lowernext(sym.indices[end]))
     else
-        return Zero()
+        return Zero(sym.indices..., lowernext(sym.indices[end]))
     end
 end
 
