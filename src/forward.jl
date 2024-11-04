@@ -25,6 +25,102 @@ function diff(*, arg1, arg2, wrt::Sym)
     BinaryOperation(*, arg1, diff(arg2, wrt)) + BinaryOperation(*, diff(arg1, wrt), arg2)
 end
 
+function rotate(op::BinaryOperation)
+    println("rotate(op::BinaryOperation)")
+    if typeof(op.op) != typeof(*)
+        return BinaryOperation(op.op, rotate(op.arg1), rotate(op.arg2))
+    end
+
+    return rotate(op.arg1, op.arg2)
+end
+
+function rotate(op::UnaryOperation)
+    println("rotate(op::UnaryOperation)")
+    @show op.op
+    @show op.arg
+    return UnaryOperation(op.op, rotate(op.arg))
+end
+
+function rotate(sym::Sym)
+    println("rotate(sym::Sym)")
+    return sym
+end
+
+function rotate(arg1::Sym, arg2::KrD)
+    rotate(arg2, arg1)
+end
+
+function rotate(arg1::KrD, arg2::Sym)
+    UnaryOperation(arg1, arg2)
+end
+
+function rotate(arg1::Sym, arg2::Sym)
+    BinaryOperation(*, arg1, arg2)
+end
+
+function rotate(arg1::UnaryOperation, arg2::Zero)
+    println("rotate(arg1::UnaryOperation, arg2::Zero)")
+    return BinaryOperation(*, rotate(arg1), arg2)
+end
+
+function rotate(arg1::UnaryOperation, arg2::Sym)
+    println("rotate(arg1::UnaryOperation, arg2::Sym)")
+    if typeof(arg1.op) == KrD
+        return UnaryOperation(arg1.op, rotate(arg1.arg, arg2))
+    else
+        return BinaryOperation(*, rotate(arg1), arg2)
+    end
+end
+
+function rotate(arg1::KrD, arg2::UnaryOperation)
+    println("rotate(arg1::KrD, arg2::UnaryOperation)")
+    rotate(arg2, arg1)
+end
+
+function rotate(arg1::UnaryOperation, arg2::KrD)
+    println("rotate(arg1::UnaryOperation, arg2::KrD)")
+    if typeof(arg1.op) == KrD
+        new_krd = evaluate(*, arg1.op, arg2)
+        return UnaryOperation(new_krd, rotate(arg1.arg))
+    else
+        return UnaryOperation(arg1, arg2)
+    end
+end
+
+function rotate(arg1::KrD, arg2::BinaryOperation)
+    println("rotate(arg1::KrD, arg2::BinaryOperation)")
+    rotate(arg2, arg1)
+end
+
+function rotate(arg1::BinaryOperation, arg2::KrD)
+    println("rotate(arg1::BinaryOperation, arg2::KrD)")
+    if typeof(arg1.arg1) == KrD
+        new_krd = evaluate(*, arg1.arg1, arg2)
+        return UnaryOperation(arg1.arg2, new_krd)
+    elseif typeof(arg1.arg2) == KrD
+        new_krd = evaluate(*, arg1.arg2, arg2)
+        return UnaryOperation(arg1.arg1, new_krd)
+    else
+        return BinaryOperation(*, arg1, arg2)
+    end
+end
+
+function rotate(arg1::Sym, arg2::BinaryOperation)
+    println("rotate(arg1::Sym, arg2::BinaryOperation)")
+    rotate(arg2, arg1)
+end
+
+function rotate(arg1::BinaryOperation, arg2::Sym)
+    println("rotate(arg1::BinaryOperation, arg2::KrD)")
+    if typeof(arg1.arg1) == KrD
+        return UnaryOperation(arg1.arg1, BinaryOperation(*, arg1.arg2, arg2))
+    elseif typeof(arg1.arg2) == KrD
+        return UnaryOperation(arg1.arg2, BinaryOperation(*, arg1.arg1, arg2))
+    else
+        return BinaryOperation(*, rotate(arg1), arg2)
+    end
+end
+
 function evaluate(sym::Sym)
     sym
 end
