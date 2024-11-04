@@ -142,6 +142,19 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
     evaluate(*, arg2, arg1)
 end
 
+function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation)
+    evaluate(*, arg2, arg1)
+end
+
+function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD)
+    if typeof(arg1.op) == typeof(*)
+        new_arg2 = evaluate(*, arg1.arg2, arg2)
+        return BinaryOperation(*, arg1.arg1, new_arg2)
+    else
+        return UnaryOperation(arg2, arg1)
+    end
+end
+
 function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
     contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
