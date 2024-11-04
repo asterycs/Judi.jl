@@ -99,5 +99,5 @@ end
     y = Sym("y", Upper(3))
 
     @test evaluate(MD.BinaryOperation(*, A, x)) == MD.BinaryOperation(*, A, x)
-    # @test evaluate(MD.BinaryOperation(*, A, y)) == MD.BinaryOperation(*, A, y) # TODO: Should this really fail?
+    @test evaluate(MD.BinaryOperation(*, A, y)) == MD.BinaryOperation(*, A, y)
 end
