@@ -86,7 +86,7 @@ struct Sym <: SymbolicValue
     id::String
     indices::IndexSet
 
-    function Sym(id, indices)
+    function Sym(id, indices::LowerOrUpperIndex...)
         # Convert type
         indices = LowerOrUpperIndex[i for i ∈ indices]
         if !isempty(eliminated_indices(indices))
