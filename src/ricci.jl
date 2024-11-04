@@ -460,29 +460,42 @@ function adjoint(arg::SymbolicValue)
     UnaryOperation(KrD(flip(ids[1]), flip(ids[1])), arg)
 end
 
+function script(index::Lower)
+    @assert index.letter >= 0
+    text = []
+
+    for d ∈ reverse(digits(index.letter))
+        push!(text, Char(0x2080 + d))
+    end
+
+    return join(text)
+end
+
+function script(index::Upper)
+    @assert index.letter >= 0
+    text = []
+
+    for d ∈ reverse(digits(index.letter))
+        if d == 0 push!(text, Char(0x2070)) end
+        if d == 1 push!(text, Char(0x00B9)) end
+        if d == 2 push!(text, Char(0x00B2)) end
+        if d == 3 push!(text, Char(0x00B3)) end
+        if d > 3 push!(text, Char(0x2070 + d)) end
+    end
+
+    return join(text)
+end
+
 function to_string(arg::Sym)
-    upper_indices = [i.letter for i ∈ arg.indices if typeof(i) == Upper]
-    upper_tag = ""
-    if !isempty(upper_indices)
-        upper_tag = "^(" * string(upper_indices...) * ")"
-    end
+    scripts = [script(i) for i ∈ arg.indices]
 
-    lower_indices = [i.letter for i ∈ arg.indices if typeof(i) == Lower]
-    lower_tag = ""
-    if !isempty(lower_indices)
-        lower_tag = "_(" * string(lower_indices...) * ")"
-    end
-
-    arg.id * upper_tag * lower_tag
+    arg.id * join(scripts)
 end
 
 function to_string(arg::KrD)
-    upper_indices = [i.letter for i ∈ arg.indices if typeof(i) == Upper]
-    upper_indices = string(upper_indices...)
-    lower_indices = [i.letter for i ∈ arg.indices if typeof(i) == Lower]
-    lower_indices = string(lower_indices...)
+    scripts = [script(i) for i ∈ arg.indices]
 
-    "δ" * "^(" * upper_indices * ")_(" * lower_indices * ")"
+    "δ" * join(scripts)
 end
 
 function to_string(arg::Real)
@@ -490,7 +503,9 @@ function to_string(arg::Real)
 end
 
 function to_string(arg::Zero)
-    "0"
+    scripts = [script(i) for i ∈ arg.indices]
+
+    "0" * join(scripts)
 end
 
 function to_string(arg::UnaryOperation)
@@ -512,10 +527,6 @@ function to_std_string(arg::Sym)
     end
 
     return arg.id * superscript
-end
-
-function to_std_string(arg::KrD)
-    return ""
 end
 
 function to_std_string(arg::UnaryOperation)
