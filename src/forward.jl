@@ -3,6 +3,7 @@ export evaluate
 export diff
 
 export to_string
+export to_std_string
 
 function diff(sym::Sym, wrt::Sym)
     if sym == wrt
@@ -256,4 +257,40 @@ end
 
 function to_string(arg::BinaryOperation)
     "(" * to_string(arg.arg1) * " " * string(arg.op) * " " * to_string(arg.arg2) * ")"
+end
+
+function to_std_string(arg::Sym)
+    superscript = ""
+    if length(arg.indices) <= 2
+        if all(i -> typeof(i) == Lower, arg.indices)
+            superscript = "ᵀ"
+        end
+    else
+        @assert false "Tensor format string not implemented"
+    end
+
+    return arg.id * superscript
+end
+
+function to_std_string(arg::KrD)
+    return ""
+end
+
+function to_std_string(arg::UnaryOperation)
+    return to_std_string(arg.arg) * to_std_string(arg.op)
+end
+
+function to_std_string(arg::BinaryOperation)
+    separator = string(arg.op)
+    term = to_std_string(arg.arg1) * " " * separator * " " * to_std_string(arg.arg2)
+
+    if typeof(arg.op) == typeof(+)
+        term = "(" * term * ")"
+    elseif typeof(arg.op) == typeof(*)
+        # no-op
+    else
+        @assert false "Not implemented"
+    end
+
+    return term
 end
