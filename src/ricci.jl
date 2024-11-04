@@ -375,6 +375,7 @@ end
 
 # If any other except arg1.indices[end] and arg2.indices[1] match
 # then the input does not correspond to valid standard notation.
+# TODO: Rename - include "multiplication" or "contraction" in the name.
 function is_valid_standard_notation(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
@@ -395,6 +396,10 @@ function is_valid_standard_notation(arg1, arg2)
         end
     end
 
+    if flip(arg1.indices[end]) != arg2.indices[1]
+        return false
+    end
+
     return true
 end
 
@@ -405,10 +410,6 @@ function *(arg1, arg2)
         if !is_contraction_unambigous(arg1, arg2)
             throw(DomainError((arg1, arg2), "Invalid multiplication"))
         end
-
-        # if !is_valid_standard_notation(arg1, arg2)
-        #     throw(DomainError((arg1, arg2), "Input operands do not correspond to valid standard notation"))
-        # end
 
         arg1_free_indices = get_free_indices(arg1)
         arg2_free_indices = get_free_indices(arg2)

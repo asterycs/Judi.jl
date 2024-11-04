@@ -184,15 +184,24 @@ end
     @test MD.is_contraction_unambigous(x, A)
 end
 
-@testset "create BinaryOperation with impossible input fails" begin
-    # This input cannot be written with standard matrix notation.
-    # We catch it in *() although the check should arguably be somewhere else.
+@testset "is_valid_standard_notation fails with invalid input" begin
     A = Sym("A", [Upper(1); Lower(2)])
-    x = Sym("x", [Lower(1)])
-    y = Sym("y", [Upper(1)])
+    x = Sym("x", [Upper(1)])
+    y = Sym("y", [Lower(2)])
 
-    @test_throws DomainError A * x
-    @test_throws DomainError A * y
+    @test !MD.is_valid_standard_notation(A, x)
+    @test !MD.is_valid_standard_notation(x, A)
+    @test !MD.is_valid_standard_notation(A, y)
+    @test !MD.is_valid_standard_notation(y, A)
+end
+
+@testset "is_valid_standard_notation succeeds with valid input" begin
+    A = Sym("A", [Upper(1); Lower(2)])
+    x = Sym("x", [Upper(2)])
+    y = Sym("y", [Lower(1)])
+
+    @test MD.is_valid_standard_notation(A, x)
+    @test MD.is_valid_standard_notation(y, A)
 end
 
 @testset "create BinaryOperation with matching indices" begin
