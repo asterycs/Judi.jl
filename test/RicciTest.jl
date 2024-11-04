@@ -23,22 +23,26 @@ end
     @test left != Lower(1)
 end
 
+@testset "KrD constructor throws on invalid input" begin
+    @test_throws DomainError KrD(Upper(2), Lower(2))
+end
+
 @testset "KrD equality operator" begin
-    left = KrD([Upper(1); Lower(2)])
-    @test KrD([Upper(1); Lower(2)]) == KrD([Upper(1); Lower(2)])
-    @test !(KrD([Upper(1); Lower(2)]) === KrD([Upper(1); Lower(2)]))
-    @test left == KrD([Upper(1); Lower(2)])
-    @test left != KrD([Upper(1); Upper(2)])
-    @test left != KrD([Lower(1); Lower(2)])
-    @test left != KrD([Upper(2); Lower(2)])
-    @test left != KrD([Upper(1); Lower(3)])
-    @test left != KrD([Upper(1)])
-    @test left != KrD([Upper(1); Lower(2); Lower(3)])
+    left = KrD(Upper(1), Lower(2))
+    @test KrD(Upper(1), Lower(2)) == KrD(Upper(1), Lower(2))
+    @test !(KrD(Upper(1), Lower(2)) === KrD(Upper(1), Lower(2)))
+    @test left == KrD(Upper(1), Lower(2))
+    @test left != KrD(Upper(1), Upper(2))
+    @test left != KrD(Lower(1), Lower(2))
+    @test left != KrD(Upper(3), Lower(2))
+    @test left != KrD(Upper(1), Lower(3))
+    @test left != KrD(Upper(1))
+    @test left != KrD(Upper(1), Lower(2), Lower(3))
 end
 
 
 @testset "UnaryOperation equality operator" begin
-    a = KrD([Upper(1); Upper(1)])
+    a = KrD(Upper(1), Upper(1))
     b = Sym("b", Lower(1))
 
     left = MD.UnaryOperation(a, b)
@@ -107,7 +111,7 @@ end
 
 @testset "get_free_indices with Sym-KrD and one matching pair" begin
     x = Sym("x", Upper(1))
-    δ = KrD([Lower(1); Lower(2)])
+    δ = KrD(Lower(1), Lower(2))
 
     op1 = MD.BinaryOperation(*, x, δ)
     op2 = MD.BinaryOperation(*, δ, x)
@@ -118,7 +122,7 @@ end
 
 @testset "get_free_indices with Sym-KrD and two matching pairs" begin
     x = Sym("x", Upper(1))
-    δ = KrD([Lower(1); Lower(1)])
+    δ = KrD(Lower(1), Lower(1))
 
     op1 = MD.BinaryOperation(*, x, δ)
     op2 = MD.BinaryOperation(*, δ, x)
@@ -129,7 +133,7 @@ end
 
 @testset "get_free_indices with scalar Sym-KrD" begin
     x = Sym("x")
-    δ = KrD([Lower(1); Lower(1)])
+    δ = KrD(Lower(1), Lower(1))
 
     op1 = MD.BinaryOperation(*, x, δ)
     op2 = MD.BinaryOperation(*, δ, x)
@@ -218,10 +222,10 @@ end
 
     @test MD.update_index(x, Upper(3), Upper(3)) == x
 
-    expected_shift = KrD([Lower(3); Upper(1)])
+    expected_shift = KrD(Lower(3), Upper(1))
     @test MD.update_index(x, Upper(3), Upper(1)) == MD.UnaryOperation(expected_shift, x)
 
-    expected_shift = KrD([Lower(3); Upper(2)])
+    expected_shift = KrD(Lower(3), Upper(2))
     @test MD.update_index(x, Upper(3), Upper(2)) == MD.UnaryOperation(expected_shift, x)
 
     # update_index shall not transpose
@@ -233,10 +237,10 @@ end
 
     @test MD.update_index(x, Lower(3), Lower(3)) == x
 
-    expected_shift = KrD([Upper(3); Lower(1)])
+    expected_shift = KrD(Upper(3), Lower(1))
     @test MD.update_index(x, Lower(3), Lower(1)) == MD.UnaryOperation(expected_shift, x)
 
-    expected_shift = KrD([Upper(3); Lower(2)])
+    expected_shift = KrD(Upper(3), Lower(2))
     @test MD.update_index(x, Lower(3), Lower(2)) == MD.UnaryOperation(expected_shift, x)
 
     # update_index shall not transpose
@@ -248,7 +252,7 @@ end
 
     @test MD.update_index(A, Lower(2), Lower(2)) == A
 
-    expected_shift = KrD([Upper(2); Lower(3)])
+    expected_shift = KrD(Upper(2), Lower(3))
     @test MD.update_index(A, Lower(2), Lower(3)) == MD.UnaryOperation(expected_shift, A)
 
     # update_index shall not transpose
@@ -259,10 +263,10 @@ end
     x = Sym("x", Upper(1))
     y = Sym("y", Lower(1))
 
-    expected_shift = KrD([Lower(1); Lower(1)])
+    expected_shift = KrD(Lower(1), Lower(1))
     @test x' == MD.UnaryOperation(expected_shift, x)
 
-    expected_shift = KrD([Upper(1); Upper(1)])
+    expected_shift = KrD(Upper(1), Upper(1))
     @test y' == MD.UnaryOperation(expected_shift, y)
 end
 
@@ -271,8 +275,8 @@ end
 
     updated_transpose = MD.update_index(x', Lower(2), Lower(1))
 
-    expected_first_shift = KrD([Lower(2); Lower(2)])
-    expected_second_shift = KrD([Upper(2); Lower(1)])
+    expected_first_shift = KrD(Lower(2), Lower(2))
+    expected_second_shift = KrD(Upper(2), Lower(1))
     @test typeof(updated_transpose) == MD.UnaryOperation
     @test updated_transpose.op == expected_second_shift
     @test typeof(updated_transpose.arg) == MD.UnaryOperation
@@ -282,10 +286,10 @@ end
 
 # TODO: Not implemented
 # @testset "transpose matrix" begin
-#     A = Sym("A", [Upper(1); Lower(2)], [])
+#     A = Sym("A", Upper(1), Lower(2))
 
-#     expected_first_shift = KrD([Upper(2); Upper(2)])
-#     expected_second_shift = KrD([Lower(1); Lower(1)])
+#     expected_first_shift = KrD(Upper(2), Upper(2))
+#     expected_second_shift = KrD(Lower(1), Lower(1))
 #     A_transpose = A'
 #     @test typeof(A_transpose) == MD.UnaryOperation
 #     @test typeof(A_transpose.op) == expected_second_shift
@@ -299,7 +303,7 @@ end
     x = Sym("x", Upper(2))
     y = Sym("y", Upper(3))
     z = Sym("z", Lower(1))
-    d = KrD([Lower(1); Lower(1)])
+    d = KrD(Lower(1), Lower(1))
 
     @test MD.can_contract(A, x)
     @test MD.can_contract(x, A)
@@ -331,8 +335,8 @@ end
     @test typeof(op2.arg1) == MD.UnaryOperation
     @test typeof(op2.arg1.arg) == MD.UnaryOperation
     @test op2.arg1.arg.arg == x
-    @test op2.arg1.arg.op == KrD([Lower(3); Lower(3)])
-    @test op2.arg1.op == KrD([Upper(3); Lower(1)])
+    @test op2.arg1.arg.op == KrD(Lower(3), Lower(3))
+    @test op2.arg1.op == KrD(Upper(3), Lower(1))
     @test op2.arg2 == A
 end
 

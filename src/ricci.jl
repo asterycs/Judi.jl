@@ -108,6 +108,15 @@ end
 
 struct KrD <: SymbolicValue
     indices::IndexSet
+
+    function KrD(indices::LowerOrUpperIndex...)
+        indices = LowerOrUpperIndex[i for i ∈ indices]
+        if !isempty(eliminated_indices(indices))
+            throw(DomainError(indices, "Indices $indices of δ are invalid"))
+        end
+
+        new(indices)
+    end
 end
 
 function ==(left::KrD, right::KrD)
@@ -435,13 +444,13 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
         throw(DomainError((from, to), "requested a transpose which isn't allowed"))
     end
 
-    return UnaryOperation(KrD([flip(from); to]), arg)
+    return UnaryOperation(KrD(flip(from), to), arg)
 end
     
 function adjoint(arg::SymbolicValue)
     ids = get_free_indices(arg)
     @assert length(ids) == 1
-    UnaryOperation(KrD([flip(ids[1]); flip(ids[1])]), arg)
+    UnaryOperation(KrD(flip(ids[1]), flip(ids[1])), arg)
 end
 
 function to_string(arg::Sym)
