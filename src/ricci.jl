@@ -9,6 +9,9 @@ export Sym, KrD, Zero
 
 export flip
 
+export to_string
+export to_std_string
+
 Letter = Int64
 
 mutable struct Upper
@@ -438,4 +441,81 @@ function adjoint(arg::SymbolicValue)
     ids = get_free_indices(arg)
     @assert length(ids) == 1
     UnaryOperation(KrD([flip(ids[1]); flip(ids[1])]), arg)
+end
+
+function to_string(arg::Sym)
+    upper_indices = [i.letter for i ∈ arg.indices if typeof(i) == Upper]
+    upper_tag = ""
+    if !isempty(upper_indices)
+        upper_tag = "^(" * string(upper_indices...) * ")"
+    end
+
+    lower_indices = [i.letter for i ∈ arg.indices if typeof(i) == Lower]
+    lower_tag = ""
+    if !isempty(lower_indices)
+        lower_tag = "_(" * string(lower_indices...) * ")"
+    end
+
+    arg.id * upper_tag * lower_tag
+end
+
+function to_string(arg::KrD)
+    upper_indices = [i.letter for i ∈ arg.indices if typeof(i) == Upper]
+    upper_indices = string(upper_indices...)
+    lower_indices = [i.letter for i ∈ arg.indices if typeof(i) == Lower]
+    lower_indices = string(lower_indices...)
+
+    "δ" * "^(" * upper_indices * ")_(" * lower_indices * ")"
+end
+
+function to_string(arg::Real)
+    string(arg)
+end
+
+function to_string(arg::Zero)
+    "0"
+end
+
+function to_string(arg::UnaryOperation)
+    "(" * to_string(arg.arg) * " " * to_string(arg.op) * ")"
+end
+
+function to_string(arg::BinaryOperation)
+    "(" * to_string(arg.arg1) * " " * string(arg.op) * " " * to_string(arg.arg2) * ")"
+end
+
+function to_std_string(arg::Sym)
+    superscript = ""
+    if length(arg.indices) <= 2
+        if all(i -> typeof(i) == Lower, arg.indices)
+            superscript = "ᵀ"
+        end
+    else
+        @assert false "Tensor format string not implemented"
+    end
+
+    return arg.id * superscript
+end
+
+function to_std_string(arg::KrD)
+    return ""
+end
+
+function to_std_string(arg::UnaryOperation)
+    return to_std_string(arg.arg) * to_std_string(arg.op)
+end
+
+function to_std_string(arg::BinaryOperation)
+    separator = string(arg.op)
+    term = to_std_string(arg.arg1) * " " * separator * " " * to_std_string(arg.arg2)
+
+    if typeof(arg.op) == typeof(+)
+        term = "(" * term * ")"
+    elseif typeof(arg.op) == typeof(*)
+        # no-op
+    else
+        @assert false "Not implemented"
+    end
+
+    return term
 end
