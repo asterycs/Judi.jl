@@ -187,7 +187,6 @@ function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
 end
 
 function evaluate(::typeof(*), arg1, arg2)
-    @assert can_contract(arg1, arg2)
     return BinaryOperation(*, arg1, arg2)
 end
 
