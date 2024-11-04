@@ -14,11 +14,11 @@ export to_std_string
 
 Letter = Int64
 
-mutable struct Upper
+struct Upper
     letter::Letter
 end
 
-mutable struct Lower
+struct Lower
     letter::Letter
 end
 
@@ -117,7 +117,7 @@ end
 struct Zero <: SymbolicValue
 end
 
-mutable struct BinaryOperation <: SymbolicValue
+struct BinaryOperation <: SymbolicValue
     op
     arg1::SymbolicValue
     arg2::SymbolicValue
@@ -129,7 +129,7 @@ function ==(left::BinaryOperation, right::BinaryOperation)
     return left.op == right.op && same_args
 end
 
-mutable struct UnaryOperation <: SymbolicValue
+struct UnaryOperation <: SymbolicValue
     op::SymbolicValue
     arg::SymbolicValue
 end

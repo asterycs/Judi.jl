@@ -18,7 +18,6 @@ end
     left = Lower(3)
     right = Lower(3)
     @test left == right
-    @test !(left === right)
     @test left == Lower(3)
     @test left != Upper(3)
     @test left != Lower(1)
@@ -45,7 +44,6 @@ end
     left = MD.UnaryOperation(a, b)
 
     @test MD.UnaryOperation(a, b) == MD.UnaryOperation(a, b)
-    @test !(MD.UnaryOperation(a, b) === MD.UnaryOperation(a, b))
     @test left == MD.UnaryOperation(a, b)
     @test left != MD.UnaryOperation(b, a)
 end
@@ -57,7 +55,6 @@ end
     left = MD.BinaryOperation(*, a, b)
 
     @test MD.BinaryOperation(*, a, b) == MD.BinaryOperation(*, a, b)
-    @test !(MD.BinaryOperation(*, a, b) === MD.BinaryOperation(*, a, b))
     @test left == MD.BinaryOperation(*, a, b)
     @test left == MD.BinaryOperation(*, b, a)
     @test left != MD.BinaryOperation(+, a, b)
