@@ -223,10 +223,10 @@ end
     @test MD.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD(Lower(3), Upper(1))
-    @test MD.update_index(x, Upper(3), Upper(1)) == MD.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Upper(3), Upper(1)) == MD.BinaryOperation(*, x, expected_shift)
 
     expected_shift = KrD(Lower(3), Upper(2))
-    @test MD.update_index(x, Upper(3), Upper(2)) == MD.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Upper(3), Upper(2)) == MD.BinaryOperation(*, x, expected_shift)
 
     # update_index shall not transpose
     @test_throws DomainError MD.update_index(x, Upper(3), Lower(1))
@@ -238,10 +238,10 @@ end
     @test MD.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD(Upper(3), Lower(1))
-    @test MD.update_index(x, Lower(3), Lower(1)) == MD.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Lower(3), Lower(1)) == MD.BinaryOperation(*, x, expected_shift)
 
     expected_shift = KrD(Upper(3), Lower(2))
-    @test MD.update_index(x, Lower(3), Lower(2)) == MD.UnaryOperation(expected_shift, x)
+    @test MD.update_index(x, Lower(3), Lower(2)) == MD.BinaryOperation(*, x, expected_shift)
 
     # update_index shall not transpose
     @test_throws DomainError MD.update_index(x, Lower(3), Upper(1))
@@ -253,7 +253,7 @@ end
     @test MD.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD(Upper(2), Lower(3))
-    @test MD.update_index(A, Lower(2), Lower(3)) == MD.UnaryOperation(expected_shift, A)
+    @test MD.update_index(A, Lower(2), Lower(3)) == MD.BinaryOperation(*, A, expected_shift)
 
     # update_index shall not transpose
     @test_throws DomainError MD.update_index(A, Lower(2), Upper(3))
@@ -264,10 +264,10 @@ end
     y = Sym("y", Lower(1))
 
     expected_shift = KrD(Lower(1), Lower(1))
-    @test x' == MD.UnaryOperation(expected_shift, x)
+    @test x' == MD.BinaryOperation(*, x, expected_shift)
 
     expected_shift = KrD(Upper(1), Upper(1))
-    @test y' == MD.UnaryOperation(expected_shift, y)
+    @test y' == MD.BinaryOperation(*, y, expected_shift, )
 end
 
 @testset "combined update_index and transpose vector" begin
@@ -277,11 +277,11 @@ end
 
     expected_first_shift = KrD(Lower(2), Lower(2))
     expected_second_shift = KrD(Upper(2), Lower(1))
-    @test typeof(updated_transpose) == MD.UnaryOperation
-    @test updated_transpose.op == expected_second_shift
-    @test typeof(updated_transpose.arg) == MD.UnaryOperation
-    @test updated_transpose.arg.arg == x
-    @test updated_transpose.arg.op == expected_first_shift
+    @test typeof(updated_transpose) == MD.BinaryOperation
+    @test updated_transpose.arg2 == expected_second_shift
+    @test typeof(updated_transpose.arg1) == MD.BinaryOperation
+    @test updated_transpose.arg1.arg1 == x
+    @test updated_transpose.arg1.arg2 == expected_first_shift
 end
 
 # TODO: Not implemented
@@ -324,7 +324,7 @@ end
     @test typeof(op1) == MD.BinaryOperation
     @test MD.can_contract(op1.arg1, op1.arg2)
     @test op1.op == *
-    @test typeof(op1.arg1) == MD.UnaryOperation
+    @test typeof(op1.arg1) == MD.BinaryOperation
     @test op1.arg2 == x
 
     op2 = x' * A
@@ -332,11 +332,11 @@ end
     @test typeof(op2) == MD.BinaryOperation
     @test MD.can_contract(op2.arg1, op2.arg2)
     @test op2.op == *
-    @test typeof(op2.arg1) == MD.UnaryOperation
-    @test typeof(op2.arg1.arg) == MD.UnaryOperation
-    @test op2.arg1.arg.arg == x
-    @test op2.arg1.arg.op == KrD(Lower(3), Lower(3))
-    @test op2.arg1.op == KrD(Upper(3), Lower(1))
+    @test typeof(op2.arg1) == MD.BinaryOperation
+    @test typeof(op2.arg1.arg1) == MD.BinaryOperation
+    @test op2.arg1.arg1.arg1 == x
+    @test op2.arg1.arg1.arg2 == KrD(Lower(3), Lower(3))
+    @test op2.arg1.arg2 == KrD(Upper(3), Lower(1))
     @test op2.arg2 == A
 end
 
@@ -356,7 +356,7 @@ end
     @test typeof(op1) == MD.BinaryOperation
     @test MD.can_contract(op1.arg1, op1.arg2)
     @test op1.op == *
-    @test typeof(op1.arg1) == MD.UnaryOperation
+    @test typeof(op1.arg1) == MD.BinaryOperation
     @test op1.arg2 == y
 
     op2 = y' * x
@@ -364,7 +364,7 @@ end
     @test typeof(op2) == MD.BinaryOperation
     @test MD.can_contract(op2.arg1, op2.arg2)
     @test op2.op == *
-    @test typeof(op2.arg1) == MD.UnaryOperation
+    @test typeof(op2.arg1) == MD.BinaryOperation
     @test op2.arg2 == x
 end
 

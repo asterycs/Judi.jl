@@ -451,7 +451,7 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
         throw(DomainError((from, to), "requested a transpose which isn't allowed"))
     end
 
-    return UnaryOperation(KrD(flip(from), to), arg)
+    return BinaryOperation(*, arg, KrD(flip(from), to))
 end
 
 function adjoint(arg::UnaryOperation)
@@ -461,7 +461,7 @@ function adjoint(arg::UnaryOperation)
         throw(DomainError("Adjoint is ambigous"))
     end
 
-    return UnaryOperation(KrD(flip(free_indices[1]), flip(free_indices[1])), arg)
+    return BinaryOperation(*, arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
 end
 
 function adjoint(arg::BinaryOperation)
@@ -472,7 +472,7 @@ function adjoint(arg::BinaryOperation)
             throw(DomainError("Adjoint is ambigous"))
         end
 
-        return UnaryOperation(KrD(flip(free_indices[1]), flip(free_indices[1])), arg)
+        return BinaryOperation(*, arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
     elseif typeof(arg.op) == typeof(+)
         return BinaryOperation(+, adjoint(arg.arg1), adjoint(arg.arg2))
     else
@@ -484,9 +484,9 @@ function adjoint(arg::Union{Sym, KrD, Zero})
     ids = get_free_indices(arg)
 
     if length(ids) == 1
-        UnaryOperation(KrD(flip(ids[1]), flip(ids[1])), arg)
+        BinaryOperation(*, arg, KrD(flip(ids[1]), flip(ids[1])))
     elseif length(ids) == 2
-        UnaryOperation(KrD(flip(ids[1]), flip(ids[1])), UnaryOperation(KrD(flip(ids[2]), flip(ids[2])), arg))
+        BinaryOperation(*, BinaryOperation(*, arg, KrD(flip(ids[2]), flip(ids[2]))), KrD(flip(ids[1]), flip(ids[1])))
     else
         throw(DomainError("Ambgious transpose"))
     end
