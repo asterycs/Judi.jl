@@ -284,19 +284,18 @@ end
     @test updated_transpose.arg1.arg2 == expected_first_shift
 end
 
-# TODO: Not implemented
-# @testset "transpose matrix" begin
-#     A = Sym("A", Upper(1), Lower(2))
+@testset "transpose matrix" begin
+    A = Sym("A", Upper(1), Lower(2))
 
-#     expected_first_shift = KrD(Upper(2), Upper(2))
-#     expected_second_shift = KrD(Lower(1), Lower(1))
-#     A_transpose = A'
-#     @test typeof(A_transpose) == MD.UnaryOperation
-#     @test typeof(A_transpose.op) == expected_second_shift
-#     @test typeof(A_transpose.arg) == MD.UnaryOperation
-#     @test typeof(A_transpose.arg.op) == expected_first_shift
-#     @test typeof(A_transpose.arg.arg) == A
-# end
+    expected_first_shift = KrD(Upper(2), Upper(2))
+    expected_second_shift = KrD(Lower(1), Lower(1))
+    A_transpose = A'
+    @test typeof(A_transpose) == MD.BinaryOperation
+    @test A_transpose.arg2 == expected_second_shift
+    @test typeof(A_transpose.arg1) == MD.BinaryOperation
+    @test A_transpose.arg1.arg2 == expected_first_shift
+    @test A_transpose.arg1.arg1 == A
+end
 
 @testset "can_contract" begin
     A = Sym("A", Upper(1), Lower(2))
