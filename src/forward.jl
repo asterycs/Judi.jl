@@ -19,8 +19,8 @@ function diff(arg::BinaryOperation, wrt::Sym)
     diff(arg.op, arg.arg1, arg.arg2, wrt)
 end
 
-function diff(*, arg1, arg2, wrt::Sym)
-    BinaryOperation(*, arg1, diff(arg2, wrt)) + BinaryOperation(*, diff(arg1, wrt), arg2)
+function diff(::typeof(*), arg1, arg2, wrt::Sym)
+    BinaryOperation(+, BinaryOperation(*, arg1, diff(arg2, wrt)), BinaryOperation(*, diff(arg1, wrt), arg2))
 end
 
 function evaluate(sym::Sym)
