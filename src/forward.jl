@@ -1,6 +1,13 @@
 export evaluate
 
-export diff
+export D
+
+function D(expr, wrt::Sym)
+    linear_form = diff(expr, wrt)
+    linear_form = evaluate(linear_form)
+
+    linear_form
+end
 
 function diff(sym::Sym, wrt::Sym)
     if sym == wrt
