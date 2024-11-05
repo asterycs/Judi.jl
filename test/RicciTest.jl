@@ -56,12 +56,12 @@ end
     a = Sym("a", Upper(1))
     b = Sym("b", Lower(1))
 
-    left = MD.BinaryOperation(*, a, b)
+    left = MD.BinaryOperation{*}(a, b)
 
-    @test MD.BinaryOperation(*, a, b) == MD.BinaryOperation(*, a, b)
-    @test left == MD.BinaryOperation(*, a, b)
-    @test left == MD.BinaryOperation(*, b, a)
-    @test left != MD.BinaryOperation(+, a, b)
+    @test MD.BinaryOperation{*}(a, b) == MD.BinaryOperation{*}(a, b)
+    @test left == MD.BinaryOperation{*}(a, b)
+    @test left == MD.BinaryOperation{*}(b, a)
+    @test left != MD.BinaryOperation{+}(a, b)
 end
 
 @testset "index hash function" begin
@@ -102,8 +102,8 @@ end
     xt = Sym("x", Lower(1)) # row vector
     A = Sym("A", Upper(1), Lower(2))
 
-    op1 = MD.BinaryOperation(*, xt, A)
-    op2 = MD.BinaryOperation(*, A, xt)
+    op1 = MD.BinaryOperation{*}(xt, A)
+    op2 = MD.BinaryOperation{*}(A, xt)
 
     @test MD.get_free_indices(op1) == [Lower(2)]
     @test MD.get_free_indices(op2) == [Lower(2)]
@@ -113,8 +113,8 @@ end
     x = Sym("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = MD.BinaryOperation(*, x, δ)
-    op2 = MD.BinaryOperation(*, δ, x)
+    op1 = MD.BinaryOperation{*}(x, δ)
+    op2 = MD.BinaryOperation{*}(δ, x)
 
     @test MD.get_free_indices(op1) == [Lower(2)]
     @test MD.get_free_indices(op2) == [Lower(2)]
@@ -124,8 +124,8 @@ end
     x = Sym("x", Upper(1))
     δ = KrD(Lower(1), Lower(1))
 
-    op1 = MD.BinaryOperation(*, x, δ)
-    op2 = MD.BinaryOperation(*, δ, x)
+    op1 = MD.BinaryOperation{*}(x, δ)
+    op2 = MD.BinaryOperation{*}(δ, x)
 
     @test MD.get_free_indices(op1) == [Lower(1)]
     @test MD.get_free_indices(op2) == [Lower(1)]
@@ -135,8 +135,8 @@ end
     x = Sym("x")
     δ = KrD(Lower(1), Lower(1))
 
-    op1 = MD.BinaryOperation(*, x, δ)
-    op2 = MD.BinaryOperation(*, δ, x)
+    op1 = MD.BinaryOperation{*}(x, δ)
+    op2 = MD.BinaryOperation{*}(δ, x)
 
     @test MD.get_free_indices(op1) == [Lower(1); Lower(1)]
     @test MD.get_free_indices(op2) == [Lower(1); Lower(1)]
@@ -146,8 +146,8 @@ end
     x = Sym("x", Upper(1))
     A = Sym("A", Upper(1), Lower(2))
 
-    op1 = MD.BinaryOperation(*, x, A)
-    op2 = MD.BinaryOperation(*, A, x)
+    op1 = MD.BinaryOperation{*}(x, A)
+    op2 = MD.BinaryOperation{*}(A, x)
 
     @test MD.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
     @test MD.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
@@ -211,10 +211,10 @@ end
     z = Sym("z")
     A = Sym("A", Upper(1), Lower(2))
 
-    @test typeof(A * x) == MD.BinaryOperation
-    @test typeof(y * A) == MD.BinaryOperation
-    @test typeof(z * A) == MD.BinaryOperation
-    @test typeof(A * z) == MD.BinaryOperation
+    @test typeof(A * x) == MD.BinaryOperation{*}
+    @test typeof(y * A) == MD.BinaryOperation{*}
+    @test typeof(z * A) == MD.BinaryOperation{*}
+    @test typeof(A * z) == MD.BinaryOperation{*}
 end
 
 @testset "update_index column vector" begin
@@ -223,10 +223,10 @@ end
     @test MD.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD(Lower(3), Upper(1))
-    @test MD.update_index(x, Upper(3), Upper(1)) == MD.BinaryOperation(*, x, expected_shift)
+    @test MD.update_index(x, Upper(3), Upper(1)) == MD.BinaryOperation{*}(x, expected_shift)
 
     expected_shift = KrD(Lower(3), Upper(2))
-    @test MD.update_index(x, Upper(3), Upper(2)) == MD.BinaryOperation(*, x, expected_shift)
+    @test MD.update_index(x, Upper(3), Upper(2)) == MD.BinaryOperation{*}(x, expected_shift)
 
     # update_index shall not transpose
     @test_throws DomainError MD.update_index(x, Upper(3), Lower(1))
@@ -238,10 +238,10 @@ end
     @test MD.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD(Upper(3), Lower(1))
-    @test MD.update_index(x, Lower(3), Lower(1)) == MD.BinaryOperation(*, x, expected_shift)
+    @test MD.update_index(x, Lower(3), Lower(1)) == MD.BinaryOperation{*}(x, expected_shift)
 
     expected_shift = KrD(Upper(3), Lower(2))
-    @test MD.update_index(x, Lower(3), Lower(2)) == MD.BinaryOperation(*, x, expected_shift)
+    @test MD.update_index(x, Lower(3), Lower(2)) == MD.BinaryOperation{*}(x, expected_shift)
 
     # update_index shall not transpose
     @test_throws DomainError MD.update_index(x, Lower(3), Upper(1))
@@ -253,7 +253,7 @@ end
     @test MD.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD(Upper(2), Lower(3))
-    @test MD.update_index(A, Lower(2), Lower(3)) == MD.BinaryOperation(*, A, expected_shift)
+    @test MD.update_index(A, Lower(2), Lower(3)) == MD.BinaryOperation{*}(A, expected_shift)
 
     # update_index shall not transpose
     @test_throws DomainError MD.update_index(A, Lower(2), Upper(3))
@@ -264,10 +264,10 @@ end
     y = Sym("y", Lower(1))
 
     expected_shift = KrD(Lower(1), Lower(1))
-    @test x' == MD.BinaryOperation(*, x, expected_shift)
+    @test x' == MD.BinaryOperation{*}(x, expected_shift)
 
     expected_shift = KrD(Upper(1), Upper(1))
-    @test y' == MD.BinaryOperation(*, y, expected_shift, )
+    @test y' == MD.BinaryOperation{*}(y, expected_shift, )
 end
 
 @testset "combined update_index and transpose vector" begin
@@ -277,9 +277,9 @@ end
 
     expected_first_shift = KrD(Lower(2), Lower(2))
     expected_second_shift = KrD(Upper(2), Lower(1))
-    @test typeof(updated_transpose) == MD.BinaryOperation
+    @test typeof(updated_transpose) == MD.BinaryOperation{*}
     @test updated_transpose.arg2 == expected_second_shift
-    @test typeof(updated_transpose.arg1) == MD.BinaryOperation
+    @test typeof(updated_transpose.arg1) == MD.BinaryOperation{*}
     @test updated_transpose.arg1.arg1 == x
     @test updated_transpose.arg1.arg2 == expected_first_shift
 end
@@ -290,9 +290,9 @@ end
     expected_first_shift = KrD(Upper(2), Upper(2))
     expected_second_shift = KrD(Lower(1), Lower(1))
     A_transpose = A'
-    @test typeof(A_transpose) == MD.BinaryOperation
+    @test typeof(A_transpose) == MD.BinaryOperation{*}
     @test A_transpose.arg2 == expected_second_shift
-    @test typeof(A_transpose.arg1) == MD.BinaryOperation
+    @test typeof(A_transpose.arg1) == MD.BinaryOperation{*}
     @test A_transpose.arg1.arg2 == expected_first_shift
     @test A_transpose.arg1.arg1 == A
 end
@@ -320,19 +320,17 @@ end
 
     op1 = A * x
 
-    @test typeof(op1) == MD.BinaryOperation
+    @test typeof(op1) == MD.BinaryOperation{*}
     @test MD.can_contract(op1.arg1, op1.arg2)
-    @test op1.op == *
-    @test typeof(op1.arg1) == MD.BinaryOperation
+    @test typeof(op1.arg1) == MD.BinaryOperation{*}
     @test op1.arg2 == x
 
     op2 = x' * A
 
-    @test typeof(op2) == MD.BinaryOperation
+    @test typeof(op2) == MD.BinaryOperation{*}
     @test MD.can_contract(op2.arg1, op2.arg2)
-    @test op2.op == *
-    @test typeof(op2.arg1) == MD.BinaryOperation
-    @test typeof(op2.arg1.arg1) == MD.BinaryOperation
+    @test typeof(op2.arg1) == MD.BinaryOperation{*}
+    @test typeof(op2.arg1.arg1) == MD.BinaryOperation{*}
     @test op2.arg1.arg1.arg1 == x
     @test op2.arg1.arg1.arg2 == KrD(Lower(3), Lower(3))
     @test op2.arg1.arg2 == KrD(Upper(3), Lower(1))
@@ -352,18 +350,16 @@ end
 
     op1 = x' * y
 
-    @test typeof(op1) == MD.BinaryOperation
+    @test typeof(op1) == MD.BinaryOperation{*}
     @test MD.can_contract(op1.arg1, op1.arg2)
-    @test op1.op == *
-    @test typeof(op1.arg1) == MD.BinaryOperation
+    @test typeof(op1.arg1) == MD.BinaryOperation{*}
     @test op1.arg2 == y
 
     op2 = y' * x
 
-    @test typeof(op2) == MD.BinaryOperation
+    @test typeof(op2) == MD.BinaryOperation{*}
     @test MD.can_contract(op2.arg1, op2.arg2)
-    @test op2.op == *
-    @test typeof(op2.arg1) == MD.BinaryOperation
+    @test typeof(op2.arg1) == MD.BinaryOperation{*}
     @test op2.arg2 == x
 end
 

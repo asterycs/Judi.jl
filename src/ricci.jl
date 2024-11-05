@@ -133,16 +133,15 @@ struct Zero <: SymbolicValue
     end
 end
 
-struct BinaryOperation <: SymbolicValue
-    op
+struct BinaryOperation{Op} <: SymbolicValue where Op
     arg1::SymbolicValue
     arg2::SymbolicValue
 end
 
-function ==(left::BinaryOperation, right::BinaryOperation)
+function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
     same_args = left.arg1 == right.arg1 && left.arg2 == right.arg2
     same_args = same_args || (left.arg1 == right.arg2 && left.arg2 == right.arg1)
-    return left.op == right.op && same_args
+    return same_args
 end
 
 struct UnaryOperation <: SymbolicValue
@@ -220,7 +219,7 @@ function get_free_indices(arg::UnaryOperation)
     eliminate_indices([get_free_indices(arg.arg); get_free_indices(arg.op)])
 end
 
-function get_free_indices(arg::BinaryOperation)
+function get_free_indices(arg::BinaryOperation{*})
     eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
 end
 
@@ -421,7 +420,7 @@ end
 
 function *(arg1, arg2)
     if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
-        return BinaryOperation(*, arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     else
         if !is_contraction_unambigous(arg1, arg2)
             throw(DomainError((arg1, arg2), "Invalid multiplication"))
@@ -430,12 +429,12 @@ function *(arg1, arg2)
         arg1_free_indices = get_free_indices(arg1)
         arg2_free_indices = get_free_indices(arg2)
 
-        return BinaryOperation(*, update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])), arg2)
+        return BinaryOperation{*}(update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])), arg2)
     end
 end
 
 function +(arg1::SymbolicValue, arg2::SymbolicValue)
-    BinaryOperation(+, arg1, arg2)
+    BinaryOperation{+}(arg1, arg2)
 end
 
 function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
@@ -451,7 +450,7 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
         throw(DomainError((from, to), "requested a transpose which isn't allowed"))
     end
 
-    return BinaryOperation(*, arg, KrD(flip(from), to))
+    return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
 function adjoint(arg::UnaryOperation)
@@ -461,32 +460,30 @@ function adjoint(arg::UnaryOperation)
         throw(DomainError("Adjoint is ambigous"))
     end
 
-    return BinaryOperation(*, arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
+    return BinaryOperation{*}(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
 end
 
-function adjoint(arg::BinaryOperation)
-    if typeof(arg.op) == typeof(*)
-        free_indices = get_free_indices(arg)
+function adjoint(arg::BinaryOperation{*})
+    free_indices = get_free_indices(arg)
 
-        if length(free_indices) > 1
-            throw(DomainError("Adjoint is ambigous"))
-        end
-
-        return BinaryOperation(*, arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
-    elseif typeof(arg.op) == typeof(+)
-        return BinaryOperation(+, adjoint(arg.arg1), adjoint(arg.arg2))
-    else
-        @assert false "Not implemented"
+    if length(free_indices) > 1
+        throw(DomainError("Adjoint is ambigous"))
     end
+
+    return BinaryOperation{*}(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
+end
+
+function adjoint(arg::BinaryOperation{+})
+    return BinaryOperation{+}(adjoint(arg.arg1), adjoint(arg.arg2))
 end
 
 function adjoint(arg::Union{Sym, KrD, Zero})
     ids = get_free_indices(arg)
 
     if length(ids) == 1
-        BinaryOperation(*, arg, KrD(flip(ids[1]), flip(ids[1])))
+        BinaryOperation{*}(arg, KrD(flip(ids[1]), flip(ids[1])))
     elseif length(ids) == 2
-        BinaryOperation(*, BinaryOperation(*, arg, KrD(flip(ids[2]), flip(ids[2]))), KrD(flip(ids[1]), flip(ids[1])))
+        BinaryOperation{*}(BinaryOperation{*}(arg, KrD(flip(ids[2]), flip(ids[2]))), KrD(flip(ids[1]), flip(ids[1])))
     else
         throw(DomainError("Ambgious transpose"))
     end
@@ -544,8 +541,8 @@ function to_string(arg::UnaryOperation)
     "(" * to_string(arg.arg) * " " * to_string(arg.op) * ")"
 end
 
-function to_string(arg::BinaryOperation)
-    "(" * to_string(arg.arg1) * " " * string(arg.op) * " " * to_string(arg.arg2) * ")"
+function to_string(arg::BinaryOperation{Op}) where Op
+    "(" * to_string(arg.arg1) * " " * string(Op) * " " * to_string(arg.arg2) * ")"
 end
 
 function to_std_string(arg::Sym)
@@ -586,41 +583,39 @@ function to_std_string(arg::UnaryOperation)
     end
 end
 
-function to_std_string(arg::BinaryOperation)
-    if typeof(arg.op) == typeof(+)
-        return "(" * to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2) * ")"
-    elseif typeof(arg.op) == typeof(*)
-        free_ids = get_free_indices(arg)
+function to_std_string(arg::BinaryOperation{+})
+    return "(" * to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2) * ")"
+end
 
-        if !can_contract(arg.arg1, arg.arg2)
-            return arg
-        elseif length(free_ids) == 1 # result is a vector
-            if length(get_free_indices(arg.arg1)) == 2 && length(get_free_indices(arg.arg2)) == 1
+function to_std_string(arg::BinaryOperation{*})
+    free_ids = get_free_indices(arg)
 
-                if all(i -> typeof(i) == Lower, get_free_indices(arg.arg1))
-                    return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1) * "ᵀ"
-                end
+    if !can_contract(arg.arg1, arg.arg2)
+        return arg
+    elseif length(free_ids) == 1 # result is a vector
+        if length(get_free_indices(arg.arg1)) == 2 && length(get_free_indices(arg.arg2)) == 1
 
-                if typeof(get_free_indices(arg.arg2)[1]) == Lower
-                    return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
-                end
-
-                @assert false "Unreachable"
-            elseif length(get_free_indices(arg.arg1)) == 1 && length(get_free_indices(arg.arg2)) == 2
-                if all(i -> typeof(i) == Lower, get_free_indices(arg.arg2))
-                    return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
-                end
-
-                if typeof(get_free_indices(arg.arg1)[1]) == Lower
-                    return to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2)
-                end
-
-                @assert false "Unreachable"
-            else
-                @assert false "Not implemented"
+            if all(i -> typeof(i) == Lower, get_free_indices(arg.arg1))
+                return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1) * "ᵀ"
             end
+
+            if typeof(get_free_indices(arg.arg2)[1]) == Lower
+                return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
+            end
+
+            @assert false "Unreachable"
+        elseif length(get_free_indices(arg.arg1)) == 1 && length(get_free_indices(arg.arg2)) == 2
+            if all(i -> typeof(i) == Lower, get_free_indices(arg.arg2))
+                return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
+            end
+
+            if typeof(get_free_indices(arg.arg1)[1]) == Lower
+                return to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2)
+            end
+
+            @assert false "Unreachable"
+        else
+            @assert false "Not implemented"
         end
     end
-
-    @assert false "Unreachable"
 end

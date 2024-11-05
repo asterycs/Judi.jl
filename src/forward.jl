@@ -22,12 +22,8 @@ function diff(arg::UnaryOperation, wrt::Sym)
     UnaryOperation(arg.op, diff(arg.arg, wrt))
 end
 
-function diff(arg::BinaryOperation, wrt::Sym)
-    diff(arg.op, arg.arg1, arg.arg2, wrt)
-end
-
-function diff(::typeof(*), arg1, arg2, wrt::Sym)
-    BinaryOperation(+, BinaryOperation(*, arg1, diff(arg2, wrt)), BinaryOperation(*, diff(arg1, wrt), arg2))
+function diff(arg::BinaryOperation{*}, wrt::Sym)
+    BinaryOperation{*}(BinaryOperation{*}(arg1, diff(arg2, wrt)), BinaryOperation{*}(diff(arg1, wrt), arg2))
 end
 
 function evaluate(sym::Sym)
@@ -58,12 +54,12 @@ function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD)
     if typeof(arg1.op) == typeof(*)
         if can_contract(arg1.arg2, arg2)
             new_arg2 = evaluate(*, arg1.arg2, arg2)
-            return BinaryOperation(*, arg1.arg1, new_arg2)
+            return BinaryOperation{*}(arg1.arg1, new_arg2)
         elseif can_contract(arg1.arg1, arg2)
             new_arg1 = evaluate(*, arg1.arg1, arg2)
-            return BinaryOperation(*, new_arg1, arg1.arg2)
+            return BinaryOperation{*}(new_arg1, arg1.arg2)
         else
-            return BinaryOperation(*, arg1, arg2)
+            return BinaryOperation{*}(arg1, arg2)
         end
     else
         return UnaryOperation(arg2, arg1)
@@ -102,7 +98,7 @@ function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
 end
 
 function evaluate(::typeof(*), arg1, arg2)
-    return BinaryOperation(*, arg1, arg2)
+    return BinaryOperation{*}(arg1, arg2)
 end
 
 function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
@@ -113,7 +109,7 @@ function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
     if arg1 == 1
         return arg2
     else
-        BinaryOperation(*, arg1, arg2)
+        BinaryOperation{*}(arg1, arg2)
     end
 end
 
@@ -134,11 +130,11 @@ function evaluate(::typeof(+), arg1, arg2::Zero)
 end
 
 function evaluate(::typeof(+), arg1, arg2)
-    BinaryOperation(+, arg1, arg2)
+    BinaryOperation{+}(arg1, arg2)
 end
 
-function evaluate(op::BinaryOperation)
-    evaluate(op.op, evaluate(op.arg1), evaluate(op.arg2))
+function evaluate(op::BinaryOperation{*})
+    evaluate(*, evaluate(op.arg1), evaluate(op.arg2))
 end
 
 function evaluate(sym::Union{Sym, KrD, Zero, Real})
