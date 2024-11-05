@@ -56,8 +56,15 @@ end
 
 function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD)
     if typeof(arg1.op) == typeof(*)
-        new_arg2 = evaluate(*, arg1.arg2, arg2)
-        return BinaryOperation(*, arg1.arg1, new_arg2)
+        if can_contract(arg1.arg2, arg2)
+            new_arg2 = evaluate(*, arg1.arg2, arg2)
+            return BinaryOperation(*, arg1.arg1, new_arg2)
+        elseif can_contract(arg1.arg1, arg2)
+            new_arg1 = evaluate(*, arg1.arg1, arg2)
+            return BinaryOperation(*, new_arg1, arg1.arg2)
+        else
+            return BinaryOperation(*, arg1, arg2)
+        end
     else
         return UnaryOperation(arg2, arg1)
     end
