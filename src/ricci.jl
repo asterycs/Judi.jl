@@ -453,11 +453,43 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
 
     return UnaryOperation(KrD(flip(from), to), arg)
 end
-    
-function adjoint(arg::SymbolicValue)
+
+function adjoint(arg::UnaryOperation)
+    free_indices = get_free_indices(arg)
+
+    if length(free_indices) >= 1
+        throw(DomainError("Adjoint is ambigous"))
+    end
+
+    return UnaryOperation(KrD(flip(free_indices[1]), flip(free_indices[1])), arg)
+end
+
+function adjoint(arg::BinaryOperation)
+    if typeof(arg.op) == typeof(*)
+        free_indices = get_free_indices(arg)
+
+        if length(free_indices) > 1
+            throw(DomainError("Adjoint is ambigous"))
+        end
+
+        return UnaryOperation(KrD(flip(free_indices[1]), flip(free_indices[1])), arg)
+    elseif typeof(arg.op) == typeof(+)
+        return BinaryOperation(+, adjoint(arg.arg1), adjoint(arg.arg2))
+    else
+        @assert false "Not implemented"
+    end
+end
+
+function adjoint(arg::Union{Sym, KrD, Zero})
     ids = get_free_indices(arg)
-    @assert length(ids) == 1
-    UnaryOperation(KrD(flip(ids[1]), flip(ids[1])), arg)
+
+    if length(ids) == 1
+        UnaryOperation(KrD(flip(ids[1]), flip(ids[1])), arg)
+    elseif length(ids) == 2
+        UnaryOperation(KrD(flip(ids[1]), flip(ids[1])), UnaryOperation(KrD(flip(ids[2]), flip(ids[2])), arg))
+    else
+        throw(DomainError("Ambgious transpose"))
+    end
 end
 
 function script(index::Lower)
