@@ -111,7 +111,7 @@ struct KrD <: SymbolicValue
 
     function KrD(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
-        if !isempty(eliminated_indices(indices))
+        if isempty(eliminate_indices(indices))
             throw(DomainError(indices, "Indices $indices of δ are invalid"))
         end
 
