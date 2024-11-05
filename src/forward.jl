@@ -73,15 +73,15 @@ end
 function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
     contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
-    if isempty(contracting_index) # One arg is a scalar
+    if isempty(contracting_index) # One arg is a scalar or the indices are incompatible.
         return UnaryOperation(arg2, arg1)
     end
 
     @assert length(contracting_index) == 2
 
-    contracting_letter = contracting_index[1].letter
-
-    @assert can_contract(arg1, arg2)
+    if !can_contract(arg1, arg2) # Happens if one of the arguments is self-contracting
+        return UnaryOperation(arg2, arg1)
+    end
 
     @assert length(arg2.indices) == 2
 
