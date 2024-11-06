@@ -129,6 +129,12 @@ function evaluate(::typeof(*), arg1::Zero, arg2)
     arg1
 end
 
+function evaluate(::typeof(+), arg1::Zero, arg2::Zero)
+    @assert all(typeof.(arg1.indices) .== typeof.(arg2.indices))
+
+    arg1
+end
+
 function evaluate(::typeof(+), arg1::Zero, arg2)
     arg2
 end
@@ -143,6 +149,10 @@ end
 
 function evaluate(op::BinaryOperation{*})
     evaluate(*, evaluate(op.arg1), evaluate(op.arg2))
+end
+
+function evaluate(op::BinaryOperation{+})
+    evaluate(+, evaluate(op.arg1), evaluate(op.arg2))
 end
 
 function evaluate(sym::Union{Sym, KrD, Zero, Real})
