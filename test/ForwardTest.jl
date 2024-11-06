@@ -101,3 +101,64 @@ end
     @test evaluate(MD.BinaryOperation{*}(A, x)) == MD.BinaryOperation{*}(A, x)
     @test evaluate(MD.BinaryOperation{*}(A, y)) == MD.BinaryOperation{*}(A, y)
 end
+
+@testset "diff Sym" begin
+    x = Sym("x", Upper(2))
+    y = Sym("y", Upper(3))
+    A = Sym("A", Upper(4), Lower(5))
+
+    @test MD.diff(x, x) == KrD(Upper(2), Lower(3))
+    @test MD.diff(y, x) == Zero(Upper(3), Lower(4))
+    @test MD.diff(A, x) == Zero(Upper(4), Lower(5), Lower(6))
+end
+
+@testset "diff KrD" begin
+    x = Sym("x", Upper(2))
+    y = Sym("y", Upper(3))
+    A = Sym("A", Upper(4), Lower(5))
+
+    @test MD.diff(x, x) == KrD(Upper(2), Lower(3))
+    @test MD.diff(y, x) == Zero(Upper(3), Lower(4))
+    @test MD.diff(A, x) == Zero(Upper(4), Lower(5), Lower(6))
+end
+
+@testset "diff UnaryOperation" begin
+    x = Sym("x", Upper(2))
+
+    op = MD.UnaryOperation(KrD(Lower(2)), x)
+
+    @test MD.diff(op, x) == MD.UnaryOperation(KrD(Lower(2)), KrD(Upper(2), Lower(3)))
+end
+
+@testset "diff UnaryOperation{*}" begin
+    x = Sym("x", Upper(2))
+    y = Sym("y", Lower(2))
+
+    op = MD.BinaryOperation{*}(x, y)
+
+    D = MD.diff(op, x)
+
+    @test typeof(D) == MD.BinaryOperation{+}
+    @test D.arg1 == MD.BinaryOperation{*}(x, Zero(Lower(2), Lower(3)))
+    @test D.arg2 == MD.BinaryOperation{*}(KrD(Upper(2), Lower(3)), y)
+end
+
+@testset "diff UnaryOperation{+}" begin
+    x = Sym("x", Upper(2))
+    y = Sym("y", Upper(2))
+
+    op = MD.BinaryOperation{+}(x, y)
+
+    D = MD.diff(op, x)
+
+    @test D == MD.BinaryOperation{+}(KrD(Upper(2), Lower(3)), Zero(Upper(2), Lower(3)))
+end
+
+@testset "Differentiate Ax" begin
+    A = Sym("A", Upper(1), Lower(2))
+    x = Sym("x", Upper(3))
+
+    e = A * x
+
+    @test equivalent(D(e, x), A)
+end

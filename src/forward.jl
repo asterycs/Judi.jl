@@ -18,12 +18,20 @@ function diff(sym::Sym, wrt::Sym)
     end
 end
 
+function diff(arg::KrD, wrt::Sym)
+    return Zero(arg.indices..., lowernext(arg.indices[end]))
+end
+
 function diff(arg::UnaryOperation, wrt::Sym)
     UnaryOperation(arg.op, diff(arg.arg, wrt))
 end
 
 function diff(arg::BinaryOperation{*}, wrt::Sym)
-    BinaryOperation{*}(BinaryOperation{*}(arg1, diff(arg2, wrt)), BinaryOperation{*}(diff(arg1, wrt), arg2))
+    BinaryOperation{+}(BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)), BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2))
+end
+
+function diff(arg::BinaryOperation{+}, wrt::Sym)
+    BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
 end
 
 function evaluate(sym::Sym)
