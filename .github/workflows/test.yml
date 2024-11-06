@@ -1,2 +1,0 @@
-  name: Run Julia package tests
-  uses: julia-actions/julia-runtest@v1.11.1
