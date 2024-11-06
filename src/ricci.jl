@@ -7,6 +7,8 @@ import Base.adjoint
 export Upper, Lower
 export Sym, KrD, Zero
 
+export equivalent
+
 export flip
 
 export to_string
@@ -104,6 +106,10 @@ end
 
 function ==(left::Sym, right::Sym)
     return left.id == right.id && left.indices == right.indices
+end
+
+function equivalent(left::Sym, right::Sym)
+    return left.id == right.id && all(typeof.(left.indices) .== typeof.(right.indices))
 end
 
 struct KrD <: SymbolicValue
