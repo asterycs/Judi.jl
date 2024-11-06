@@ -133,6 +133,10 @@ struct Zero <: SymbolicValue
     end
 end
 
+function ==(left::Zero, right::Zero)
+    return left.indices == right.indices
+end
+
 struct BinaryOperation{Op} <: SymbolicValue where Op
     arg1::SymbolicValue
     arg2::SymbolicValue

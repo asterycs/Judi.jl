@@ -40,6 +40,19 @@ end
     @test left != KrD(Upper(1), Lower(2), Lower(3))
 end
 
+@testset "Zero equality operator" begin
+    left = Zero(Upper(1), Lower(2))
+    @test Zero(Upper(1), Lower(2)) == Zero(Upper(1), Lower(2))
+    @test !(Zero(Upper(1), Lower(2)) === Zero(Upper(1), Lower(2)))
+    @test left == Zero(Upper(1), Lower(2))
+    @test left != Zero(Upper(1), Upper(2))
+    @test left != Zero(Lower(1), Lower(2))
+    @test left != Zero(Upper(3), Lower(2))
+    @test left != Zero(Upper(1), Lower(3))
+    @test left != Zero(Upper(1))
+    @test left != Zero(Upper(1), Lower(2), Lower(3))
+    @test left != Zero()
+end
 
 @testset "UnaryOperation equality operator" begin
     a = KrD(Upper(1), Upper(1))
