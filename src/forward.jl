@@ -12,14 +12,14 @@ end
 function diff(sym::Sym, wrt::Sym)
     if sym == wrt
         @assert length(sym.indices) <= 1 # Only scalars and vectors supported for now
-        return KrD(sym.indices..., lowernext(sym.indices[end]))
+        return KrD(sym.indices..., Lower())
     else
-        return Zero(sym.indices..., lowernext(sym.indices[end]))
+        return Zero(sym.indices..., Lower())
     end
 end
 
 function diff(arg::KrD, wrt::Sym)
-    return Zero(arg.indices..., lowernext(arg.indices[end]))
+    return Zero(arg.indices..., Lower())
 end
 
 function diff(arg::UnaryOperation, wrt::Sym)
@@ -27,105 +27,104 @@ function diff(arg::UnaryOperation, wrt::Sym)
 end
 
 function diff(arg::BinaryOperation{*}, wrt::Sym)
-    BinaryOperation{+}(BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)), BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2))
+    BinaryOperation{+}(BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt), arg.indices), BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2, arg.indices), [])
 end
 
 function diff(arg::BinaryOperation{+}, wrt::Sym)
-    BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
+    BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt), arg.indices)
+end
+
+function mirror(contractions::Contractions)
+    return [(pair[2], pair[1]) for pair ∈ contractions]
 end
 
 function evaluate(sym::Sym)
     sym
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation, arg2::BinaryOperation)
-    evaluate(*, evaluate(arg1), evaluate(arg2))
+function evaluate(::typeof(*), arg1::BinaryOperation, arg2::BinaryOperation, contractions::Contractions)
+    evaluate(*, evaluate(arg1), evaluate(arg2), contractions)
 end
 
 function evaluate(arg::UnaryOperation)
-    if typeof(arg.op) == KrD
-        return evaluate(*, evaluate(arg.arg), arg.op)
-    end
-
-    return arg
+    @assert false "Not implemented"
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
-    evaluate(*, arg2, arg1)
+function evaluate(::typeof(*), arg1::KrD, arg2::Sym, contractions::Contractions)
+    evaluate(*, arg2, arg1, mirror(contractions))
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation)
-    evaluate(*, arg2, arg1)
+function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation, contractions::Contractions)
+    evaluate(*, arg2, arg1, mirror(contractions))
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD)
+function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD, contractions::Contractions)
     if typeof(arg1.op) == typeof(*)
-        if can_contract(arg1.arg2, arg2)
-            new_arg2 = evaluate(*, arg1.arg2, arg2)
-            return BinaryOperation{*}(arg1.arg1, new_arg2)
-        elseif can_contract(arg1.arg1, arg2)
-            new_arg1 = evaluate(*, arg1.arg1, arg2)
-            return BinaryOperation{*}(new_arg1, arg1.arg2)
+        if can_contract(arg1.arg2, arg2, contractions)
+            new_arg2 = evaluate(*, arg1.arg2, arg2, contractions)
+            return BinaryOperation{*}(arg1.arg1, new_arg2, contractions)
+        elseif can_contract(arg1.arg1, arg2, contractions)
+            new_arg1 = evaluate(*, arg1.arg1, arg2, contractions)
+            return BinaryOperation{*}(new_arg1, arg1.arg2, contractions)
         else
-            return BinaryOperation{*}(arg1, arg2)
+            return BinaryOperation{*}(arg1, arg2, contractions)
         end
     else
-        return UnaryOperation(arg2, arg1)
+        return BinaryOperation{*}(arg1, arg2, contractions)
     end
 end
 
-function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
-    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD, contractions::Contractions)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
 
-    if isempty(contracting_index) # One arg is a scalar or the indices are incompatible.
-        return UnaryOperation(arg2, arg1)
+    if !can_contract(arg1, arg2, contractions)
+        return BinaryOperation{*}(arg1, arg2, contractions)
     end
 
-    @assert length(contracting_index) == 2
+    @assert length(contractions) == 1 "Trace not implemented"
+    @assert length(arg2.indices) == 2 "Generalized δ not implemented"
 
-    if !can_contract(arg1, arg2) # Happens if one of the arguments is self-contracting
-        return UnaryOperation(arg2, arg1)
-    end
+    new_indices = LowerOrUpperIndex[]
 
-    @assert length(arg2.indices) == 2
-
-    newarg = deepcopy(arg1)
-    empty!(newarg.indices)
-
-    for i ∈ arg1.indices
-        if flip(i) == arg2.indices[1]
-            push!(newarg.indices, arg2.indices[2])
-        elseif flip(i) == arg2.indices[2]
-            push!(newarg.indices, arg2.indices[1])
-        else
-            push!(newarg.indices, i)
+    for (i,idx) ∈ enumerate(arg1_indices)
+        for (from,to) ∈ contractions
+            if i == from
+                new_index = to == 1 ? 2 : 1
+                push!(new_indices, arg2_indices[new_index])
+            else
+                push!(new_indices, idx)
+            end
         end
     end
 
-    newarg
+
+    if typeof(arg1) == Sym
+        return Sym(arg1.id, new_indices...)
+    elseif typeof(arg1) == KrD
+        return KrD(new_indices...)
+    else
+        @assert false "Unreachable"
+    end
 end
 
-function evaluate(::typeof(*), arg1, arg2)
-    return BinaryOperation{*}(arg1, arg2)
+function evaluate(::typeof(*), arg1, arg2, contractions::Contractions)
+    return BinaryOperation{*}(arg1, arg2, contractions)
 end
 
 function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
-    evaluate(*, arg2, arg1)
+    @assert false "Not implemented"
 end
 
 function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
-    if arg1 == 1
-        return arg2
-    else
-        BinaryOperation{*}(arg1, arg2)
-    end
+    @assert false "Not implemented"
 end
 
-function evaluate(::typeof(*), arg1, arg2::Zero)
-    evaluate(*, arg2, arg1)
+function evaluate(::typeof(*), arg1, arg2::Zero, contractions::Contractions)
+    evaluate(*, arg2, arg1, mirror(contractions))
 end
 
-function evaluate(::typeof(*), arg1::Zero, arg2)
+function evaluate(::typeof(*), arg1::Zero, arg2, contractions::Contractions)
     arg1
 end
 
@@ -148,7 +147,7 @@ function evaluate(::typeof(+), arg1, arg2)
 end
 
 function evaluate(op::BinaryOperation{*})
-    evaluate(*, evaluate(op.arg1), evaluate(op.arg2))
+    evaluate(*, evaluate(op.arg1), evaluate(op.arg2), op.indices)
 end
 
 function evaluate(op::BinaryOperation{+})
