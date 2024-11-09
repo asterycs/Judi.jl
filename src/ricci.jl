@@ -14,55 +14,32 @@ export flip
 export to_string
 export to_std_string
 
+struct Upper end
+struct Lower end
+
 Letter = Int64
-
-struct Upper
-    letter::Letter
-end
-
-struct Lower
-    letter::Letter
-end
 
 LowerOrUpperIndex = Union{Lower, Upper}
 
-function flipnext(index::Lower)
-    return Upper(index.letter + 1)
+function flip(_::Lower)
+    return Upper()
 end
 
-function flipnext(index::Upper)
-    return Lower(index.letter + 1)
+function flip(_::Upper)
+    return Lower()
 end
 
-function lowernext(index::Upper)
-    return Lower(index.letter + 1)
+function same(_::Lower)
+    return Lower()
 end
 
-function lowernext(index::Lower)
-    return Lower(index.letter + 1)
-end
-
-function flip(index::Lower)
-    return Upper(index.letter)
-end
-
-function flip(index::Upper)
-    return Lower(index.letter)
-end
-
-function same(old::Lower, letter::Letter)
-    return Lower(letter)
-end
-
-function same(old::Upper, letter::Letter)
-    return Upper(letter)
+function same(_::Upper)
+    return Upper()
 end
 
 function ==(left::LowerOrUpperIndex, right::LowerOrUpperIndex)
     if typeof(left) == typeof(right)
-        if left.letter == right.letter
-            return true
-        end
+        return true
     end
 
     return false
@@ -74,8 +51,6 @@ function hash(arg::LowerOrUpperIndex)
     if typeof(arg) == Lower
         h |= 1
     end
-
-    h |= arg.letter << 1
 
     h
 end
@@ -91,14 +66,6 @@ struct Sym <: SymbolicValue
     function Sym(id, indices::LowerOrUpperIndex...)
         # Convert type
         indices = LowerOrUpperIndex[i for i ∈ indices]
-        if !isempty(eliminated_indices(indices))
-            throw(DomainError(indices, "Indices of $id are invalid"))
-        end
-
-        letters = unique([i.letter for i ∈ indices])
-        if length(letters) != length(indices)
-            throw(DomainError(indices, "Indices of $id are invalid"))
-        end
 
         new(id, indices)
     end
@@ -143,9 +110,14 @@ function ==(left::Zero, right::Zero)
     return left.indices == right.indices
 end
 
+IndexPair = Tuple{Int64, Int64}
+Contractions = Vector{IndexPair}
+
+# TODO: Rename to contraction
 struct BinaryOperation{Op} <: SymbolicValue where Op
     arg1::SymbolicValue
     arg2::SymbolicValue
+    indices::Contractions
 end
 
 function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
@@ -161,6 +133,25 @@ end
 
 function ==(left::UnaryOperation, right::UnaryOperation)
     return left.arg == right.arg && left.op == right.op
+end
+
+function eliminate_indices(arg1, arg2, indices)
+    arg1_indices = Union{LowerOrUpperIndex, Nothing}[i for i ∈ get_free_indices(arg1)]
+    arg2_indices = Union{LowerOrUpperIndex, Nothing}[i for i ∈ get_free_indices(arg2)]
+
+    for pair ∈ indices
+        if typeof(flip(arg1_indices[pair[1]])) == typeof(arg2_indices[pair[2]])
+            arg1_indices[pair[1]] = nothing
+            arg2_indices[pair[2]] = nothing
+        end
+    end
+
+    arg1_remaining = filter(i -> !isnothing(i), arg1_indices)
+    arg2_remaining = filter(i -> !isnothing(i), arg2_indices)
+
+    @assert length(arg1_remaining) + length(arg2_remaining) < length(arg1_indices) + length(arg2_indices)
+
+    return [arg1_remaining; arg2_remaining]
 end
 
 function eliminate_indices(arg::IndexSet)
@@ -237,7 +228,7 @@ function are_indices_unique(indices::IndexSet)
     return length(unique(indices)) == length(indices)
 end
 
-function can_contract(arg1, arg2, index::Letter)
+function can_contract(arg1, arg2, index)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
@@ -349,6 +340,19 @@ function can_contract_strong(arg1, arg2)
     return false
 end
 
+function is_valid_multiplication(arg1, arg2)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    if (length(arg1_indices) == 2 && length(arg2_indices) == 1) || (length(arg1_indices) == 1 && length(arg2_indices) == 2)
+        if typeof(arg1_indices[end]) == Lower && typeof(arg2_indices[1]) == Upper
+            return true
+        end
+    end
+
+    return false
+end
+
 function is_contraction_unambigous(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
@@ -429,17 +433,18 @@ function is_valid_standard_notation(arg1, arg2)
 end
 
 function *(arg1, arg2)
-    if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
+    arg1_free_indices = get_free_indices(arg1)
+    arg2_free_indices = get_free_indices(arg2)
+
+    if isempty(arg1_free_indices) || isempty(arg2_free_indices)
+        @assert false "Not implemented"
         return BinaryOperation{*}(arg1, arg2)
     else
-        if !is_contraction_unambigous(arg1, arg2)
+        if !is_valid_multiplication(arg1, arg2)
             throw(DomainError((arg1, arg2), "Invalid multiplication"))
         end
 
-        arg1_free_indices = get_free_indices(arg1)
-        arg2_free_indices = get_free_indices(arg2)
-
-        return BinaryOperation{*}(update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])), arg2)
+        return BinaryOperation{*}(arg1, arg2, [(length(arg1_free_indices), 1)])
     end
 end
 
@@ -491,7 +496,7 @@ function adjoint(arg::Union{Sym, KrD, Zero})
     ids = get_free_indices(arg)
 
     if length(ids) == 1
-        BinaryOperation{*}(arg, KrD(flip(ids[1]), flip(ids[1])))
+        BinaryOperation{*}(arg, KrD(flip(ids[1]), flip(ids[1])), [(1, 1)])
     elseif length(ids) == 2
         BinaryOperation{*}(BinaryOperation{*}(arg, KrD(flip(ids[2]), flip(ids[2]))), KrD(flip(ids[1]), flip(ids[1])))
     else
@@ -499,22 +504,20 @@ function adjoint(arg::Union{Sym, KrD, Zero})
     end
 end
 
-function script(index::Lower)
-    @assert index.letter >= 0
+function script(_::Lower, letter::Letter)
     text = []
 
-    for d ∈ reverse(digits(index.letter))
+    for d ∈ reverse(digits(letter))
         push!(text, Char(0x2080 + d))
     end
 
     return join(text)
 end
 
-function script(index::Upper)
-    @assert index.letter >= 0
+function script(_::Upper, letter::Letter)
     text = []
 
-    for d ∈ reverse(digits(index.letter))
+    for d ∈ reverse(digits(letter))
         if d == 0 push!(text, Char(0x2070)) end
         if d == 1 push!(text, Char(0x00B9)) end
         if d == 2 push!(text, Char(0x00B2)) end
@@ -551,8 +554,43 @@ function to_string(arg::UnaryOperation)
     "(" * to_string(arg.arg) * " " * to_string(arg.op) * ")"
 end
 
-function to_string(arg::BinaryOperation{Op}) where Op
-    "(" * to_string(arg.arg1) * " " * string(Op) * " " * to_string(arg.arg2) * ")"
+function to_string(arg::BinaryOperation{*})
+    to_string(arg.arg1, arg.arg2, arg.indices)
+end
+
+function to_string(arg1::Sym, arg2::Sym, contractions::Contractions)
+    arg1_contracting_indices = [p[1] for p ∈ contractions]
+    arg2_contracting_indices = [p[2] for p ∈ contractions]
+
+    next_free_index = length(contractions) + 1
+    next_dummy_index = 1
+
+    out = arg1.id
+
+    for (i,ul) ∈ enumerate(arg1.indices)
+        if i ∈ arg1_contracting_indices
+            out *= script(ul, next_dummy_index)
+            next_dummy_index += 1
+        else
+            out *= script(ul, next_free_index)
+            next_free_index += 1
+        end
+    end
+
+    out *= arg2.id
+    next_dummy_index = 1
+
+    for (i,ul) ∈ enumerate(arg2.indices)
+        if i ∈ arg2_contracting_indices
+            out *= script(ul, next_dummy_index)
+            next_dummy_index += 1
+        else
+            out *= script(ul, next_free_index)
+            next_free_index += 1
+        end
+    end
+
+    return out
 end
 
 function to_std_string(arg::Sym)

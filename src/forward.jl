@@ -38,94 +38,67 @@ function evaluate(sym::Sym)
     sym
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation, arg2::BinaryOperation)
-    evaluate(*, evaluate(arg1), evaluate(arg2))
+function evaluate(::typeof(*), arg1::BinaryOperation, arg2::BinaryOperation, contractions::Contractions)
+    evaluate(*, evaluate(arg1), evaluate(arg2), contractions)
 end
 
 function evaluate(arg::UnaryOperation)
-    if typeof(arg.op) == KrD
-        return evaluate(*, evaluate(arg.arg), arg.op)
-    end
-
-    return arg
+    @assert false "Not implemented"
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
-    evaluate(*, arg2, arg1)
+function evaluate(::typeof(*), arg1::KrD, arg2::Sym, contractions::Contractions)
+    evaluate(*, arg2, arg1, contractions)
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation)
-    evaluate(*, arg2, arg1)
+function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation, contractions::Contractions)
+    evaluate(*, arg2, arg1, contractions)
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD)
+function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD, contractions::Contractions)
     if typeof(arg1.op) == typeof(*)
-        if can_contract(arg1.arg2, arg2)
-            new_arg2 = evaluate(*, arg1.arg2, arg2)
-            return BinaryOperation{*}(arg1.arg1, new_arg2)
-        elseif can_contract(arg1.arg1, arg2)
-            new_arg1 = evaluate(*, arg1.arg1, arg2)
-            return BinaryOperation{*}(new_arg1, arg1.arg2)
+        if can_contract(arg1.arg2, arg2, contractions)
+            new_arg2 = evaluate(*, arg1.arg2, arg2, contractions)
+            return BinaryOperation{*}(arg1.arg1, new_arg2, contractions)
+        elseif can_contract(arg1.arg1, arg2, contractions)
+            new_arg1 = evaluate(*, arg1.arg1, arg2, contractions)
+            return BinaryOperation{*}(new_arg1, arg1.arg2, contractions)
         else
-            return BinaryOperation{*}(arg1, arg2)
+            return BinaryOperation{*}(arg1, arg2, contractions)
         end
     else
-        return UnaryOperation(arg2, arg1)
+        return BinaryOperation{*}(arg1, arg2, contractions)
     end
 end
 
-function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
-    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD, contractions::Contractions)
+    new_indices = eliminate_indices(arg1, arg2, contractions)
 
-    if isempty(contracting_index) # One arg is a scalar or the indices are incompatible.
-        return UnaryOperation(arg2, arg1)
+    if typeof(arg1) == Sym
+        return Sym(arg1.id, new_indices...)
+    elseif typeof(arg1) == KrD
+        return KrD(new_indices...)
+    else
+        @assert false "Unreachable"
     end
-
-    @assert length(contracting_index) == 2
-
-    if !can_contract(arg1, arg2) # Happens if one of the arguments is self-contracting
-        return UnaryOperation(arg2, arg1)
-    end
-
-    @assert length(arg2.indices) == 2
-
-    newarg = deepcopy(arg1)
-    empty!(newarg.indices)
-
-    for i ∈ arg1.indices
-        if flip(i) == arg2.indices[1]
-            push!(newarg.indices, arg2.indices[2])
-        elseif flip(i) == arg2.indices[2]
-            push!(newarg.indices, arg2.indices[1])
-        else
-            push!(newarg.indices, i)
-        end
-    end
-
-    newarg
 end
 
-function evaluate(::typeof(*), arg1, arg2)
-    return BinaryOperation{*}(arg1, arg2)
+function evaluate(::typeof(*), arg1, arg2, contractions::Contractions)
+    return BinaryOperation{*}(arg1, arg2, contractions)
 end
 
 function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
-    evaluate(*, arg2, arg1)
+    @assert false "Not implemented"
 end
 
 function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
-    if arg1 == 1
-        return arg2
-    else
-        BinaryOperation{*}(arg1, arg2)
-    end
+    @assert false "Not implemented"
 end
 
-function evaluate(::typeof(*), arg1, arg2::Zero)
-    evaluate(*, arg2, arg1)
+function evaluate(::typeof(*), arg1, arg2::Zero, contractions::Contractions)
+    evaluate(*, arg2, arg1, contractions)
 end
 
-function evaluate(::typeof(*), arg1::Zero, arg2)
+function evaluate(::typeof(*), arg1::Zero, arg2, contractions::Contractions)
     arg1
 end
 
@@ -148,7 +121,7 @@ function evaluate(::typeof(+), arg1, arg2)
 end
 
 function evaluate(op::BinaryOperation{*})
-    evaluate(*, evaluate(op.arg1), evaluate(op.arg2))
+    evaluate(*, evaluate(op.arg1), evaluate(op.arg2), op.indices)
 end
 
 function evaluate(op::BinaryOperation{+})
