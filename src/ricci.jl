@@ -15,7 +15,7 @@ export to_std_string
 struct Upper end
 struct Lower end
 
-Letter = Int64
+Letter = Int
 
 LowerOrUpperIndex = Union{Lower, Upper}
 
@@ -113,7 +113,7 @@ function ==(left::Zero, right::Zero)
     return left.indices == right.indices
 end
 
-ContractingPair = Tuple{Int64, Int64}
+ContractingPair = Tuple{Int, Int}
 Contractions = Vector{ContractingPair}
 
 # TODO: Rename to contraction
