@@ -62,10 +62,11 @@ function hash(arg::LowerOrUpperIndex)
 end
 
 abstract type Expression end
+abstract type Primitive <: Expression end
 
 IndexSet = Vector{LowerOrUpperIndex}
 
-struct Sym <: Expression
+struct Sym <: Primitive
     id::String
     indices::IndexSet
 
@@ -81,7 +82,7 @@ function ==(left::Sym, right::Sym)
     return left.id == right.id && left.indices == right.indices
 end
 
-struct KrD <: Expression
+struct KrD <: Primitive
     indices::IndexSet
 
     function KrD(indices::LowerOrUpperIndex...)
@@ -99,7 +100,7 @@ function ==(left::KrD, right::KrD)
     return left.indices == right.indices
 end
 
-struct Zero <: Expression
+struct Zero <: Primitive
     indices::IndexSet
 
     function Zero(indices::LowerOrUpperIndex...)
@@ -116,8 +117,7 @@ end
 ContractingPair = Tuple{Int, Int}
 Contractions = Vector{ContractingPair}
 
-# TODO: Rename to contraction
-struct BinaryOperation{Op} <: Expression where Op
+struct Contraction <: Expression
     arg1::Expression
     arg2::Expression
     indices::Contractions
@@ -125,7 +125,19 @@ end
 
 # TODO: Check BinaryOperation validity in constructor
 
-function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
+function ==(left::Contraction, right::Contraction)
+    same_args = left.arg1 == right.arg1 && left.arg2 == right.arg2
+    same_args = same_args || (left.arg1 == right.arg2 && left.arg2 == right.arg1)
+    same_args = same_args || (left.indices == right.indices)
+    return same_args
+end
+
+struct Sum <: Expression
+    arg1::Expression
+    arg2::Expression
+end
+
+function ==(left::Sum, right::Sum)
     same_args = left.arg1 == right.arg1 && left.arg2 == right.arg2
     same_args = same_args || (left.arg1 == right.arg2 && left.arg2 == right.arg1)
     return same_args
@@ -193,8 +205,16 @@ function get_free_indices(arg::UnaryOperation)
     @assert false "Not implemented"
 end
 
-function get_free_indices(arg::BinaryOperation{*})
+function get_free_indices(arg::Contraction)
     eliminate_indices(get_free_indices(arg.arg1), get_free_indices(arg.arg2), arg.indices)
+end
+
+function get_free_indices(arg::Sum)
+    arg1_indices = get_free_indices(arg.arg1)
+    arg2_indices = get_free_indices(arg.arg2)
+
+    @assert arg1_indices == arg2_indices
+    return arg1_indices
 end
 
 function can_contract(arg1, arg2, indices::Contractions)
@@ -229,18 +249,18 @@ function *(arg1, arg2)
 
     if isempty(arg1_free_indices) || isempty(arg2_free_indices)
         @assert false "Not implemented"
-        return BinaryOperation{*}(arg1, arg2)
+        return Contraction(arg1, arg2)
     else
         if !is_valid_multiplication(arg1, arg2)
             throw(DomainError((arg1, arg2), "Invalid multiplication"))
         end
 
-        return BinaryOperation{*}(arg1, arg2, [(length(arg1_free_indices), 1)])
+        return Contraction(arg1, arg2, [(-1, 1)])
     end
 end
 
 function +(arg1::Expression, arg2::Expression)
-    BinaryOperation{+}(arg1, arg2)
+    Sum(arg1, arg2)
 end
 
 function adjoint(arg::UnaryOperation)
@@ -250,30 +270,30 @@ function adjoint(arg::UnaryOperation)
         throw(DomainError("Adjoint is ambigous"))
     end
 
-    return BinaryOperation{*}(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
+    return Contraction(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
 end
 
-function adjoint(arg::BinaryOperation{*})
+function adjoint(arg::Contraction)
     free_indices = get_free_indices(arg)
 
     if length(free_indices) > 1
         throw(DomainError("Adjoint is ambigous"))
     end
 
-    return BinaryOperation{*}(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
+    return Contraction(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
 end
 
-function adjoint(arg::BinaryOperation{+})
-    return BinaryOperation{+}(adjoint(arg.arg1), adjoint(arg.arg2))
+function adjoint(arg::Sum)
+    return Sum(adjoint(arg.arg1), adjoint(arg.arg2))
 end
 
 function adjoint(arg::Union{Sym, KrD, Zero})
     ids = get_free_indices(arg)
 
     if length(ids) == 1
-        BinaryOperation{*}(arg, KrD(flip(ids[1]), flip(ids[1])), [(1, 1)])
+        Contraction(arg, KrD(flip(ids[1]), flip(ids[1])), [(1, 1)])
     elseif length(ids) == 2
-        BinaryOperation{*}(BinaryOperation{*}(arg, KrD(flip(ids[2]), flip(ids[2])), [(2, 1)]), KrD(flip(ids[1]), flip(ids[1])), [(1, 1)])
+        Contraction(Contraction(arg, KrD(flip(ids[2]), flip(ids[2])), [(2, 1)]), KrD(flip(ids[1]), flip(ids[1])), [(1, 1)])
     else
         throw(DomainError("Ambgious transpose"))
     end
@@ -316,16 +336,14 @@ function to_string(arg::Real)
 end
 
 function to_string(arg::Zero)
-    scripts = [script(i) for i ∈ arg.indices]
-
-    "0" * join(scripts)
+    "0"
 end
 
 function to_string(arg::UnaryOperation)
     "(" * to_string(arg.arg) * " " * to_string(arg.op) * ")"
 end
 
-function to_string(arg::BinaryOperation{*})
+function to_string(arg::Contraction)
     to_string(arg.arg1, arg.arg2, arg.indices)
 end
 
@@ -367,6 +385,10 @@ function to_string(arg1, arg2, contractions::Contractions)
     return out
 end
 
+function to_string(arg::Sum)
+    return "(" * to_string(arg.arg1) * "+" * to_string(arg.arg2) * ")"
+end
+
 function to_std_string(arg::Sym)
     superscript = ""
     # if length(arg.indices) == 2
@@ -405,11 +427,11 @@ function to_std_string(arg::UnaryOperation)
     end
 end
 
-function to_std_string(arg::BinaryOperation{+})
+function to_std_string(arg::Sum)
     return "(" * to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2) * ")"
 end
 
-function to_std_string(arg::BinaryOperation{*})
+function to_std_string(arg::Contraction)
     free_ids = get_free_indices(arg)
 
     if !can_contract(arg.arg1, arg.arg2)
