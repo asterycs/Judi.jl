@@ -61,11 +61,11 @@ function hash(arg::LowerOrUpperIndex)
     h
 end
 
-abstract type SymbolicValue end
+abstract type Expression end
 
 IndexSet = Vector{LowerOrUpperIndex}
 
-struct Sym <: SymbolicValue
+struct Sym <: Expression
     id::String
     indices::IndexSet
 
@@ -81,7 +81,7 @@ function ==(left::Sym, right::Sym)
     return left.id == right.id && left.indices == right.indices
 end
 
-struct KrD <: SymbolicValue
+struct KrD <: Expression
     indices::IndexSet
 
     function KrD(indices::LowerOrUpperIndex...)
@@ -99,7 +99,7 @@ function ==(left::KrD, right::KrD)
     return left.indices == right.indices
 end
 
-struct Zero <: SymbolicValue
+struct Zero <: Expression
     indices::IndexSet
 
     function Zero(indices::LowerOrUpperIndex...)
@@ -117,9 +117,9 @@ ContractingPair = Tuple{Int, Int}
 Contractions = Vector{ContractingPair}
 
 # TODO: Rename to contraction
-struct BinaryOperation{Op} <: SymbolicValue where Op
-    arg1::SymbolicValue
-    arg2::SymbolicValue
+struct BinaryOperation{Op} <: Expression where Op
+    arg1::Expression
+    arg2::Expression
     indices::Contractions
 end
 
@@ -131,9 +131,9 @@ function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
     return same_args
 end
 
-struct UnaryOperation <: SymbolicValue
-    op::SymbolicValue
-    arg::SymbolicValue
+struct UnaryOperation <: Expression
+    op::Expression
+    arg::Expression
 end
 
 function ==(left::UnaryOperation, right::UnaryOperation)
@@ -239,7 +239,7 @@ function *(arg1, arg2)
     end
 end
 
-function +(arg1::SymbolicValue, arg2::SymbolicValue)
+function +(arg1::Expression, arg2::Expression)
     BinaryOperation{+}(arg1, arg2)
 end
 

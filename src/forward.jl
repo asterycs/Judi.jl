@@ -112,11 +112,11 @@ function evaluate(::typeof(*), arg1, arg2, contractions::Contractions)
     return BinaryOperation{*}(arg1, arg2, contractions)
 end
 
-function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
+function evaluate(::typeof(*), arg1::Expression, arg2::Real)
     @assert false "Not implemented"
 end
 
-function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
+function evaluate(::typeof(*), arg1::Real, arg2::Expression)
     @assert false "Not implemented"
 end
 
