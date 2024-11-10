@@ -157,9 +157,11 @@ function eliminate_indices(arg1::IndexSet, arg2::IndexSet, indices)
     arg2 = Union{LowerOrUpperIndex, Nothing}[i for i ∈ arg2]
 
     for pair ∈ indices
-        if typeof(flip(arg1[pair[1]])) == typeof(arg2[pair[2]])
-            arg1[pair[1]] = nothing
-            arg2[pair[2]] = nothing
+        i1 = pair[1] == -1 ? length(arg1) : pair[1]
+        i2 = pair[2] == -1 ? length(arg2) : pair[2]
+        if typeof(flip(arg1[i1])) == typeof(arg2[i2])
+            arg1[i1] = nothing
+            arg2[i2] = nothing
         end
     end
 
@@ -222,7 +224,9 @@ function can_contract(arg1, arg2, indices::Contractions)
     arg2_indices = get_free_indices(arg2)
 
     for pair ∈ indices
-        if typeof(arg1_indices[pair[1]]) == typeof(arg2_indices[pair[2]])
+        i1 = pair[1] == -1 ? length(arg1_indices) : pair[1]
+        i2 = pair[2] == -1 ? length(arg2_indices) : pair[2]
+        if typeof(arg1_indices[i1]) == typeof(arg2_indices[i2])
             return false
         end
     end
@@ -348,8 +352,10 @@ function to_string(arg::Contraction)
 end
 
 function to_string(arg1, arg2, contractions::Contractions)
-    arg1_contracting_indices = [p[1] for p ∈ contractions]
-    arg2_contracting_indices = [p[2] for p ∈ contractions]
+    arg1_free_indices = get_free_indices(arg1)
+    arg2_free_indices = get_free_indices(arg2)
+    arg1_contracting_indices = [p[1] == -1 ? length(arg1_free_indices) : p[1] for p ∈ contractions]
+    arg2_contracting_indices = [p[2] == -1 ? length(arg2_free_indices) : p[2] for p ∈ contractions]
 
     next_free_index = length(contractions) + 1
     next_dummy_index = 1
@@ -359,7 +365,7 @@ function to_string(arg1, arg2, contractions::Contractions)
         out = "(" * out * ")"
     end
 
-    for (i,ul) ∈ enumerate(get_free_indices(arg1))
+    for (i,ul) ∈ enumerate(arg1_free_indices)
         if i ∈ arg1_contracting_indices
             out *= script(ul, next_dummy_index)
             next_dummy_index += 1
