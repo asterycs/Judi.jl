@@ -3,74 +3,60 @@ using Test
 
 MD = MatrixDiff
 
-@testset "Sym constructor creates a valid Sym" begin
-    A = Sym("A", Upper(), Lower())
-    @test A.id == "A"
-    @test A.indices == [Upper(); Lower()]
+@testset "Sym constructor throws on invalid input" begin
+    @test_throws DomainError Sym("A", Upper(2), Lower(2))
+    @test_throws DomainError Sym("A", Lower(2), Lower(2))
 
-    B = Sym("B", Lower(), Lower())
-    @test B.id == "B"
-    @test B.indices == [Lower(); Lower()]
-
-    x = Sym("x", Upper())
-    @test x.id == "x"
-    @test x.indices == [Upper()]
-
-    y = Sym("y", Lower())
-    @test y.id == "y"
-    @test y.indices == [Lower()]
-
+    A = Sym("A", Upper(1), Lower(2))
+    B = Sym("B", Lower(1), Lower(2))
+    x = Sym("x", Upper(1))
+    y = Sym("y", Lower(1))
     z = Sym("z")
-    @test z.id == "z"
-    @test isempty(z.indices)
 end
 
 @testset "index equality operator" begin
-    left = Lower()
-    right = Lower()
+    left = Lower(3)
+    right = Lower(3)
     @test left == right
-    @test left == Lower()
-    @test left != Upper()
+    @test left == Lower(3)
+    @test left != Upper(3)
+    @test left != Lower(1)
 end
 
 @testset "KrD constructor throws on invalid input" begin
-    @test_throws DomainError KrD(Upper())
-    @test_throws DomainError KrD()
-end
-
-@testset "KrD constructor creates a valid KrD" begin
-    d = KrD(Upper(), Upper())
-    @test d.indices == [Upper(); Upper()]
-
-    d2 = KrD(Upper(), Lower(), Upper())
-    @test d2.indices == [Upper(); Lower(); Upper()]
+    @test_throws DomainError KrD(Upper(2), Lower(2))
 end
 
 @testset "KrD equality operator" begin
-    left = KrD(Upper(), Lower())
-    @test KrD(Upper(), Lower()) == KrD(Upper(), Lower())
-    @test !(KrD(Upper(), Lower()) === KrD(Upper(), Lower()))
-    @test left == KrD(Upper(), Lower())
-    @test left != KrD(Upper(), Upper())
-    @test left != KrD(Lower(), Lower())
-    @test left != KrD(Upper(), Lower(), Lower())
+    left = KrD(Upper(1), Lower(2))
+    @test KrD(Upper(1), Lower(2)) == KrD(Upper(1), Lower(2))
+    @test !(KrD(Upper(1), Lower(2)) === KrD(Upper(1), Lower(2)))
+    @test left == KrD(Upper(1), Lower(2))
+    @test left != KrD(Upper(1), Upper(2))
+    @test left != KrD(Lower(1), Lower(2))
+    @test left != KrD(Upper(3), Lower(2))
+    @test left != KrD(Upper(1), Lower(3))
+    @test left != KrD(Upper(1))
+    @test left != KrD(Upper(1), Lower(2), Lower(3))
 end
 
 @testset "Zero equality operator" begin
-    left = Zero(Upper(), Lower())
-    @test Zero(Upper(), Lower()) == Zero(Upper(), Lower())
-    @test !(Zero(Upper(), Lower()) === Zero(Upper(), Lower()))
-    @test left == Zero(Upper(), Lower())
-    @test left != Zero(Upper(), Upper())
-    @test left != Zero(Lower(), Lower())
-    @test left != Zero(Upper())
-    @test left != Zero(Upper(), Lower(), Lower())
+    left = Zero(Upper(1), Lower(2))
+    @test Zero(Upper(1), Lower(2)) == Zero(Upper(1), Lower(2))
+    @test !(Zero(Upper(1), Lower(2)) === Zero(Upper(1), Lower(2)))
+    @test left == Zero(Upper(1), Lower(2))
+    @test left != Zero(Upper(1), Upper(2))
+    @test left != Zero(Lower(1), Lower(2))
+    @test left != Zero(Upper(3), Lower(2))
+    @test left != Zero(Upper(1), Lower(3))
+    @test left != Zero(Upper(1))
+    @test left != Zero(Upper(1), Lower(2), Lower(3))
     @test left != Zero()
 end
 
 @testset "UnaryOperation equality operator" begin
-    a = KrD(Upper(), Upper())
-    b = Sym("b", Lower())
+    a = KrD(Upper(1), Upper(1))
+    b = Sym("b", Lower(1))
 
     left = MD.UnaryOperation(a, b)
 
@@ -80,128 +66,242 @@ end
 end
 
 @testset "BinaryOperation equality operator" begin
-    a = Sym("a", Upper())
-    b = Sym("b", Lower())
+    a = Sym("a", Upper(1))
+    b = Sym("b", Lower(1))
 
-    left = MD.BinaryOperation{*}(a, b, [(1, 1)])
+    left = MD.BinaryOperation{*}(a, b)
 
-    @test MD.BinaryOperation{*}(a, b, [(1, 1)]) == MD.BinaryOperation{*}(a, b, [(1, 1)])
-    @test left == MD.BinaryOperation{*}(a, b, [(1, 1)])
-    @test left == MD.BinaryOperation{*}(b, a, [(1, 1)])
-    @test left != MD.BinaryOperation{+}(a, b, [(1, 2)])
+    @test MD.BinaryOperation{*}(a, b) == MD.BinaryOperation{*}(a, b)
+    @test left == MD.BinaryOperation{*}(a, b)
+    @test left == MD.BinaryOperation{*}(b, a)
+    @test left != MD.BinaryOperation{+}(a, b)
 end
 
 @testset "index hash function" begin
-    @test hash(Lower()) == hash(Lower())
-    @test hash(Upper()) != hash(Lower())
+    @test hash(Lower(3)) == hash(Lower(3))
+    @test hash(Lower(3)) != hash(Lower(1))
+    @test hash(Lower(1)) != hash(Lower(3))
+    @test hash(Upper(3)) != hash(Lower(3))
 end
 
 @testset "flip" begin
-    @test flip(Lower()) == Upper()
-    @test flip(Upper()) == Lower()
+    @test flip(Lower(3)) == Upper(3)
+    @test flip(Upper(3)) == Lower(3)
 end
 
 @testset "eliminate_indices removes correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
-    arg1 = IdxUnion[Upper(); Lower(); Lower()]
-    arg2 = IdxUnion[Upper(); Lower(); Lower()]
-    contractions = [(2, 1)]
+    indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
 
-    output = MD.eliminate_indices(arg1, arg2, contractions)
+    output = MD.eliminate_indices(indices)
 
-    @test output == [Upper(); Lower(); Lower(); Lower()]
+    @test output == [Lower(2); Lower(1); Lower(2); Upper(3)]
+    @test MD.eliminate_indices(IdxUnion[]) == IdxUnion[]
 end
 
 @testset "eliminated_indices retains correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
-    arg1 = IdxUnion[Upper(); Lower(); Lower()]
-    arg2 = IdxUnion[Upper(); Lower(); Lower()]
-    contractions = [(2, 1)]
+    indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
 
-    output = MD.eliminated_indices(arg1, arg2, contractions)
+    output = MD.eliminated_indices(indices)
 
-    @test output == [(2, 1)]
+    @test output == IdxUnion[Lower(9); Upper(9); Upper(3); Lower(3); Upper(9); Lower(9)]
+    @test MD.eliminated_indices(IdxUnion[]) == IdxUnion[]
 end
 
-@testset "get_free_indices with Sym-Sym" begin
-    xt = Sym("x", Lower()) # row vector
-    A = Sym("A", Upper(), Lower())
+@testset "get_free_indices with Sym-Sym and one matching pair" begin
+    xt = Sym("x", Lower(1)) # row vector
+    A = Sym("A", Upper(1), Lower(2))
 
-    op1 = MD.BinaryOperation{*}(xt, A, [(1, 1)])
-    op2 = MD.BinaryOperation{*}(A, xt, [(1, 1)]) # not valid standard notation
+    op1 = MD.BinaryOperation{*}(xt, A)
+    op2 = MD.BinaryOperation{*}(A, xt)
 
-    @test MD.get_free_indices(op1) == [Lower()]
-    @test MD.get_free_indices(op2) == [Lower()]
+    @test MD.get_free_indices(op1) == [Lower(2)]
+    @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices with Sym-KrD" begin
-    x = Sym("x", Upper())
-    δ = KrD(Lower(), Lower())
+@testset "get_free_indices with Sym-KrD and one matching pair" begin
+    x = Sym("x", Upper(1))
+    δ = KrD(Lower(1), Lower(2))
 
-    op1 = MD.BinaryOperation{*}(x, δ, [(1, 1)])
-    op2 = MD.BinaryOperation{*}(δ, x, [(1, 1)])
+    op1 = MD.BinaryOperation{*}(x, δ)
+    op2 = MD.BinaryOperation{*}(δ, x)
 
-    @test MD.get_free_indices(op1) == [Lower()]
-    @test MD.get_free_indices(op2) == [Lower()]
+    @test MD.get_free_indices(op1) == [Lower(2)]
+    @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "is_valid_multiplication succeeds with valid matrix-vector input" begin
-    A = Sym("A", Upper(), Lower())
-    x = Sym("x", Upper())
-    y = Sym("y", Lower())
+@testset "get_free_indices with Sym-KrD and two matching pairs" begin
+    x = Sym("x", Upper(1))
+    δ = KrD(Lower(1), Lower(1))
 
-    # TODO: add more tests here
-    @test MD.is_valid_multiplication(A, x)
-    @test MD.is_valid_multiplication(y, A)
+    op1 = MD.BinaryOperation{*}(x, δ)
+    op2 = MD.BinaryOperation{*}(δ, x)
+
+    @test MD.get_free_indices(op1) == [Lower(1)]
+    @test MD.get_free_indices(op2) == [Lower(1)]
 end
 
-@testset "is_valid_multiplication fails with invalid matrix-vector input" begin
-    A = Sym("A", Upper(), Lower())
-    x = Sym("x", Upper())
-    y = Sym("y", Lower())
+@testset "get_free_indices with scalar Sym-KrD" begin
+    x = Sym("x")
+    δ = KrD(Lower(1), Lower(1))
 
-    @test !MD.is_valid_multiplication(x, A)
-    @test !MD.is_valid_multiplication(A, y)
+    op1 = MD.BinaryOperation{*}(x, δ)
+    op2 = MD.BinaryOperation{*}(δ, x)
+
+    @test MD.get_free_indices(op1) == [Lower(1); Lower(1)]
+    @test MD.get_free_indices(op2) == [Lower(1); Lower(1)]
+end
+
+@testset "get_free_indices with Sym-Sym and no matching pairs" begin
+    x = Sym("x", Upper(1))
+    A = Sym("A", Upper(1), Lower(2))
+
+    op1 = MD.BinaryOperation{*}(x, A)
+    op2 = MD.BinaryOperation{*}(A, x)
+
+    @test MD.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
+    @test MD.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
+end
+
+@testset "is_contraction_unambigous vector-vector with matching pair" begin
+    x = Sym("x", Upper(1))
+    y = Sym("y", Lower(1))
+
+    @test MD.is_contraction_unambigous(x, y)
+    @test MD.is_contraction_unambigous(y, x)
+end
+
+@testset "is_contraction_unambigous vector-vector with non-matching pair" begin
+    x = Sym("x", Lower(1))
+    y = Sym("y", Lower(1))
+
+    @test !MD.is_contraction_unambigous(x, y)
+    @test !MD.is_contraction_unambigous(y, x)
+end
+
+@testset "is_contraction_unambigous matrix-vector with matching pair" begin
+    x = Sym("x", Upper(2))
+    A = Sym("A", Upper(1), Lower(2))
+
+    @test MD.is_contraction_unambigous(A, x)
+    @test MD.is_contraction_unambigous(x, A)
+end
+
+@testset "is_contraction_unambigous matrix-vector with non-matching pair" begin
+    x = Sym("x", Lower(3))
+    A = Sym("A", Upper(1), Lower(2))
+
+    @test MD.is_contraction_unambigous(A, x)
+    @test MD.is_contraction_unambigous(x, A)
+end
+
+@testset "is_valid_standard_notation fails with invalid input" begin
+    A = Sym("A", Upper(1), Lower(2))
+    x = Sym("x", Upper(1))
+    y = Sym("y", Lower(2))
+
+    @test !MD.is_valid_standard_notation(A, x)
+    @test !MD.is_valid_standard_notation(x, A)
+    @test !MD.is_valid_standard_notation(A, y)
+    @test !MD.is_valid_standard_notation(y, A)
+end
+
+@testset "is_valid_standard_notation succeeds with valid input" begin
+    A = Sym("A", Upper(1), Lower(2))
+    x = Sym("x", Upper(2))
+    y = Sym("y", Lower(1))
+
+    @test MD.is_valid_standard_notation(A, x)
+    @test MD.is_valid_standard_notation(y, A)
 end
 
 @testset "create BinaryOperation with matching indices" begin
-    x = Sym("x", Upper())
-    y = Sym("y", Lower())
-    A = Sym("A", Upper(), Lower())
+    x = Sym("x", Upper(2))
+    y = Sym("y", Lower(1))
+    z = Sym("z")
+    A = Sym("A", Upper(1), Lower(2))
 
     @test typeof(A * x) == MD.BinaryOperation{*}
     @test typeof(y * A) == MD.BinaryOperation{*}
+    @test typeof(z * A) == MD.BinaryOperation{*}
+    @test typeof(A * z) == MD.BinaryOperation{*}
 end
 
-# @testset "create ***Operation with matrix-scalar" begin
-#     x = Sym("x", Upper())
-#     A = Sym("A", Upper(), Lower())
-#     z = Sym("z")
+@testset "update_index column vector" begin
+    x = Sym("x", Upper(3))
 
-#     @test typeof(A * x) == MD.BinaryOperation{*}
-#     @test typeof(y * A) == MD.BinaryOperation{*}
-#     @test typeof(z * A) == MD.BinaryOperation{*}
-#     @test typeof(A * z) == MD.BinaryOperation{*}
-# end
+    @test MD.update_index(x, Upper(3), Upper(3)) == x
+
+    expected_shift = KrD(Lower(3), Upper(1))
+    @test MD.update_index(x, Upper(3), Upper(1)) == MD.BinaryOperation{*}(x, expected_shift)
+
+    expected_shift = KrD(Lower(3), Upper(2))
+    @test MD.update_index(x, Upper(3), Upper(2)) == MD.BinaryOperation{*}(x, expected_shift)
+
+    # update_index shall not transpose
+    @test_throws DomainError MD.update_index(x, Upper(3), Lower(1))
+end
+
+@testset "update_index row vector" begin
+    x = Sym("x", Lower(3))
+
+    @test MD.update_index(x, Lower(3), Lower(3)) == x
+
+    expected_shift = KrD(Upper(3), Lower(1))
+    @test MD.update_index(x, Lower(3), Lower(1)) == MD.BinaryOperation{*}(x, expected_shift)
+
+    expected_shift = KrD(Upper(3), Lower(2))
+    @test MD.update_index(x, Lower(3), Lower(2)) == MD.BinaryOperation{*}(x, expected_shift)
+
+    # update_index shall not transpose
+    @test_throws DomainError MD.update_index(x, Lower(3), Upper(1))
+end
+
+@testset "update_index matrix" begin
+    A = Sym("A", Upper(1), Lower(2))
+
+    @test MD.update_index(A, Lower(2), Lower(2)) == A
+
+    expected_shift = KrD(Upper(2), Lower(3))
+    @test MD.update_index(A, Lower(2), Lower(3)) == MD.BinaryOperation{*}(A, expected_shift)
+
+    # update_index shall not transpose
+    @test_throws DomainError MD.update_index(A, Lower(2), Upper(3))
+end
 
 @testset "transpose vector" begin
-    x = Sym("x", Upper())
-    y = Sym("y", Lower())
+    x = Sym("x", Upper(1))
+    y = Sym("y", Lower(1))
 
-    expected_shift = KrD(Lower(), Lower())
-    @test x' == MD.BinaryOperation{*}(x, expected_shift, [(1, 1)])
+    expected_shift = KrD(Lower(1), Lower(1))
+    @test x' == MD.BinaryOperation{*}(x, expected_shift)
 
-    expected_shift = KrD(Upper(), Upper())
-    @test y' == MD.BinaryOperation{*}(y, expected_shift, [(1, 1)])
+    expected_shift = KrD(Upper(1), Upper(1))
+    @test y' == MD.BinaryOperation{*}(y, expected_shift, )
+end
+
+@testset "combined update_index and transpose vector" begin
+    x = Sym("x", Upper(2))
+
+    updated_transpose = MD.update_index(x', Lower(2), Lower(1))
+
+    expected_first_shift = KrD(Lower(2), Lower(2))
+    expected_second_shift = KrD(Upper(2), Lower(1))
+    @test typeof(updated_transpose) == MD.BinaryOperation{*}
+    @test updated_transpose.arg2 == expected_second_shift
+    @test typeof(updated_transpose.arg1) == MD.BinaryOperation{*}
+    @test updated_transpose.arg1.arg1 == x
+    @test updated_transpose.arg1.arg2 == expected_first_shift
 end
 
 @testset "transpose matrix" begin
-    A = Sym("A", Upper(), Lower())
+    A = Sym("A", Upper(1), Lower(2))
 
-    expected_first_shift = KrD(Upper(), Upper())
-    expected_second_shift = KrD(Lower(), Lower())
+    expected_first_shift = KrD(Upper(2), Upper(2))
+    expected_second_shift = KrD(Lower(1), Lower(1))
     A_transpose = A'
     @test typeof(A_transpose) == MD.BinaryOperation{*}
     @test A_transpose.arg2 == expected_second_shift
@@ -211,72 +311,74 @@ end
 end
 
 @testset "can_contract" begin
-    A = Sym("A", Upper(), Lower())
-    x = Sym("x", Upper())
-    y = Sym("y", Upper())
-    z = Sym("z", Lower())
-    d = KrD(Lower(), Lower())
+    A = Sym("A", Upper(1), Lower(2))
+    x = Sym("x", Upper(2))
+    y = Sym("y", Upper(3))
+    z = Sym("z", Lower(1))
+    d = KrD(Lower(1), Lower(1))
 
-    @test MD.can_contract(A, x, [(2, 1)])
-    @test MD.can_contract(x, A, [(1, 2)])
-    @test !MD.can_contract(A, y, [(1, 1)])
-    @test !MD.can_contract(y, A, [(1, 1)])
-    @test MD.can_contract(A, d, [(1, 1)])
-    @test MD.can_contract(d, A, [(1, 1)])
-    @test MD.can_contract(A, z, [(1, 1)])
-    @test MD.can_contract(z, A, [(1, 1)])
+    @test MD.can_contract(A, x)
+    @test MD.can_contract(x, A)
+    @test !MD.can_contract(A, y)
+    @test !MD.can_contract(y, A)
+    @test MD.can_contract(A, d)
+    @test MD.can_contract(d, A)
+    @test MD.can_contract(A, z)
+    @test MD.can_contract(z, A)
 end
 
 @testset "create BinaryOperation with non-matching indices matrix-vector" begin
-    x = Sym("x", Upper())
-    A = Sym("A", Upper(), Lower())
+    x = Sym("x", Upper(3))
+    A = Sym("A", Upper(1), Lower(2))
 
     op1 = A * x
 
     @test typeof(op1) == MD.BinaryOperation{*}
-    @test MD.can_contract(op1.arg1, op1.arg2, op1.indices)
-    @test op1.arg1 == A
+    @test MD.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1.arg1) == MD.BinaryOperation{*}
     @test op1.arg2 == x
 
     op2 = x' * A
 
     @test typeof(op2) == MD.BinaryOperation{*}
-    @test MD.can_contract(op2.arg1, op2.arg2, op2.indices)
+    @test MD.can_contract(op2.arg1, op2.arg2)
     @test typeof(op2.arg1) == MD.BinaryOperation{*}
-    @test op2.arg1.arg1 == x
-    @test op2.arg1.arg2 == KrD(Lower(), Lower())
+    @test typeof(op2.arg1.arg1) == MD.BinaryOperation{*}
+    @test op2.arg1.arg1.arg1 == x
+    @test op2.arg1.arg1.arg2 == KrD(Lower(3), Lower(3))
+    @test op2.arg1.arg2 == KrD(Upper(3), Lower(1))
     @test op2.arg2 == A
 end
 
 @testset "create BinaryOperation with non-compatible matrix-vector fails" begin
-    x = Sym("x", Upper())
-    A = Sym("A", Upper(), Lower())
+    x = Sym("x", Upper(3))
+    A = Sym("A", Upper(1), Lower(2))
 
     @test_throws DomainError x * A
 end
 
 @testset "create BinaryOperation with non-matching indices vector-vector" begin
-    x = Sym("x", Upper())
-    y = Sym("y", Upper())
+    x = Sym("x", Upper(2))
+    y = Sym("y", Upper(1))
 
     op1 = x' * y
 
     @test typeof(op1) == MD.BinaryOperation{*}
-    @test MD.can_contract(op1.arg1, op1.arg2, op1.indices)
+    @test MD.can_contract(op1.arg1, op1.arg2)
     @test typeof(op1.arg1) == MD.BinaryOperation{*}
     @test op1.arg2 == y
 
     op2 = y' * x
 
     @test typeof(op2) == MD.BinaryOperation{*}
-    @test MD.can_contract(op2.arg1, op2.arg2, op2.indices)
+    @test MD.can_contract(op2.arg1, op2.arg2)
     @test typeof(op2.arg1) == MD.BinaryOperation{*}
     @test op2.arg2 == x
 end
 
 # TODO: Scalars not implemented
 # @testset "create BinaryOperation with non-matching indices scalar-matrix" begin
-#     A = Sym("A", Upper(), Lower())
+#     A = Sym("A", Upper(1), Lower(2))
 #     z = Sym("z")
 
 #     op1 = A * z
@@ -296,7 +398,7 @@ end
 # end
 
 # @testset "create BinaryOperation with non-matching indices scalar-vector" begin
-#     x = Sym("x", Upper())
+#     x = Sym("x", Upper(3))
 #     z = Sym("z")
 
 #     op1 = z * x
