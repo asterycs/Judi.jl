@@ -18,12 +18,12 @@ end
     d1 = KrD(Lower(), Upper())
     d2 = KrD(Lower(), Lower())
 
-    @test evaluate(MD.Contraction(d1, x, [(1, 1)])) == Sym("x", Upper())
-    @test evaluate(MD.Contraction(x, d1, [(1, 1)])) == Sym("x", Upper())
-    @test evaluate(MD.Contraction(d2, x, [(1, 1)])) == Sym("x", Lower())
-    @test evaluate(MD.Contraction(x, d2, [(1, 1)])) == Sym("x", Lower())
-    @test evaluate(MD.Contraction(d2, x, [(2, 1)])) == Sym("x", Lower())
-    @test evaluate(MD.Contraction(x, d2, [(1, 2)])) == Sym("x", Lower())
+    @test evaluate(MD.BinaryOperation{*}(d1, x, [(1, 1)])) == Sym("x", Upper())
+    @test evaluate(MD.BinaryOperation{*}(x, d1, [(1, 1)])) == Sym("x", Upper())
+    @test evaluate(MD.BinaryOperation{*}(d2, x, [(1, 1)])) == Sym("x", Lower())
+    @test evaluate(MD.BinaryOperation{*}(x, d2, [(1, 1)])) == Sym("x", Lower())
+    @test evaluate(MD.BinaryOperation{*}(d2, x, [(2, 1)])) == Sym("x", Lower())
+    @test evaluate(MD.BinaryOperation{*}(x, d2, [(1, 2)])) == Sym("x", Lower())
 
 end
 
@@ -32,16 +32,16 @@ end
     d1 = KrD(Upper(), Upper())
     d2 = KrD(Lower(), Lower())
 
-    @test evaluate(MD.Contraction(d1, A, [(2, 2)])) == Sym("A", Upper(), Upper())
-    @test evaluate(MD.Contraction(d2, A, [(1, 1)])) == Sym("A", Lower(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d1, A, [(2, 2)])) == Sym("A", Upper(), Upper())
+    @test evaluate(MD.BinaryOperation{*}(d2, A, [(1, 1)])) == Sym("A", Lower(), Lower())
 end
 
 @testset "evaluate BinaryOperation KrD-KrD" begin
     d1 = KrD(Upper(), Lower())
     d2 = KrD(Upper(), Lower())
 
-    @test evaluate(MD.Contraction(d1, d2, [(2, 1)])) == KrD(Upper(), Lower())
-    @test evaluate(MD.Contraction(d2, d1, [(2, 1)])) == KrD(Upper(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d1, d2, [(2, 1)])) == KrD(Upper(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d2, d1, [(2, 1)])) == KrD(Upper(), Lower())
 end
 
 @testset "evaluate BinaryOperation matrix-KrD" begin
@@ -49,20 +49,20 @@ end
     d1 = KrD(Lower(), Upper())
     d2 = KrD(Lower(), Lower())
 
-    @test evaluate(MD.Contraction(d1, A, [(1, 1)])) == Sym("A", Upper(), Lower())
-    @test evaluate(MD.Contraction(A, d1, [(1, 1)])) == Sym("A", Upper(), Lower())
-    @test evaluate(MD.Contraction(d2, A, [(1, 1)])) == Sym("A", Lower(), Lower())
-    @test evaluate(MD.Contraction(d2, A, [(2, 1)])) == Sym("A", Lower(), Lower())
-    @test evaluate(MD.Contraction(A, d2, [(1, 1)])) == Sym("A", Lower(), Lower())
-    @test evaluate(MD.Contraction(A, d2, [(1, 2)])) == Sym("A", Lower(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d1, A, [(1, 1)])) == Sym("A", Upper(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(A, d1, [(1, 1)])) == Sym("A", Upper(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d2, A, [(1, 1)])) == Sym("A", Lower(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d2, A, [(2, 1)])) == Sym("A", Lower(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(A, d2, [(1, 1)])) == Sym("A", Lower(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(A, d2, [(1, 2)])) == Sym("A", Lower(), Lower())
 end
 
 @testset "evaluate BinaryOperation KrD-KrD" begin
     d1 = KrD(Upper(), Lower())
     d2 = KrD(Upper(), Lower())
 
-    @test evaluate(MD.Contraction(d1, d2, [(1, 2)])) == KrD(Upper(), Lower())
-    @test evaluate(MD.Contraction(d2, d1, [(2, 1)])) == KrD(Upper(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d1, d2, [(1, 2)])) == KrD(Upper(), Lower())
+    @test evaluate(MD.BinaryOperation{*}(d2, d1, [(2, 1)])) == KrD(Upper(), Lower())
 end
 
 @testset "evaluate BinaryOperation matrix-vector" begin
@@ -70,8 +70,8 @@ end
     x = Sym("x", Upper())
     y = Sym("y", Lower())
 
-    @test evaluate(MD.Contraction(A, x, [(2, 1)])) == MD.Contraction(A, x, [(2, 1)])
-    @test evaluate(MD.Contraction(y, A, [(1, 1)])) == MD.Contraction(y, A, [(1, 1)])
+    @test evaluate(MD.BinaryOperation{*}(A, x, [(2, 1)])) == MD.BinaryOperation{*}(A, x, [(2, 1)])
+    @test evaluate(MD.BinaryOperation{*}(y, A, [(1, 1)])) == MD.BinaryOperation{*}(y, A, [(1, 1)])
 end
 
 @testset "evaluate transpose" begin
@@ -112,28 +112,28 @@ end
     @test MD.diff(op, x) == MD.UnaryOperation(KrD(Lower(), Lower()), KrD(Upper(), Lower()))
 end
 
-@testset "diff Contraction" begin
+@testset "diff BinaryOperation{*}" begin
     x = Sym("x", Upper())
     y = Sym("y", Lower())
 
-    op = MD.Contraction(x, y, [(1, 1)])
+    op = MD.BinaryOperation{*}(x, y, [(1, 1)])
 
     D = MD.diff(op, x)
 
-    @test typeof(D) == MD.Sum
-    @test D.arg1 == MD.Contraction(x, Zero(Lower(), Lower()), [(1, 1)])
-    @test D.arg2 == MD.Contraction(KrD(Upper(), Lower()), y, [(1, 1)])
+    @test typeof(D) == MD.BinaryOperation{+}
+    @test D.arg1 == MD.BinaryOperation{*}(x, Zero(Lower(), Lower()), [(1, 1)])
+    @test D.arg2 == MD.BinaryOperation{*}(KrD(Upper(), Lower()), y, [(1, 1)])
 end
 
-@testset "diff Sum" begin
+@testset "diff BinaryOperation{+}" begin
     x = Sym("x", Upper())
     y = Sym("y", Upper())
 
-    op = MD.Sum(x, y)
+    op = MD.BinaryOperation{+}(x, y, [])
 
     D = MD.diff(op, x)
 
-    @test D == MD.Sum(KrD(Upper(), Lower()), Zero(Upper(), Lower()))
+    @test D == MD.BinaryOperation{+}(KrD(Upper(), Lower()), Zero(Upper(), Lower()), [])
 end
 
 @testset "Differentiate Ax" begin

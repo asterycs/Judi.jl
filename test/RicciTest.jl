@@ -79,28 +79,16 @@ end
     @test left != MD.UnaryOperation(b, a)
 end
 
-@testset "Contraction equality operator" begin
+@testset "BinaryOperation equality operator" begin
     a = Sym("a", Upper())
     b = Sym("b", Lower())
 
-    left = MD.Contraction(a, b, [(1, 1)])
+    left = MD.BinaryOperation{*}(a, b, [(1, 1)])
 
-    @test MD.Contraction(a, b, [(1, 1)]) == MD.Contraction(a, b, [(1, 1)])
-    @test left == MD.Contraction(a, b, [(1, 1)])
-    @test left == MD.Contraction(b, a, [(1, 1)])
-    @test left != MD.Sum(a, b)
-end
-
-@testset "Sum equality operator" begin
-    a = Sym("a", Upper())
-    b = Sym("b", Lower())
-
-    left = MD.Sum(a, b)
-
-    @test MD.Sum(a, b) == MD.Sum(a, b)
-    @test left == MD.Sum(a, b)
-    @test left == MD.Sum(b, a)
-    @test left != MD.Contraction(a, b, [(1, 1)])
+    @test MD.BinaryOperation{*}(a, b, [(1, 1)]) == MD.BinaryOperation{*}(a, b, [(1, 1)])
+    @test left == MD.BinaryOperation{*}(a, b, [(1, 1)])
+    @test left == MD.BinaryOperation{*}(b, a, [(1, 1)])
+    @test left != MD.BinaryOperation{+}(a, b, [(1, 2)])
 end
 
 @testset "index hash function" begin
@@ -141,8 +129,8 @@ end
     xt = Sym("x", Lower()) # row vector
     A = Sym("A", Upper(), Lower())
 
-    op1 = MD.Contraction(xt, A, [(1, 1)])
-    op2 = MD.Contraction(A, xt, [(1, 1)]) # not valid standard notation
+    op1 = MD.BinaryOperation{*}(xt, A, [(1, 1)])
+    op2 = MD.BinaryOperation{*}(A, xt, [(1, 1)]) # not valid standard notation
 
     @test MD.get_free_indices(op1) == [Lower()]
     @test MD.get_free_indices(op2) == [Lower()]
@@ -152,8 +140,8 @@ end
     x = Sym("x", Upper())
     δ = KrD(Lower(), Lower())
 
-    op1 = MD.Contraction(x, δ, [(1, 1)])
-    op2 = MD.Contraction(δ, x, [(1, 1)])
+    op1 = MD.BinaryOperation{*}(x, δ, [(1, 1)])
+    op2 = MD.BinaryOperation{*}(δ, x, [(1, 1)])
 
     @test MD.get_free_indices(op1) == [Lower()]
     @test MD.get_free_indices(op2) == [Lower()]
@@ -178,13 +166,13 @@ end
     @test !MD.is_valid_multiplication(A, y)
 end
 
-@testset "create Contraction with matching indices" begin
+@testset "create BinaryOperation with matching indices" begin
     x = Sym("x", Upper())
     y = Sym("y", Lower())
     A = Sym("A", Upper(), Lower())
 
-    @test typeof(A * x) == MD.Contraction
-    @test typeof(y * A) == MD.Contraction
+    @test typeof(A * x) == MD.BinaryOperation{*}
+    @test typeof(y * A) == MD.BinaryOperation{*}
 end
 
 # @testset "create ***Operation with matrix-scalar" begin
@@ -192,10 +180,10 @@ end
 #     A = Sym("A", Upper(), Lower())
 #     z = Sym("z")
 
-#     @test typeof(A * x) == MD.Contraction
-#     @test typeof(y * A) == MD.Contraction
-#     @test typeof(z * A) == MD.Contraction
-#     @test typeof(A * z) == MD.Contraction
+#     @test typeof(A * x) == MD.BinaryOperation{*}
+#     @test typeof(y * A) == MD.BinaryOperation{*}
+#     @test typeof(z * A) == MD.BinaryOperation{*}
+#     @test typeof(A * z) == MD.BinaryOperation{*}
 # end
 
 @testset "transpose vector" begin
@@ -203,10 +191,10 @@ end
     y = Sym("y", Lower())
 
     expected_shift = KrD(Lower(), Lower())
-    @test x' == MD.Contraction(x, expected_shift, [(1, 1)])
+    @test x' == MD.BinaryOperation{*}(x, expected_shift, [(1, 1)])
 
     expected_shift = KrD(Upper(), Upper())
-    @test y' == MD.Contraction(y, expected_shift, [(1, 1)])
+    @test y' == MD.BinaryOperation{*}(y, expected_shift, [(1, 1)])
 end
 
 @testset "transpose matrix" begin
@@ -215,9 +203,9 @@ end
     expected_first_shift = KrD(Upper(), Upper())
     expected_second_shift = KrD(Lower(), Lower())
     A_transpose = A'
-    @test typeof(A_transpose) == MD.Contraction
+    @test typeof(A_transpose) == MD.BinaryOperation{*}
     @test A_transpose.arg2 == expected_second_shift
-    @test typeof(A_transpose.arg1) == MD.Contraction
+    @test typeof(A_transpose.arg1) == MD.BinaryOperation{*}
     @test A_transpose.arg1.arg2 == expected_first_shift
     @test A_transpose.arg1.arg1 == A
 end
@@ -239,68 +227,68 @@ end
     @test MD.can_contract(z, A, [(1, 1)])
 end
 
-@testset "create Contraction with non-matching indices matrix-vector" begin
+@testset "create BinaryOperation with non-matching indices matrix-vector" begin
     x = Sym("x", Upper())
     A = Sym("A", Upper(), Lower())
 
     op1 = A * x
 
-    @test typeof(op1) == MD.Contraction
+    @test typeof(op1) == MD.BinaryOperation{*}
     @test MD.can_contract(op1.arg1, op1.arg2, op1.indices)
     @test op1.arg1 == A
     @test op1.arg2 == x
 
     op2 = x' * A
 
-    @test typeof(op2) == MD.Contraction
+    @test typeof(op2) == MD.BinaryOperation{*}
     @test MD.can_contract(op2.arg1, op2.arg2, op2.indices)
-    @test typeof(op2.arg1) == MD.Contraction
+    @test typeof(op2.arg1) == MD.BinaryOperation{*}
     @test op2.arg1.arg1 == x
     @test op2.arg1.arg2 == KrD(Lower(), Lower())
     @test op2.arg2 == A
 end
 
-@testset "create Contraction with non-compatible matrix-vector fails" begin
+@testset "create BinaryOperation with non-compatible matrix-vector fails" begin
     x = Sym("x", Upper())
     A = Sym("A", Upper(), Lower())
 
     @test_throws DomainError x * A
 end
 
-@testset "create Contraction with non-matching indices vector-vector" begin
+@testset "create BinaryOperation with non-matching indices vector-vector" begin
     x = Sym("x", Upper())
     y = Sym("y", Upper())
 
     op1 = x' * y
 
-    @test typeof(op1) == MD.Contraction
+    @test typeof(op1) == MD.BinaryOperation{*}
     @test MD.can_contract(op1.arg1, op1.arg2, op1.indices)
-    @test typeof(op1.arg1) == MD.Contraction
+    @test typeof(op1.arg1) == MD.BinaryOperation{*}
     @test op1.arg2 == y
 
     op2 = y' * x
 
-    @test typeof(op2) == MD.Contraction
+    @test typeof(op2) == MD.BinaryOperation{*}
     @test MD.can_contract(op2.arg1, op2.arg2, op2.indices)
-    @test typeof(op2.arg1) == MD.Contraction
+    @test typeof(op2.arg1) == MD.BinaryOperation{*}
     @test op2.arg2 == x
 end
 
 # TODO: Scalars not implemented
-# @testset "create Contraction with non-matching indices scalar-matrix" begin
+# @testset "create BinaryOperation with non-matching indices scalar-matrix" begin
 #     A = Sym("A", Upper(), Lower())
 #     z = Sym("z")
 
 #     op1 = A * z
 #     op2 = z * A
 
-#     @test typeof(op1) == MD.Contraction
+#     @test typeof(op1) == MD.BinaryOperation
 #     @test MD.can_contract(op1.arg1, op1.arg2)
 #     @test op1.op == *
 #     @test op1.arg1 == A
 #     @test op1.arg2 == z
 
-#     @test typeof(op2) == MD.Contraction
+#     @test typeof(op2) == MD.BinaryOperation
 #     @test MD.can_contract(op2.arg1, op2.arg2)
 #     @test op2.op == *
 #     @test op2.arg1 == z

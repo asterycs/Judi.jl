@@ -26,12 +26,12 @@ function diff(arg::UnaryOperation, wrt::Sym)
     UnaryOperation(arg.op, diff(arg.arg, wrt))
 end
 
-function diff(arg::Contraction, wrt::Sym)
-    Sum(Contraction(arg.arg1, diff(arg.arg2, wrt), arg.indices), Contraction(diff(arg.arg1, wrt), arg.arg2, arg.indices))
+function diff(arg::BinaryOperation{*}, wrt::Sym)
+    BinaryOperation{+}(BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt), arg.indices), BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2, arg.indices), [])
 end
 
-function diff(arg::Sum, wrt::Sym)
-    Sum(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
+function diff(arg::BinaryOperation{+}, wrt::Sym)
+    BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt), arg.indices)
 end
 
 function mirror(contractions::Contractions)
@@ -42,6 +42,10 @@ function evaluate(sym::Sym)
     sym
 end
 
+function evaluate(::typeof(*), arg1::BinaryOperation, arg2::BinaryOperation, contractions::Contractions)
+    evaluate(*, evaluate(arg1), evaluate(arg2), contractions)
+end
+
 function evaluate(arg::UnaryOperation)
     @assert false "Not implemented"
 end
@@ -50,12 +54,32 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Sym, contractions::Contractions)
     evaluate(*, arg2, arg1, mirror(contractions))
 end
 
+function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation, contractions::Contractions)
+    evaluate(*, arg2, arg1, mirror(contractions))
+end
+
+function evaluate(::typeof(*), arg1::BinaryOperation, arg2::KrD, contractions::Contractions)
+    if typeof(arg1.op) == typeof(*)
+        if can_contract(arg1.arg2, arg2, contractions)
+            new_arg2 = evaluate(*, arg1.arg2, arg2, contractions)
+            return BinaryOperation{*}(arg1.arg1, new_arg2, contractions)
+        elseif can_contract(arg1.arg1, arg2, contractions)
+            new_arg1 = evaluate(*, arg1.arg1, arg2, contractions)
+            return BinaryOperation{*}(new_arg1, arg1.arg2, contractions)
+        else
+            return BinaryOperation{*}(arg1, arg2, contractions)
+        end
+    else
+        return BinaryOperation{*}(arg1, arg2, contractions)
+    end
+end
+
 function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD, contractions::Contractions)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
     if !can_contract(arg1, arg2, contractions)
-        return Contraction(arg1, arg2, contractions)
+        return BinaryOperation{*}(arg1, arg2, contractions)
     end
 
     @assert length(contractions) == 1 "Trace not implemented"
@@ -85,7 +109,7 @@ function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD, contractions::C
 end
 
 function evaluate(::typeof(*), arg1, arg2, contractions::Contractions)
-    return Contraction(evaluate(arg1), evaluate(arg2), contractions)
+    return BinaryOperation{*}(arg1, arg2, contractions)
 end
 
 function evaluate(::typeof(*), arg1::Expression, arg2::Real)
@@ -119,14 +143,14 @@ function evaluate(::typeof(+), arg1, arg2::Zero)
 end
 
 function evaluate(::typeof(+), arg1, arg2)
-    Sum(arg1, arg2)
+    BinaryOperation{+}(arg1, arg2)
 end
 
-function evaluate(op::Contraction)
+function evaluate(op::BinaryOperation{*})
     evaluate(*, evaluate(op.arg1), evaluate(op.arg2), op.indices)
 end
 
-function evaluate(op::Sum)
+function evaluate(op::BinaryOperation{+})
     evaluate(+, evaluate(op.arg1), evaluate(op.arg2))
 end
 
