@@ -147,38 +147,7 @@ function ==(left::UnaryOperation, right::UnaryOperation)
     return left.arg == right.arg && left.op == right.op
 end
 
-function eliminate_indices(arg::IndexSet)
-    available = Union{Nothing, Lower, Upper}[i for i ∈ arg]
-
-    for i ∈ eachindex(available)
-        if isnothing(available[i])
-            continue
-        end
-
-        for j ∈ eachindex(available)
-            if isnothing(available[j])
-                continue
-            end
-
-            if flip(available[j]) == available[i]
-                available[i] = nothing
-                available[j] = nothing
-            end
-        end
-    end
-
-    filtered = LowerOrUpperIndex[]
-
-    for e ∈ available
-        if !isnothing(e)
-            push!(filtered, e)
-        end
-    end
-
-    return filtered
-end
-
-function eliminated_indices(arg::IndexSet)
+function _eliminate_indices(arg::IndexSet)
     available = Union{Nothing, Lower, Upper}[i for i ∈ arg]
     eliminated = LowerOrUpperIndex[]
 
@@ -195,14 +164,29 @@ function eliminated_indices(arg::IndexSet)
             if flip(available[j]) == available[i]
                 push!(eliminated, available[i])
                 push!(eliminated, available[j])
-
                 available[i] = nothing
                 available[j] = nothing
             end
         end
     end
 
-    return eliminated
+    filtered = LowerOrUpperIndex[]
+
+    for e ∈ available
+        if !isnothing(e)
+            push!(filtered, e)
+        end
+    end
+
+    return filtered, eliminated
+end
+
+function eliminate_indices(arg::IndexSet)
+    return first(_eliminate_indices(arg))
+end
+
+function eliminated_indices(arg::IndexSet)
+    return last(_eliminate_indices(arg))
 end
 
 function get_free_indices(arg::Union{Sym, KrD, Zero})
