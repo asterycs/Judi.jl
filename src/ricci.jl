@@ -26,22 +26,6 @@ end
 
 LowerOrUpperIndex = Union{Lower, Upper}
 
-function flipnext(index::Lower)
-    return Upper(index.letter + 1)
-end
-
-function flipnext(index::Upper)
-    return Lower(index.letter + 1)
-end
-
-function lowernext(index::Upper)
-    return Lower(index.letter + 1)
-end
-
-function lowernext(index::Lower)
-    return Lower(index.letter + 1)
-end
-
 function flip(index::Lower)
     return Upper(index.letter)
 end
