@@ -10,16 +10,29 @@ function D(expr, wrt::Sym)
 end
 
 function diff(sym::Sym, wrt::Sym)
-    if sym == wrt
-        @assert length(sym.indices) <= 1 # Only scalars and vectors supported for now
-        return KrD(sym.indices..., lowernext(sym.indices[end]))
+    if sym.id == wrt.id
+        if sym.indices == wrt.indices
+            return Zero(sym.indices...)
+        end
+
+        D = nothing
+
+        for (u,l) ∈ zip(sym.indices, wrt.indices)
+            if isnothing(D)
+                D = KrD(u, flip(l))
+            else
+                D = BinaryOperation{*}(D, KrD(u, flip(l)))
+            end
+        end
+
+        return D
     else
-        return Zero(sym.indices..., lowernext(sym.indices[end]))
+        return Zero(sym.indices..., [flip(i) for i ∈ wrt.indices]...)
     end
 end
 
 function diff(arg::KrD, wrt::Sym)
-    return Zero(arg.indices..., lowernext(arg.indices[end]))
+    return Zero(arg.indices..., [flip(i) for i ∈ wrt.indices]...)
 end
 
 function diff(arg::UnaryOperation, wrt::Sym)
