@@ -198,24 +198,26 @@ end
     @test MD.is_contraction_unambigous(x, A)
 end
 
-@testset "is_valid_standard_notation fails with invalid input" begin
+@testset "is_valid_matrix_multiplication fails with invalid input" begin
     A = Sym("A", Upper(1), Lower(2))
     x = Sym("x", Upper(1))
     y = Sym("y", Lower(2))
 
-    @test !MD.is_valid_standard_notation(A, x)
-    @test !MD.is_valid_standard_notation(x, A)
-    @test !MD.is_valid_standard_notation(A, y)
-    @test !MD.is_valid_standard_notation(y, A)
+    @test !MD.is_valid_matrix_multiplication(A, x)
+    @test !MD.is_valid_matrix_multiplication(x, A)
+    @test !MD.is_valid_matrix_multiplication(A, y)
+    @test !MD.is_valid_matrix_multiplication(y, A)
 end
 
-@testset "is_valid_standard_notation succeeds with valid input" begin
+@testset "is_valid_matrix_multiplication succeeds with valid input" begin
     A = Sym("A", Upper(1), Lower(2))
     x = Sym("x", Upper(2))
     y = Sym("y", Lower(1))
+    z = Sym("z", Lower(2))
 
-    @test MD.is_valid_standard_notation(A, x)
-    @test MD.is_valid_standard_notation(y, A)
+    @test MD.is_valid_matrix_multiplication(A, x)
+    @test MD.is_valid_matrix_multiplication(y, A)
+    @test MD.is_valid_matrix_multiplication(A, z')
 end
 
 @testset "create BinaryOperation with matching indices" begin
