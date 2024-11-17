@@ -418,3 +418,16 @@ end
 #     @test op2.arg1 == x
 #     @test op2.arg2 == z
 # end
+
+@testset "to_std_string output is correct with matrix-vector contraction" begin
+    A = Sym("A", Upper(1), Lower(2))
+    x = Sym("x", Upper(2))
+    y = Sym("y", Lower(1))
+
+    function contract(l, r)
+        return evaluate(MD.BinaryOperation{*}(l, r))
+    end
+
+    @test to_std_string(contract(A, x)) == "A * x"
+    @test to_std_string(contract(A, y)) == "yᵀ * A"
+end

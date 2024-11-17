@@ -532,21 +532,7 @@ function to_string(arg::BinaryOperation{Op}) where Op
 end
 
 function to_std_string(arg::Sym)
-    superscript = ""
-    # if length(arg.indices) == 2
-    #     if all(i -> typeof(i) == Lower, arg.indices) || all(i -> typeof(i) == Upper, arg.indices)
-    #         superscript = "ᵀ"
-    #     end
-    # else
-    if length(arg.indices) == 1
-        if all(i -> typeof(i) == Lower, arg.indices)
-            superscript = "ᵀ"
-        end
-    # else
-        # @assert false "Tensor format string not implemented"
-    end
-
-    return arg.id * superscript
+    return arg.id
 end
 
 function to_std_string(arg::UnaryOperation)
@@ -574,34 +560,45 @@ function to_std_string(arg::BinaryOperation{+})
 end
 
 function to_std_string(arg::BinaryOperation{*})
-    free_ids = get_free_indices(arg)
+    arg1_ids = get_free_indices(arg.arg1)
+    arg2_ids = get_free_indices(arg.arg2)
 
     if !can_contract(arg.arg1, arg.arg2)
         return arg
-    elseif length(free_ids) == 1 # result is a vector
-        if length(get_free_indices(arg.arg1)) == 2 && length(get_free_indices(arg.arg2)) == 1
+    else
+        if length(get_free_indices(arg)) == 1 # result is a vector
+            if length(arg1_ids) == 2 && length(arg2_ids) == 1
 
-            if all(i -> typeof(i) == Lower, get_free_indices(arg.arg1))
-                return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1) * "ᵀ"
+                if flip(arg1_ids[1]) == arg2_ids[1]
+                    return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1) * ""
+                end
+
+                if flip(arg1_ids[end]) == arg2_ids[1]
+                    return to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2)
+                end
+
+                @assert false "Unreachable"
+            elseif length(arg1_ids) == 1 && length(arg2_ids) == 2
+                if flip(arg1_ids[1]) == arg2_ids[1]
+                    if typeof(arg1_ids[1]) == Lower
+                        return "(" * to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2) * ")ᵀ"
+                    else
+                        return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
+                    end
+                end
+
+                if flip(arg1_ids[1]) == arg2_ids[end]
+                    if typeof(arg1_ids[end]) == Upper
+                        return "(" * to_std_string(arg.arg2) * " * " * to_std_string(arg.arg1) * ")ᵀ"
+                    else
+                        return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
+                    end
+                end
+
+                @assert false "Unreachable"
+            else
+                @assert false "Not implemented"
             end
-
-            if typeof(get_free_indices(arg.arg2)[1]) == Lower
-                return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
-            end
-
-            @assert false "Unreachable"
-        elseif length(get_free_indices(arg.arg1)) == 1 && length(get_free_indices(arg.arg2)) == 2
-            if all(i -> typeof(i) == Lower, get_free_indices(arg.arg2))
-                return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
-            end
-
-            if typeof(get_free_indices(arg.arg1)[1]) == Lower
-                return to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2)
-            end
-
-            @assert false "Unreachable"
-        else
-            @assert false "Not implemented"
         end
     end
 end
