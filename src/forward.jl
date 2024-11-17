@@ -122,23 +122,27 @@ function evaluate(::typeof(*), arg1, arg2)
     return BinaryOperation{*}(arg1, arg2)
 end
 
-function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
-    evaluate(*, arg2, arg1)
-end
+# function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
+#     evaluate(*, arg2, arg1)
+# end
 
-function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
-    if arg1 == 1
-        return arg2
-    else
-        BinaryOperation{*}(arg1, arg2)
-    end
-end
+# function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
+#     if arg1 == 1
+#         return arg2
+#     else
+#         BinaryOperation{*}(arg1, arg2)
+#     end
+# end
 
 function evaluate(::typeof(*), arg1, arg2::Zero)
     evaluate(*, arg2, arg1)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2)
+    arg1
+end
+
+function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
     arg1
 end
 

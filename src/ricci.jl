@@ -395,7 +395,7 @@ function is_valid_matrix_multiplication(arg1, arg2)
     return true
 end
 
-function *(arg1, arg2)
+function *(arg1::SymbolicValue, arg2::SymbolicValue)
     if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
         return BinaryOperation{*}(arg1, arg2)
     else
