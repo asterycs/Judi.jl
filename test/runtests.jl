@@ -1,5 +1,7 @@
 using Test
 
+include("Aqua.jl")
+
 @testset "RicciTest" begin
     include("RicciTest.jl")
 end
