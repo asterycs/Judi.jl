@@ -278,11 +278,8 @@ end
     x = Sym("x", Upper(1))
     y = Sym("y", Lower(1))
 
-    expected_shift = KrD(Lower(1), Lower(1))
-    @test x' == MD.BinaryOperation{*}(x, expected_shift)
-
-    expected_shift = KrD(Upper(1), Upper(1))
-    @test y' == MD.BinaryOperation{*}(y, expected_shift, )
+    @test evaluate(x') == Sym("x", Lower(1))
+    @test evaluate(y') == Sym("y", Upper(1))
 end
 
 @testset "combined update_index and transpose vector" begin
@@ -302,14 +299,8 @@ end
 @testset "transpose matrix" begin
     A = Sym("A", Upper(1), Lower(2))
 
-    expected_first_shift = KrD(Upper(2), Upper(2))
-    expected_second_shift = KrD(Lower(1), Lower(1))
-    A_transpose = A'
-    @test typeof(A_transpose) == MD.BinaryOperation{*}
-    @test A_transpose.arg2 == expected_second_shift
-    @test typeof(A_transpose.arg1) == MD.BinaryOperation{*}
-    @test A_transpose.arg1.arg2 == expected_first_shift
-    @test A_transpose.arg1.arg1 == A
+    A_transpose = evaluate(A')
+    @test A_transpose == Sym("A", Upper(2), Lower(1))
 end
 
 @testset "can_contract" begin

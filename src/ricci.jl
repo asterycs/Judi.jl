@@ -66,9 +66,20 @@ end
 
 global const NEXT_LETTER = Ref{Letter}(1)
 
+# TODO: Used for implementing e.g. matrix transpose until
+# proper Sym indexing is in place.
+global const NEXT_ANONYMOUS_LETTER = Ref{Letter}(-1)
+
 function get_next_letter()
     tmp = NEXT_LETTER[]
     NEXT_LETTER[] += 1
+
+    return tmp
+end
+
+function get_next_anonymous_letter()
+    tmp = NEXT_ANONYMOUS_LETTER[]
+    NEXT_ANONYMOUS_LETTER[] -= 1
 
     return tmp
 end
@@ -467,9 +478,13 @@ function adjoint(arg::Union{Sym, KrD, Zero})
     ids = get_free_indices(arg)
 
     if length(ids) == 1
-        BinaryOperation{*}(arg, KrD(flip(ids[1]), flip(ids[1])))
+        return BinaryOperation{*}(arg, KrD(flip(ids[1]), flip(ids[1])))
     elseif length(ids) == 2
-        BinaryOperation{*}(BinaryOperation{*}(arg, KrD(flip(ids[2]), flip(ids[2]))), KrD(flip(ids[1]), flip(ids[1])))
+        tmp_index = get_next_anonymous_letter()
+        op1 = BinaryOperation{*}(arg, KrD(flip(ids[1]), Upper(tmp_index)))
+        op2 = BinaryOperation{*}(op1, KrD(flip(ids[2]), flip(ids[1])))
+        op3 = BinaryOperation{*}(op2, KrD(Lower(tmp_index), flip(ids[2])))
+        return op3
     else
         throw(DomainError("Ambgious transpose"))
     end
