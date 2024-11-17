@@ -158,6 +158,10 @@ function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
     return same_args
 end
 
+function equivalent(left::BinaryOperation{*}, right::BinaryOperation{*})
+    return equivalent(left.arg1, left.arg1) && equivalent(left.arg2, left.arg2)
+end
+
 struct UnaryOperation <: SymbolicValue
     op::SymbolicValue
     arg::SymbolicValue

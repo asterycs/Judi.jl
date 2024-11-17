@@ -167,3 +167,24 @@ end
 
     @test equivalent(D(e, Sym("x", Upper(4))), A)
 end
+
+@testset "Differentiate xᵀA " begin
+    A = Sym("A", Upper(1), Lower(2))
+    x = Sym("x", Upper(3))
+
+    e = x' * A
+
+    @test equivalent(D(e, Sym("x", Upper(4))), Sym("A", Lower(1), Lower(2)))
+end
+
+@testset "Differentiate xᵀAx" begin
+    A = Sym("A", Upper(1), Lower(2))
+    x = Sym("x", Upper(3))
+
+    e = x' * A * x
+
+    differential_form = MD.D(e, Sym("x", Upper(4)))
+
+    @test equivalent(differential_form.arg1, x' * A)
+    @test equivalent(differential_form.arg2, MD.BinaryOperation{*}(x', Sym("A", Lower(1), Lower(2))))
+end
