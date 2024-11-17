@@ -6,6 +6,10 @@ include("Aqua.jl")
     include("RicciTest.jl")
 end
 
+@testset "StdTest" begin
+    include("StdTest.jl")
+end
+
 @testset "ForwardTest" begin
     include("ForwardTest.jl")
 end
