@@ -589,7 +589,7 @@ function to_std_string(arg::BinaryOperation{*})
             if length(arg1_ids) == 2 && length(arg2_ids) == 1
 
                 if flip(arg1_ids[1]) == arg2_ids[1]
-                    return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1) * ""
+                    return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1)
                 end
 
                 if flip(arg1_ids[end]) == arg2_ids[1]
@@ -600,7 +600,7 @@ function to_std_string(arg::BinaryOperation{*})
             elseif length(arg1_ids) == 1 && length(arg2_ids) == 2
                 if flip(arg1_ids[1]) == arg2_ids[1]
                     if typeof(arg1_ids[1]) == Lower
-                        return "(" * to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2) * ")ᵀ"
+                        return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
                     else
                         return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
                     end
@@ -608,7 +608,7 @@ function to_std_string(arg::BinaryOperation{*})
 
                 if flip(arg1_ids[1]) == arg2_ids[end]
                     if typeof(arg1_ids[end]) == Upper
-                        return "(" * to_std_string(arg.arg2) * " * " * to_std_string(arg.arg1) * ")ᵀ"
+                        return to_std_string(arg.arg2) * " * " * to_std_string(arg.arg1)
                     else
                         return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
                     end
