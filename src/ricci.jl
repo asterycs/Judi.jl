@@ -64,6 +64,15 @@ function hash(arg::LowerOrUpperIndex)
     h
 end
 
+global const NEXT_LETTER = Ref{Letter}(1)
+
+function get_next_letter()
+    tmp = NEXT_LETTER[]
+    NEXT_LETTER[] += 1
+
+    return tmp
+end
+
 abstract type SymbolicValue end
 
 IndexSet = Vector{LowerOrUpperIndex}
