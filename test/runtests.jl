@@ -1,6 +1,8 @@
 using Test
 
-include("Aqua.jl")
+@testset "Aqua" begin
+    include("Aqua.jl")
+end
 
 @testset "RicciTest" begin
     include("RicciTest.jl")
