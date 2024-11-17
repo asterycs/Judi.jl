@@ -14,7 +14,7 @@ export flip
 export to_string
 export to_std_string
 
-Letter = Int64
+Letter = Int
 
 struct Upper
     letter::Letter
@@ -259,10 +259,10 @@ function can_contract_weak(arg1, arg2::KrD)
     # Duplicate pairs such that several indices in arg2 matches one index in
     # arg1 are allowed.
 
-    pairs = Dict{Letter, Int64}()
+    pairs = Dict{Letter, Int}()
 
     for j ∈ arg2_indices
-        pairs_in_sweep = Dict{Letter, Int64}()
+        pairs_in_sweep = Dict{Letter, Int}()
 
         for i ∈ arg1_indices
             if flip(i) == j
@@ -305,7 +305,7 @@ function can_contract_strong(arg1, arg2)
     arg2_indices = get_free_indices(arg2)
 
     # If there is exactly one matching index pair then the contraction is unambigous.
-    pairs = Dict{Letter, Int64}()
+    pairs = Dict{Letter, Int}()
 
     for i ∈ arg1_indices
         for j ∈ arg2_indices
@@ -341,7 +341,7 @@ function is_contraction_unambigous(arg1, arg2)
     end
 
     # Otherwise, if there is exactly one matching index pair then the contraction is unambigous.
-    pairs = Dict{Letter, Int64}()
+    pairs = Dict{Letter, Int}()
 
     for i ∈ arg1_indices
         for j ∈ arg2_indices
