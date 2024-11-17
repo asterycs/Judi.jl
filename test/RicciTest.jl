@@ -285,15 +285,9 @@ end
 @testset "combined update_index and transpose vector" begin
     x = Sym("x", Upper(2))
 
-    updated_transpose = MD.update_index(x', Lower(2), Lower(1))
+    updated_transpose = evaluate(MD.update_index(x', Lower(2), Lower(1)))
 
-    expected_first_shift = KrD(Lower(2), Lower(2))
-    expected_second_shift = KrD(Upper(2), Lower(1))
-    @test typeof(updated_transpose) == MD.BinaryOperation{*}
-    @test updated_transpose.arg2 == expected_second_shift
-    @test typeof(updated_transpose.arg1) == MD.BinaryOperation{*}
-    @test updated_transpose.arg1.arg1 == x
-    @test updated_transpose.arg1.arg2 == expected_first_shift
+    @test updated_transpose == Sym("x", Lower(1))
 end
 
 @testset "transpose matrix" begin
