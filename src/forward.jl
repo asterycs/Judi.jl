@@ -71,6 +71,22 @@ function evaluate(arg::UnaryOperation)
     return arg
 end
 
+function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
+    evaluate(*, evaluate(arg2), arg1)
+end
+
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
+    if can_contract(arg1.arg2, arg2)
+        new_arg2 = evaluate(*, arg1.arg2, arg2)
+        return BinaryOperation{*}(arg1.arg1, new_arg2)
+    elseif can_contract(arg1.arg1, arg2)
+        new_arg1 = evaluate(*, arg1.arg1, arg2)
+        return BinaryOperation{*}(new_arg1, arg1.arg2)
+    else
+        return BinaryOperation{*}(arg1, arg2)
+    end
+end
+
 function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
     evaluate(*, arg2, arg1)
 end
