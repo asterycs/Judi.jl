@@ -233,23 +233,6 @@ function are_indices_unique(indices::IndexSet)
     return length(unique(indices)) == length(indices)
 end
 
-function can_contract(arg1, arg2, index::Letter)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    for i ∈ arg1_indices
-        if i.letter == index
-            for j ∈ arg2_indices
-                if flip(i) == j
-                    return true
-                end
-            end
-        end
-    end
-
-    return false
-end
-
 function can_contract(arg1::KrD, arg2)
     return can_contract_weak(arg2, arg1)
 end
