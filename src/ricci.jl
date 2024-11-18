@@ -133,6 +133,10 @@ function ==(left::KrD, right::KrD)
     return left.indices == right.indices
 end
 
+function equivalent(left::KrD, right::KrD)
+    return all(typeof.(left.indices) .== typeof.(right.indices))
+end
+
 struct Zero <: SymbolicValue
     indices::IndexSet
 

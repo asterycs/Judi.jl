@@ -118,13 +118,13 @@ end
 
 @testset "diff KrD" begin
     x = Sym("x", Upper(3))
-    y = Sym("y", Upper(4))
+    y = Sym("y", Lower(4))
     A = Sym("A", Upper(5), Lower(6))
     d = KrD(Upper(1), Lower(2))
 
-    @test MD.diff(d, x) == Zero(Upper(1), Lower(2), Lower(3))
-    @test MD.diff(d, y) == Zero(Upper(1), Lower(2), Lower(4))
-    @test MD.diff(d, A) == Zero(Upper(1), Lower(2), Lower(5), Upper(6))
+    @test MD.diff(d, x) == MD.BinaryOperation{*}(d, Zero(Lower(3)))
+    @test MD.diff(d, y) == MD.BinaryOperation{*}(d, Zero(Upper(4)))
+    @test MD.diff(d, A) == MD.BinaryOperation{*}(d, Zero(Lower(5), Upper(6)))
 end
 
 @testset "diff UnaryOperation" begin

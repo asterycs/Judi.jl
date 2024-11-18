@@ -32,7 +32,7 @@ function diff(sym::Sym, wrt::Sym)
 end
 
 function diff(arg::KrD, wrt::Sym)
-    return Zero(arg.indices..., [flip(i) for i ∈ wrt.indices]...)
+    return BinaryOperation{*}(arg, Zero([flip(i) for i ∈ wrt.indices]...))
 end
 
 function diff(arg::UnaryOperation, wrt::Sym)
@@ -51,10 +51,6 @@ function evaluate(sym::Sym)
     sym
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation, arg2::BinaryOperation)
-    evaluate(*, evaluate(arg1), evaluate(arg2))
-end
-
 function evaluate(arg::UnaryOperation)
     if typeof(arg.op) == KrD
         return evaluate(*, evaluate(arg.arg), arg.op)
@@ -65,22 +61,6 @@ end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
     evaluate(*, arg2, arg1)
-end
-
-function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation)
-    evaluate(*, evaluate(arg2), arg1)
-end
-
-function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
-    if can_contract(arg1.arg2, arg2)
-        new_arg2 = evaluate(*, arg1.arg2, arg2)
-        return BinaryOperation{*}(arg1.arg1, new_arg2)
-    elseif can_contract(arg1.arg1, arg2)
-        new_arg1 = evaluate(*, arg1.arg1, arg2)
-        return BinaryOperation{*}(new_arg1, arg1.arg2)
-    else
-        return BinaryOperation{*}(arg1, arg2)
-    end
 end
 
 function evaluate(::typeof(*), arg1::Union{Sym, Zero, KrD}, arg2::KrD)
@@ -130,7 +110,7 @@ end
 #     end
 # end
 
-function evaluate(::typeof(*), arg1::Zero, arg2::Union{Sym, BinaryOperation, UnaryOperation})
+function evaluate(::typeof(*), arg1::Zero, arg2::Sym)
     return evaluate(*, arg2, arg1)
 end
 
@@ -138,7 +118,7 @@ function evaluate(::typeof(*), arg1, arg2::Zero)
     contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     if isempty(contracting_index) # One arg is a scalar or the indices are incompatible.
-        return BinaryOperation{*}(arg1, arg2)
+        return Zero(arg1.indices..., arg2.indices...)
     end
 
     new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
