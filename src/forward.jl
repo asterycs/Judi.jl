@@ -11,9 +11,7 @@ end
 
 function diff(sym::Sym, wrt::Sym)
     if sym.id == wrt.id
-        if sym.indices == wrt.indices
-            return Zero(sym.indices...)
-        end
+        @assert length(sym.indices) == length(wrt.indices)
 
         D = nothing
 

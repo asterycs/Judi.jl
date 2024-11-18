@@ -95,6 +95,8 @@ struct Sym <: SymbolicValue
     function Sym(id, indices::LowerOrUpperIndex...)
         # Convert type
         indices = LowerOrUpperIndex[i for i ∈ indices]
+
+        # TODO: Allow this, it denotes the trace
         if !isempty(eliminated_indices(indices))
             throw(DomainError(indices, "Indices of $id are invalid"))
         end
@@ -121,9 +123,6 @@ struct KrD <: SymbolicValue
 
     function KrD(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
-        if isempty(eliminate_indices(indices))
-            throw(DomainError(indices, "Indices $indices of δ are invalid"))
-        end
 
         new(indices)
     end

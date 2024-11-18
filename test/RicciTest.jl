@@ -23,10 +23,6 @@ end
     @test left != Lower(1)
 end
 
-@testset "KrD constructor throws on invalid input" begin
-    @test_throws DomainError KrD(Upper(2), Lower(2))
-end
-
 @testset "KrD equality operator" begin
     left = KrD(Upper(1), Lower(2))
     @test KrD(Upper(1), Lower(2)) == KrD(Upper(1), Lower(2))

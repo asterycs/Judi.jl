@@ -107,7 +107,7 @@ end
     y = Sym("y", Upper(3))
     A = Sym("A", Upper(4), Lower(5))
 
-    @test MD.diff(x, x) == Zero(Upper(2))
+    @test MD.diff(x, x) == KrD(Upper(2), Lower(2))
     @test MD.diff(y, x) == Zero(Upper(3), Lower(2))
     @test MD.diff(A, x) == Zero(Upper(4), Lower(5), Lower(2))
 
