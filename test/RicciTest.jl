@@ -290,7 +290,7 @@ end
     A = Sym("A", Upper(1), Lower(2))
 
     A_transpose = evaluate(A')
-    @test A_transpose == Sym("A", Upper(2), Lower(1))
+    @test A_transpose == Sym("A", Lower(1), Upper(2))
 end
 
 @testset "can_contract" begin
@@ -413,8 +413,8 @@ end
     @test to_std_string(contract(x, A)) == "A * x"
     @test to_std_string(contract(A, y')) == "yᵀ * A"
     @test to_std_string(contract(y', A)) == "yᵀ * A"
-    # @test to_std_string(contract(x', A')) == "xᵀ * Aᵀ"
-    # @test to_std_string(contract(A', x')) == "xᵀ * Aᵀ"
-    # @test to_std_string(contract(A', y)) == "Aᵀ * y"
-    # @test to_std_string(contract(y, A')) == "Aᵀ * y"
+    @test to_std_string(contract(x', A')) == "xᵀ * Aᵀ"
+    @test to_std_string(contract(A', x')) == "xᵀ * Aᵀ"
+    @test to_std_string(contract(A', y)) == "Aᵀ * y"
+    @test to_std_string(contract(y, A')) == "Aᵀ * y"
 end

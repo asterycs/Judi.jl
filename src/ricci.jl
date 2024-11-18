@@ -416,7 +416,7 @@ function *(arg1::SymbolicValue, arg2::SymbolicValue)
         arg1_free_indices = get_free_indices(arg1)
         arg2_free_indices = get_free_indices(arg2)
 
-        return BinaryOperation{*}(update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])), arg2)
+        return BinaryOperation{*}(update_index(unwrap(arg1), arg1_free_indices[end], flip(arg2_free_indices[1])), unwrap(arg2))
     end
 end
 
@@ -440,44 +440,50 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
-function adjoint(arg::UnaryOperation)
+struct Adjoint <: SymbolicValue
+    expr
+end
+
+function get_free_indices(arg::Adjoint)
+    free_indices = get_free_indices(arg.expr)
+
+    @assert length(free_indices) <= 2
+
+    return reverse(LowerOrUpperIndex[flip(i) for i ∈ free_indices])
+end
+
+function unwrap(arg::Adjoint)
     free_indices = get_free_indices(arg)
 
-    if length(free_indices) >= 1
-        throw(DomainError("Adjoint is ambigous"))
+    @assert length(free_indices) <= 2
+
+    e = arg.expr
+
+    for i ∈ free_indices
+        e = BinaryOperation{*}(e, KrD(i, i))
     end
 
-    return BinaryOperation{*}(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
+    return e
+end
+
+function unwrap(arg)
+    return arg
+end
+
+function adjoint(arg::UnaryOperation)
+    return Adjoint(arg)
 end
 
 function adjoint(arg::BinaryOperation{*})
-    free_indices = get_free_indices(arg)
-
-    if length(free_indices) > 1
-        throw(DomainError("Adjoint is ambigous"))
-    end
-
-    return BinaryOperation{*}(arg, KrD(flip(free_indices[1]), flip(free_indices[1])))
+    return Adjoint(arg)
 end
 
 function adjoint(arg::BinaryOperation{+})
-    return BinaryOperation{+}(adjoint(arg.arg1), adjoint(arg.arg2))
+    return Adjoint(arg)
 end
 
 function adjoint(arg::Union{Sym, KrD, Zero})
-    ids = get_free_indices(arg)
-
-    if length(ids) == 1
-        return BinaryOperation{*}(arg, KrD(flip(ids[1]), flip(ids[1])))
-    elseif length(ids) == 2
-        tmp_index = get_next_anonymous_letter()
-        op1 = BinaryOperation{*}(arg, KrD(flip(ids[1]), Upper(tmp_index)))
-        op2 = BinaryOperation{*}(op1, KrD(flip(ids[2]), flip(ids[1])))
-        op3 = BinaryOperation{*}(op2, KrD(Lower(tmp_index), flip(ids[2])))
-        return op3
-    else
-        throw(DomainError("Ambgious transpose"))
-    end
+    return Adjoint(arg)
 end
 
 function script(index::Lower)
@@ -588,7 +594,7 @@ function to_std_string(arg::BinaryOperation{*})
                     if typeof(arg1_ids[1]) == Lower
                         return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
                     else
-                        return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
+                        return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1)
                     end
                 end
 
@@ -596,7 +602,7 @@ function to_std_string(arg::BinaryOperation{*})
                     if typeof(arg1_ids[end]) == Upper
                         return to_std_string(arg.arg2) * " * " * to_std_string(arg.arg1)
                     else
-                        return "(" * to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2) * ")ᵀ"
+                        return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2) * "ᵀ"
                     end
                 end
 

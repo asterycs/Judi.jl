@@ -47,6 +47,18 @@ function diff(arg::BinaryOperation{+}, wrt::Sym)
     BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
 end
 
+function evaluate(sym::Adjoint)
+    free_indices = get_free_indices(sym)
+
+    e = sym.expr
+
+    for i ∈ free_indices
+        e = BinaryOperation{*}(e, KrD(i, i))
+    end
+
+    return evaluate(e)
+end
+
 function evaluate(sym::Sym)
     sym
 end
