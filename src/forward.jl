@@ -30,6 +30,8 @@ function diff(sym::Sym, wrt::Sym)
 end
 
 function diff(arg::KrD, wrt::Sym)
+    # This is arguably inconsistent with Sym but the result will be Zero anyway
+    # and this way the double indices are confined to the KrDs.
     return BinaryOperation{*}(arg, Zero([flip(i) for i ∈ wrt.indices]...))
 end
 
