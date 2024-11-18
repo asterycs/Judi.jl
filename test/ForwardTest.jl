@@ -32,7 +32,7 @@ end
     x = Sym("x", Upper(1))
     z = Sym("z")
 
-    @test evaluate(A') == Sym("A", Upper(2), Lower(1))
+    @test evaluate(A') == Sym("A", Lower(1), Upper(2))
     @test evaluate(x') == Sym("x", Lower(1))
     # @test evaluate(z') == Sym("z") # Not implemented
 end
