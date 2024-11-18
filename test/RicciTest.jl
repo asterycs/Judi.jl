@@ -100,17 +100,6 @@ end
     @test MD.eliminate_indices(IdxUnion[]) == IdxUnion[]
 end
 
-@testset "eliminate_indices with diagonal contraction" begin
-    IdxUnion = MD.LowerOrUpperIndex
-
-    indices = IdxUnion[Upper(1); Lower(1); Lower(1)]
-
-    output = MD.eliminate_indices(indices)
-
-    @test output == []
-    @test MD.eliminate_indices(IdxUnion[]) == IdxUnion[]
-end
-
 @testset "eliminated_indices retains correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
@@ -120,17 +109,6 @@ end
 
     @test output == IdxUnion[Lower(9); Upper(9); Upper(3); Lower(3); Upper(9); Lower(9)]
     @test MD.eliminated_indices(IdxUnion[]) == IdxUnion[]
-end
-
-@testset "eliminated_indices with diagonal contraction" begin
-    IdxUnion = MD.LowerOrUpperIndex
-
-    indices = IdxUnion[Upper(1); Lower(1); Lower(1)]
-
-    output = MD.eliminate_indices(indices)
-
-    @test output == [Upper(1); Lower(1); Lower(1)]
-    @test MD.eliminate_indices(IdxUnion[]) == IdxUnion[]
 end
 
 @testset "get_free_indices with Sym-Sym and one matching pair" begin
