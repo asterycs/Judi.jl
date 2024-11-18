@@ -581,11 +581,19 @@ function to_std_string(arg::BinaryOperation{*})
             if length(arg1_ids) == 2 && length(arg2_ids) == 1
 
                 if flip(arg1_ids[1]) == arg2_ids[1]
-                    return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1)
+                    if typeof(arg1_ids[1]) == Upper
+                        return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1)
+                    else
+                        return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
+                    end
                 end
 
                 if flip(arg1_ids[end]) == arg2_ids[1]
-                    return to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2)
+                    if typeof(arg1_ids[end]) == Lower
+                        return to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2)
+                    else
+                        return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1) * "ᵀ"
+                    end
                 end
 
                 @assert false "Unreachable"

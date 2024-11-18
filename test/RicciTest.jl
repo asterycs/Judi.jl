@@ -413,8 +413,8 @@ end
     @test to_std_string(contract(x, A)) == "A * x"
     @test to_std_string(contract(A, y')) == "yᵀ * A"
     @test to_std_string(contract(y', A)) == "yᵀ * A"
-    @test to_std_string(contract(x', A')) == "xᵀ * Aᵀ"
     @test to_std_string(contract(A', x')) == "xᵀ * Aᵀ"
+    @test to_std_string(contract(x', A')) == "xᵀ * Aᵀ"
     @test to_std_string(contract(A', y)) == "Aᵀ * y"
     @test to_std_string(contract(y, A')) == "Aᵀ * y"
 end
