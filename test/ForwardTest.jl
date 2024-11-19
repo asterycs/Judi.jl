@@ -21,10 +21,10 @@ end
     d1 = KrD(Lower(1), Upper(3))
     d2 = KrD(Upper(2), Lower(3))
 
-    @test evaluate(MD.UnaryOperation(d1, A)) == Sym("A", Upper(3), Lower(2))
-    @test evaluate(MD.UnaryOperation(d1, x)) == Sym("x", Upper(3))
-    @test evaluate(MD.UnaryOperation(d1, z)) == MD.UnaryOperation(d1, z)
-    @test evaluate(MD.UnaryOperation(d2, A)) == Sym("A", Upper(1), Lower(3))
+    @test evaluate(MD.BinaryOperation{*}(A, d1)) == Sym("A", Upper(3), Lower(2))
+    @test evaluate(MD.BinaryOperation{*}(x, d1)) == Sym("x", Upper(3))
+    @test evaluate(MD.BinaryOperation{*}(z, d1)) == MD.BinaryOperation{*}(z, d1)
+    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Sym("A", Upper(1), Lower(3))
 end
 
 @testset "evaluate transpose simple" begin
