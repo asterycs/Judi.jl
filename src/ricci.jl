@@ -151,7 +151,8 @@ function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
 end
 
 function equivalent(left::BinaryOperation{*}, right::BinaryOperation{*})
-    return equivalent(left.arg1, left.arg1) && equivalent(left.arg2, left.arg2)
+    same_types = typeof(left.arg1) == typeof(right.arg1) && typeof(left.arg2) == typeof(right.arg2)
+    return same_types && equivalent(left.arg1, left.arg1) && equivalent(left.arg2, left.arg2)
 end
 
 struct UnaryOperation <: SymbolicValue
