@@ -71,39 +71,117 @@ function evaluate(arg::UnaryOperation)
     return arg
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
-    evaluate(*, evaluate(arg2), arg1)
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Zero)
+    return _evaluate_zero_times_bin(arg1, arg2)
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
-    if can_contract(arg1.arg2, arg2)
-        new_arg2 = evaluate(*, arg1.arg2, arg2)
-        return BinaryOperation{*}(arg1.arg1, new_arg2)
-    elseif can_contract(arg1.arg1, arg2)
-        new_arg1 = evaluate(*, arg1.arg1, arg2)
-        return BinaryOperation{*}(new_arg1, arg1.arg2)
+function evaluate(::typeof(*), arg1::Zero, arg2::BinaryOperation{*})
+    return _evaluate_zero_times_bin(arg1, arg2)
+end
+
+function _evaluate_zero_times_bin(arg1::Union{BinaryOperation{*}, Zero}, arg2::Union{BinaryOperation{*}, Zero})
+    free_ids_left = eliminate_indices([get_free_indices(arg1.arg1); get_free_indices(arg1.arg2)])
+
+    free_indices = eliminate_indices([free_ids_left; arg2.indices])
+
+    return Zero(free_indices...)
+end
+
+function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::BinaryOperation{*})
+    if can_contract(arg1, arg2.arg1)
+        new_arg1 = evaluate(*, arg1, arg2.arg1)
+        return BinaryOperation{*}(new_arg1, arg2.arg2)
     else
         return BinaryOperation{*}(arg1, arg2)
     end
+end
+
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Sym, KrD})
+    if can_contract(arg1.arg2, arg2)
+        new_arg2 = evaluate(*, arg1.arg2, arg2)
+        return BinaryOperation{*}(arg1.arg1, new_arg2)
+    else
+        return BinaryOperation{*}(arg1, arg2)
+    end
+end
+
+function evaluate(::typeof(*), arg1::Zero, arg2::Sym)
+    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
+
+    return Zero(new_indices...)
+end
+
+function evaluate(::typeof(*), arg1::Sym, arg2::Zero)
+    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
+
+    return Zero(new_indices...)
+end
+
+function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
+    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+
+    if isempty(contracting_index)
+        return Zero(arg1.indices..., arg2.indices...)
+    end
+
+    @assert length(contracting_index) == 2
+    @assert can_contract(arg1, arg2)
+    @assert length(arg2.indices) == 2
+
+    new_indices = LowerOrUpperIndex[]
+
+    for i ∈ arg1.indices
+        if flip(i) == arg2.indices[1]
+            push!(new_indices, arg2.indices[2])
+        elseif flip(i) == arg2.indices[2]
+            push!(new_indices, arg2.indices[1])
+        else
+            push!(new_indices, i)
+        end
+    end
+
+    return Zero(new_indices...)
+end
+
+function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
+    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+
+    if isempty(contracting_index)
+        return Zero(arg1.indices..., arg2.indices...)
+    end
+
+    @assert length(contracting_index) == 2
+    @assert can_contract(arg1, arg2)
+    @assert length(arg2.indices) == 2
+
+    new_indices = LowerOrUpperIndex[]
+
+    for i ∈ arg1.indices
+        if flip(i) == arg2.indices[1]
+            push!(new_indices, arg2.indices[2])
+        elseif flip(i) == arg2.indices[2]
+            push!(new_indices, arg2.indices[1])
+        else
+            push!(new_indices, i)
+        end
+    end
+
+    return Zero(new_indices...)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
     evaluate(*, arg2, arg1)
 end
 
-function evaluate(::typeof(*), arg1::Union{Sym, Zero, KrD}, arg2::KrD)
+function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
     contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
-    if isempty(contracting_index) # One arg is a scalar or the indices are incompatible.
-        return UnaryOperation(arg2, arg1)
+    if isempty(contracting_index) # Is an outer product
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     @assert length(contracting_index) == 2
-
-    if !can_contract(arg1, arg2) # Happens if one of the arguments is self-contracting
-        return UnaryOperation(arg2, arg1)
-    end
-
+    @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
     newarg = deepcopy(arg1)
@@ -138,39 +216,33 @@ end
 #     end
 # end
 
-function evaluate(::typeof(*), arg1::Zero, arg2::Sym)
-    return evaluate(*, arg2, arg1)
-end
-
-function evaluate(::typeof(*), arg1, arg2::Zero)
-    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
-
-    if isempty(contracting_index) # One arg is a scalar or the indices are incompatible.
-        return Zero(arg1.indices..., arg2.indices...)
-    end
-
-    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
-
-    return Zero(new_indices...)
-end
-
 function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
     arg1
 end
 
+function are_indices_equivalent(arg1, arg2)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    return all([typeof(l) == typeof(r) for (l, r) ∈ zip(arg1_indices, arg2_indices)]) && length(arg1_indices) == length(arg2_indices)
+end
+
 function evaluate(::typeof(+), arg1::Zero, arg2::Zero)
-    @assert all(typeof.(arg1.indices) .== typeof.(arg2.indices))
+    @assert are_indices_equivalent(arg1, arg2)
 
     arg1
 end
 
-# TODO: Check that the indices are the same
 function evaluate(::typeof(+), arg1::Zero, arg2)
-    evaluate(arg2)
+    @assert are_indices_equivalent(arg1, arg2)
+
+    return evaluate(arg2)
 end
 
 function evaluate(::typeof(+), arg1, arg2::Zero)
-    evaluate(arg1)
+    @assert are_indices_equivalent(arg1, arg2)
+
+    return evaluate(arg1)
 end
 
 function evaluate(::typeof(+), arg1, arg2)
