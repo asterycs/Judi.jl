@@ -568,45 +568,28 @@ function to_std_string(arg::BinaryOperation{*})
         return arg
     else
         if length(get_free_indices(arg)) == 1 # result is a vector
-            if length(arg1_ids) == 2 && length(arg2_ids) == 1
+            arg1 = arg.arg1
+            arg2 = arg.arg2
 
-                if flip(arg1_ids[1]) == arg2_ids[1]
-                    if typeof(arg1_ids[1]) == Upper
-                        return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1)
-                    else
-                        return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
-                    end
+            if length(arg1_ids) == 1 && length(arg2_ids) == 2
+                arg1_ids, arg2_ids = arg2_ids, arg1_ids
+                arg1, arg2 = arg2, arg1
+            end
+
+            if flip(arg1_ids[1]) == arg2_ids[1]
+                if typeof(arg1_ids[1]) == Upper
+                    return to_std_string(arg2) * "ᵀ * " * to_std_string(arg1)
+                else
+                    return to_std_string(arg1) * "ᵀ * " * to_std_string(arg2)
                 end
+            end
 
-                if flip(arg1_ids[end]) == arg2_ids[1]
-                    if typeof(arg1_ids[end]) == Lower
-                        return to_std_string(arg.arg1) * " * " * to_std_string(arg.arg2)
-                    else
-                        return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1) * "ᵀ"
-                    end
+            if flip(arg1_ids[end]) == arg2_ids[1]
+                if typeof(arg1_ids[end]) == Lower
+                    return to_std_string(arg1) * " * " * to_std_string(arg2)
+                else
+                    return to_std_string(arg2) * "ᵀ * " * to_std_string(arg1) * "ᵀ"
                 end
-
-                @assert false "Unreachable"
-            elseif length(arg1_ids) == 1 && length(arg2_ids) == 2
-                if flip(arg1_ids[1]) == arg2_ids[1]
-                    if typeof(arg1_ids[1]) == Lower
-                        return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2)
-                    else
-                        return to_std_string(arg.arg2) * "ᵀ * " * to_std_string(arg.arg1)
-                    end
-                end
-
-                if flip(arg1_ids[1]) == arg2_ids[end]
-                    if typeof(arg1_ids[end]) == Upper
-                        return to_std_string(arg.arg2) * " * " * to_std_string(arg.arg1)
-                    else
-                        return to_std_string(arg.arg1) * "ᵀ * " * to_std_string(arg.arg2) * "ᵀ"
-                    end
-                end
-
-                @assert false "Unreachable"
-            else
-                @assert false "Not implemented"
             end
         end
     end
