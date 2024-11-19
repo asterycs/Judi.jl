@@ -400,6 +400,41 @@ end
 #     @test op2.arg2 == z
 # end
 
+@testset "to_string output is correct for primitive types" begin
+    A = Sym("A", Upper(1), Lower(2))
+    B = Sym("B", Upper(1), Upper(2), Upper(3), Lower(4), Upper(5), Lower(6), Lower(7))
+    x = Sym("x", Upper(2))
+    y = Sym("y", Lower(1))
+    z = Sym("z")
+    d1 = KrD(Upper(1), Upper(1))
+    d2 = KrD(Upper(3), Lower(4))
+    zero = Zero(Upper(1), Lower(3), Lower(4))
+
+    @test to_string(A) == "A¹₂"
+    @test to_string(B) == "B¹²³₄⁵₆₇"
+    @test to_string(x) == "x²"
+    @test to_string(y) == "y₁"
+    @test to_string(z) == "z"
+    @test to_string(d1) == "δ¹¹"
+    @test to_string(d2) == "δ³₄"
+    @test to_string(zero) == "0¹₃₄"
+end
+
+@testset "to_string output is correct for BinaryOperation" begin
+    a = Sym("a")
+    b = Sym("b")
+
+    mul = MD.BinaryOperation{*}(a, b)
+    add = MD.BinaryOperation{+}(a, b)
+
+    @test to_string(mul) == "a * b"
+    @test to_string(add) == "a + b"
+    @test to_string(MD.BinaryOperation{+}(mul, b)) == "a * b + b"
+    @test to_string(MD.BinaryOperation{+}(mul, mul)) == "a * b + a * b"
+    @test to_string(MD.BinaryOperation{*}(mul, mul)) == "a * b * a * b"
+    @test to_string(MD.BinaryOperation{*}(add, add)) == "(a + b) * (a + b)"
+end
+
 @testset "to_std_string output is correct with matrix-vector contraction" begin
     A = Sym("A", Upper(1), Lower(2))
     x = Sym("x", Upper(2))

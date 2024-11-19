@@ -3,6 +3,7 @@ import Base.hash
 import Base.*
 import Base.+
 import Base.adjoint
+import Base.show
 
 export Upper, Lower
 export Sym, KrD, Zero
@@ -589,4 +590,8 @@ function to_std_string(arg::BinaryOperation{*})
             end
         end
     end
+end
+
+function Base.show(io::IO, expr::SymbolicValue)
+    print(io, to_string(expr))
 end
