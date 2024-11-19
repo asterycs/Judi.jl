@@ -23,7 +23,7 @@ end
 
     @test evaluate(MD.BinaryOperation{*}(A, d1)) == Sym("A", Upper(3), Lower(2))
     @test evaluate(MD.BinaryOperation{*}(x, d1)) == Sym("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(z, d1)) == MD.BinaryOperation{*}(z, d1)
+    @test evaluate(MD.BinaryOperation{*}(z, d1)) == MD.BinaryOperation{*}(d1, z)
     @test evaluate(MD.BinaryOperation{*}(A, d2)) == Sym("A", Upper(1), Lower(3))
 end
 
@@ -185,6 +185,6 @@ end
 
     differential_form = MD.D(e, Sym("x", Upper(4)))
 
-    @test equivalent(differential_form.arg1, x' * A)
-    @test equivalent(differential_form.arg2, MD.BinaryOperation{*}(x', Sym("A", Lower(1), Lower(2))))
+    @test equivalent(differential_form.arg1, evaluate(x' * A))
+    @test equivalent(differential_form.arg2, evaluate(MD.BinaryOperation{*}(x', Sym("A", Lower(1), Lower(2)))))
 end
