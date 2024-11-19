@@ -525,11 +525,23 @@ function to_string(arg::Zero)
 end
 
 function to_string(arg::UnaryOperation)
-    "(" * to_string(arg.arg) * " " * to_string(arg.op) * ")"
+    @assert false, "Not implemented"
 end
 
-function to_string(arg::BinaryOperation{Op}) where Op
-    "(" * to_string(arg.arg1) * " " * string(Op) * " " * to_string(arg.arg2) * ")"
+function parenthesize(arg)
+    return to_string(arg)
+end
+
+function parenthesize(arg::BinaryOperation{+})
+    return "(" * to_string(arg) * ")"
+end
+
+function to_string(arg::BinaryOperation{*})
+    return parenthesize(arg.arg1) * " * " * parenthesize(arg.arg2)
+end
+
+function to_string(arg::BinaryOperation{+})
+    return to_string(arg.arg1) * " + " * to_string(arg.arg2)
 end
 
 function to_std_string(arg::Sym)
@@ -537,23 +549,7 @@ function to_std_string(arg::Sym)
 end
 
 function to_std_string(arg::UnaryOperation)
-    if typeof(arg.op) == KrD
-        if typeof(arg.op) == typeof(arg.op) # is a transpose
-            free_indices = get_free_indices(arg.arg)
-
-            if length(free_indices) != 1
-                throw(DomainError("Ambigous transpose"))
-            end
-
-            @assert flip(free_indices[1]) == arg.op.indices[1]
-
-            return "(" * to_std_string(arg.arg) * ")ᵀ"
-        else
-            throw(DomainError("Cannot convert expression to std notation"))
-        end
-    else
-        return to_std_string(arg.arg) * to_std_string(arg.op)
-    end
+    @assert false, "Not implemented"
 end
 
 function to_std_string(arg::BinaryOperation{+})
