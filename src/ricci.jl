@@ -66,20 +66,9 @@ end
 
 global const NEXT_LETTER = Ref{Letter}(1)
 
-# TODO: Used for implementing e.g. matrix transpose until
-# proper Sym indexing is in place.
-global const NEXT_ANONYMOUS_LETTER = Ref{Letter}(-1)
-
 function get_next_letter()
     tmp = NEXT_LETTER[]
     NEXT_LETTER[] += 1
-
-    return tmp
-end
-
-function get_next_anonymous_letter()
-    tmp = NEXT_ANONYMOUS_LETTER[]
-    NEXT_ANONYMOUS_LETTER[] -= 1
 
     return tmp
 end
