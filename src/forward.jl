@@ -128,17 +128,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
-    new_indices = LowerOrUpperIndex[]
-
-    for i ∈ arg1.indices
-        if flip(i) == arg2.indices[1]
-            push!(new_indices, arg2.indices[2])
-        elseif flip(i) == arg2.indices[2]
-            push!(new_indices, arg2.indices[1])
-        else
-            push!(new_indices, i)
-        end
-    end
+    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     return Zero(new_indices...)
 end
@@ -154,23 +144,36 @@ function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
-    new_indices = LowerOrUpperIndex[]
-
-    for i ∈ arg1.indices
-        if flip(i) == arg2.indices[1]
-            push!(new_indices, arg2.indices[2])
-        elseif flip(i) == arg2.indices[2]
-            push!(new_indices, arg2.indices[1])
-        else
-            push!(new_indices, i)
-        end
-    end
+    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     return Zero(new_indices...)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
-    evaluate(*, arg2, arg1)
+    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+
+    if isempty(contracting_index) # Is an outer product
+        return BinaryOperation{*}(arg1, arg2)
+    end
+
+    @assert length(contracting_index) == 2
+    @assert can_contract(arg1, arg2)
+    @assert length(arg1.indices) == 2
+
+    newarg = deepcopy(arg2)
+    empty!(newarg.indices)
+
+    for i ∈ arg2.indices
+        if flip(i) == arg1.indices[1]
+            push!(newarg.indices, arg1.indices[2])
+        elseif flip(i) == arg1.indices[2]
+            push!(newarg.indices, arg1.indices[1])
+        else
+            push!(newarg.indices, i)
+        end
+    end
+
+    newarg
 end
 
 function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
@@ -224,7 +227,17 @@ function are_indices_equivalent(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    return all([typeof(l) == typeof(r) for (l, r) ∈ zip(arg1_indices, arg2_indices)]) && length(arg1_indices) == length(arg2_indices)
+    if length(arg1_indices) != length(arg2_indices)
+        return false
+    end
+
+    U = union(arg1_indices, arg2_indices)
+
+    if length(U) == length(arg1_indices)
+        return true
+    end
+
+    return false
 end
 
 function evaluate(::typeof(+), arg1::Zero, arg2::Zero)
