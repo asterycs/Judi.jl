@@ -9,13 +9,13 @@ function D(expr, wrt::Sym)
     linear_form
 end
 
-function diff(sym::Sym, wrt::Sym)
-    if sym.id == wrt.id
-        @assert length(sym.indices) == length(wrt.indices)
+function diff(arg::Sym, wrt::Sym)
+    if arg.id == wrt.id
+        @assert length(arg.indices) == length(wrt.indices)
 
         D = nothing
 
-        for (u,l) ∈ zip(sym.indices, wrt.indices)
+        for (u,l) ∈ zip(arg.indices, wrt.indices)
             if isnothing(D)
                 D = KrD(u, flip(l))
             else
@@ -25,7 +25,7 @@ function diff(sym::Sym, wrt::Sym)
 
         return D
     else
-        return Zero(sym.indices..., [flip(i) for i ∈ wrt.indices]...)
+        return Zero(arg.indices..., [flip(i) for i ∈ wrt.indices]...)
     end
 end
 
@@ -47,10 +47,10 @@ function diff(arg::BinaryOperation{+}, wrt::Sym)
     BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
 end
 
-function evaluate(sym::Adjoint)
-    free_indices = get_free_indices(sym)
+function evaluate(arg::Adjoint)
+    free_indices = get_free_indices(arg)
 
-    e = sym.expr
+    e = arg.expr
 
     for i ∈ free_indices
         e = BinaryOperation{*}(e, KrD(i, i))
@@ -59,8 +59,8 @@ function evaluate(sym::Adjoint)
     return evaluate(e)
 end
 
-function evaluate(sym::Sym)
-    sym
+function evaluate(arg::Union{Sym, KrD, Zero, Real})
+    arg
 end
 
 function evaluate(arg::UnaryOperation)
@@ -268,8 +268,4 @@ end
 
 function evaluate(op::BinaryOperation{+})
     evaluate(+, evaluate(op.arg1), evaluate(op.arg2))
-end
-
-function evaluate(sym::Union{Sym, KrD, Zero, Real})
-    sym
 end
