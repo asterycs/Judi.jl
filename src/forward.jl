@@ -207,11 +207,11 @@ function evaluate(::typeof(*), arg1, arg2)
     return BinaryOperation{*}(evaluate(arg1), evaluate(arg2))
 end
 
-# function evaluate(::typeof(*), arg1::SymbolicValue, arg2::Real)
+# function evaluate(::typeof(*), arg1::TensorValue, arg2::Real)
 #     evaluate(*, arg2, arg1)
 # end
 
-# function evaluate(::typeof(*), arg1::Real, arg2::SymbolicValue)
+# function evaluate(::typeof(*), arg1::Real, arg2::TensorValue)
 #     if arg1 == 1
 #         return arg2
 #     else

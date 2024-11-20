@@ -74,11 +74,11 @@ function get_next_letter()
     return tmp
 end
 
-abstract type SymbolicValue end
+abstract type TensorValue end
 
 IndexSet = Vector{LowerOrUpperIndex}
 
-struct Sym <: SymbolicValue
+struct Sym <: TensorValue
     id::String
     indices::IndexSet
 
@@ -108,7 +108,7 @@ function equivalent(left::Sym, right::Sym)
     return left.id == right.id && all(typeof.(left.indices) .== typeof.(right.indices))
 end
 
-struct KrD <: SymbolicValue
+struct KrD <: TensorValue
     indices::IndexSet
 
     function KrD(indices::LowerOrUpperIndex...)
@@ -126,7 +126,7 @@ function equivalent(left::KrD, right::KrD)
     return all(typeof.(left.indices) .== typeof.(right.indices))
 end
 
-struct Zero <: SymbolicValue
+struct Zero <: TensorValue
     indices::IndexSet
 
     function Zero(indices::LowerOrUpperIndex...)
@@ -140,9 +140,9 @@ function ==(left::Zero, right::Zero)
     return left.indices == right.indices
 end
 
-struct BinaryOperation{Op} <: SymbolicValue where Op
-    arg1::SymbolicValue
-    arg2::SymbolicValue
+struct BinaryOperation{Op} <: TensorValue where Op
+    arg1::TensorValue
+    arg2::TensorValue
 end
 
 function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
@@ -156,9 +156,9 @@ function equivalent(left::BinaryOperation{*}, right::BinaryOperation{*})
     return same_types && equivalent(left.arg1, left.arg1) && equivalent(left.arg2, left.arg2)
 end
 
-struct UnaryOperation <: SymbolicValue
-    op::SymbolicValue
-    arg::SymbolicValue
+struct UnaryOperation <: TensorValue
+    op::TensorValue
+    arg::TensorValue
 end
 
 function ==(left::UnaryOperation, right::UnaryOperation)
@@ -396,7 +396,7 @@ function is_valid_matrix_multiplication(arg1, arg2)
     return true
 end
 
-function *(arg1::SymbolicValue, arg2::SymbolicValue)
+function *(arg1::TensorValue, arg2::TensorValue)
     if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
         return BinaryOperation{*}(arg1, arg2)
     else
@@ -411,7 +411,7 @@ function *(arg1::SymbolicValue, arg2::SymbolicValue)
     end
 end
 
-function +(arg1::SymbolicValue, arg2::SymbolicValue)
+function +(arg1::TensorValue, arg2::TensorValue)
     BinaryOperation{+}(arg1, arg2)
 end
 
@@ -431,7 +431,7 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
-struct Adjoint <: SymbolicValue
+struct Adjoint <: TensorValue
     expr
 end
 
@@ -592,6 +592,6 @@ function to_std_string(arg::BinaryOperation{*})
     end
 end
 
-function Base.show(io::IO, expr::SymbolicValue)
+function Base.show(io::IO, expr::TensorValue)
     print(io, to_string(expr))
 end
