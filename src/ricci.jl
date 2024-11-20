@@ -538,7 +538,7 @@ function parenthesize(arg::BinaryOperation{+})
 end
 
 function to_string(arg::BinaryOperation{*})
-    return parenthesize(arg.arg1) * " * " * parenthesize(arg.arg2)
+    return parenthesize(arg.arg1) * parenthesize(arg.arg2)
 end
 
 function to_string(arg::BinaryOperation{+})

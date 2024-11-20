@@ -427,12 +427,12 @@ end
     mul = MD.BinaryOperation{*}(a, b)
     add = MD.BinaryOperation{+}(a, b)
 
-    @test to_string(mul) == "a * b"
+    @test to_string(mul) == "ab"
     @test to_string(add) == "a + b"
-    @test to_string(MD.BinaryOperation{+}(mul, b)) == "a * b + b"
-    @test to_string(MD.BinaryOperation{+}(mul, mul)) == "a * b + a * b"
-    @test to_string(MD.BinaryOperation{*}(mul, mul)) == "a * b * a * b"
-    @test to_string(MD.BinaryOperation{*}(add, add)) == "(a + b) * (a + b)"
+    @test to_string(MD.BinaryOperation{+}(mul, b)) == "ab + b"
+    @test to_string(MD.BinaryOperation{+}(mul, mul)) == "ab + ab"
+    @test to_string(MD.BinaryOperation{*}(mul, mul)) == "abab"
+    @test to_string(MD.BinaryOperation{*}(add, add)) == "(a + b)(a + b)"
 end
 
 @testset "to_std_string output is correct with matrix-vector contraction" begin
@@ -444,12 +444,12 @@ end
         return evaluate(MD.BinaryOperation{*}(l, r))
     end
 
-    @test to_std_string(contract(A, x)) == "A * x"
-    @test to_std_string(contract(x, A)) == "A * x"
-    @test to_std_string(contract(A, y')) == "yᵀ * A"
-    @test to_std_string(contract(y', A)) == "yᵀ * A"
-    @test to_std_string(contract(A', x')) == "xᵀ * Aᵀ"
-    @test to_std_string(contract(x', A')) == "xᵀ * Aᵀ"
-    @test to_std_string(contract(A', y)) == "Aᵀ * y"
-    @test to_std_string(contract(y, A')) == "Aᵀ * y"
+    @test to_std_string(contract(A, x)) == "Ax"
+    @test to_std_string(contract(x, A)) == "Ax"
+    @test to_std_string(contract(A, y')) == "yᵀA"
+    @test to_std_string(contract(y', A)) == "yᵀA"
+    @test to_std_string(contract(A', x')) == "xᵀAᵀ"
+    @test to_std_string(contract(x', A')) == "xᵀAᵀ"
+    @test to_std_string(contract(A', y)) == "Aᵀy"
+    @test to_std_string(contract(y, A')) == "Aᵀy"
 end
