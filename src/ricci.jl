@@ -575,17 +575,17 @@ function to_std_string(arg::BinaryOperation{*})
 
             if flip(arg1_ids[1]) == arg2_ids[1]
                 if typeof(arg1_ids[1]) == Upper
-                    return to_std_string(arg2) * "ᵀ * " * to_std_string(arg1)
+                    return to_std_string(arg2) * "ᵀ" * to_std_string(arg1)
                 else
-                    return to_std_string(arg1) * "ᵀ * " * to_std_string(arg2)
+                    return to_std_string(arg1) * "ᵀ" * to_std_string(arg2)
                 end
             end
 
             if flip(arg1_ids[end]) == arg2_ids[1]
                 if typeof(arg1_ids[end]) == Lower
-                    return to_std_string(arg1) * " * " * to_std_string(arg2)
+                    return to_std_string(arg1) * "" * to_std_string(arg2)
                 else
-                    return to_std_string(arg2) * "ᵀ * " * to_std_string(arg1) * "ᵀ"
+                    return to_std_string(arg2) * "ᵀ" * to_std_string(arg1) * "ᵀ"
                 end
             end
         end
