@@ -12,4 +12,4 @@ This library implements symbolic matrix differentiation. The implementation is b
 
 ### Current status
 
-This library is still a prototype. Many details are still missing and the behavior of the existing parts are changing frequently. Most notably, a user friendly API is still missing. The user currently has to know a bit of Ricci notation in order to use it.
+This library is currently in prototype stage. Many details are still missing and the behavior of the existing parts are changing frequently. Most notably, a user friendly API is still missing. The user currently has to know a bit of Ricci notation in order to use it.
