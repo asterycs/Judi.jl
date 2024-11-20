@@ -2,14 +2,14 @@ export evaluate
 
 export D
 
-function D(expr, wrt::Sym)
+function D(expr, wrt::Tensor)
     linear_form = diff(expr, wrt)
     linear_form = evaluate(linear_form)
 
     linear_form
 end
 
-function diff(arg::Sym, wrt::Sym)
+function diff(arg::Tensor, wrt::Tensor)
     if arg.id == wrt.id
         @assert length(arg.indices) == length(wrt.indices)
 
@@ -29,21 +29,21 @@ function diff(arg::Sym, wrt::Sym)
     end
 end
 
-function diff(arg::KrD, wrt::Sym)
-    # This is arguably inconsistent with Sym but the result will be Zero anyway
+function diff(arg::KrD, wrt::Tensor)
+    # This is arguably inconsistent with Tensor but the result will be Zero anyway
     # and this way the double indices are confined to the KrDs.
     return BinaryOperation{*}(arg, Zero([flip(i) for i ∈ wrt.indices]...))
 end
 
-function diff(arg::UnaryOperation, wrt::Sym)
+function diff(arg::UnaryOperation, wrt::Tensor)
     UnaryOperation(arg.op, diff(arg.arg, wrt))
 end
 
-function diff(arg::BinaryOperation{*}, wrt::Sym)
+function diff(arg::BinaryOperation{*}, wrt::Tensor)
     BinaryOperation{+}(BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)), BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2))
 end
 
-function diff(arg::BinaryOperation{+}, wrt::Sym)
+function diff(arg::BinaryOperation{+}, wrt::Tensor)
     BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
 end
 
@@ -59,7 +59,7 @@ function evaluate(arg::Adjoint)
     return evaluate(e)
 end
 
-function evaluate(arg::Union{Sym, KrD, Zero, Real})
+function evaluate(arg::Union{Tensor, KrD, Zero, Real})
     arg
 end
 
@@ -87,7 +87,7 @@ function _evaluate_zero_times_bin(arg1::Union{BinaryOperation{*}, Zero}, arg2::U
     return Zero(free_indices...)
 end
 
-function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::BinaryOperation{*})
+function evaluate(::typeof(*), arg1::Union{Tensor, KrD}, arg2::BinaryOperation{*})
     if can_contract(arg1, arg2.arg1)
         new_arg1 = evaluate(*, arg1, arg2.arg1)
         return BinaryOperation{*}(new_arg1, arg2.arg2)
@@ -96,7 +96,7 @@ function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::BinaryOperation{*})
     end
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Sym, KrD})
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Tensor, KrD})
     if can_contract(arg1.arg2, arg2)
         new_arg2 = evaluate(*, arg1.arg2, arg2)
         return BinaryOperation{*}(arg1.arg1, new_arg2)
@@ -105,13 +105,13 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Sym, KrD})
     end
 end
 
-function evaluate(::typeof(*), arg1::Zero, arg2::Sym)
+function evaluate(::typeof(*), arg1::Zero, arg2::Tensor)
     new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     return Zero(new_indices...)
 end
 
-function evaluate(::typeof(*), arg1::Sym, arg2::Zero)
+function evaluate(::typeof(*), arg1::Tensor, arg2::Zero)
     new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     return Zero(new_indices...)
@@ -149,7 +149,7 @@ function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
     return Zero(new_indices...)
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
+function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
     contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     if isempty(contracting_index) # Is an outer product
@@ -176,7 +176,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Sym)
     newarg
 end
 
-function evaluate(::typeof(*), arg1::Union{Sym, KrD}, arg2::KrD)
+function evaluate(::typeof(*), arg1::Union{Tensor, KrD}, arg2::KrD)
     contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     if isempty(contracting_index) # Is an outer product

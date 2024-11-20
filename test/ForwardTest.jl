@@ -3,10 +3,10 @@ using Test
 
 MD = MatrixDiff
 
-@testset "evaluate Sym" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(3))
-    z = Sym("z")
+@testset "evaluate Tensor" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
+    z = Tensor("z")
 
     @test evaluate(A) == A
     @test evaluate(x) == x
@@ -14,45 +14,45 @@ MD = MatrixDiff
 end
 
 @testset "evaluate KrD simple" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(1))
-    z = Sym("z")
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(1))
+    z = Tensor("z")
 
     d1 = KrD(Lower(1), Upper(3))
     d2 = KrD(Upper(2), Lower(3))
 
-    @test evaluate(MD.BinaryOperation{*}(A, d1)) == Sym("A", Upper(3), Lower(2))
-    @test evaluate(MD.BinaryOperation{*}(x, d1)) == Sym("x", Upper(3))
+    @test evaluate(MD.BinaryOperation{*}(A, d1)) == Tensor("A", Upper(3), Lower(2))
+    @test evaluate(MD.BinaryOperation{*}(x, d1)) == Tensor("x", Upper(3))
     @test evaluate(MD.BinaryOperation{*}(z, d1)) == MD.BinaryOperation{*}(d1, z)
-    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Sym("A", Upper(1), Lower(3))
+    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Tensor("A", Upper(1), Lower(3))
 end
 
 @testset "evaluate transpose simple" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(1))
-    z = Sym("z")
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(1))
+    z = Tensor("z")
 
-    @test evaluate(A') == Sym("A", Lower(1), Upper(2))
-    @test evaluate(x') == Sym("x", Lower(1))
-    # @test evaluate(z') == Sym("z") # Not implemented
+    @test evaluate(A') == Tensor("A", Lower(1), Upper(2))
+    @test evaluate(x') == Tensor("x", Lower(1))
+    # @test evaluate(z') == Tensor("z") # Not implemented
 end
 
 @testset "evaluate UnaryOperation vector-KrD" begin
-    x = Sym("x", Upper(2))
+    x = Tensor("x", Upper(2))
     d1 = KrD(Lower(2), Upper(3))
     d2 = KrD(Lower(2), Lower(2))
 
-    @test evaluate(MD.UnaryOperation(d1, x)) == Sym("x", Upper(3))
-    @test evaluate(MD.UnaryOperation(d2, x)) == Sym("x", Lower(2))
+    @test evaluate(MD.UnaryOperation(d1, x)) == Tensor("x", Upper(3))
+    @test evaluate(MD.UnaryOperation(d2, x)) == Tensor("x", Lower(2))
 end
 
 @testset "evaluate UnaryOperation matrix-KrD" begin
-    A = Sym("A", Upper(2), Lower(4))
+    A = Tensor("A", Upper(2), Lower(4))
     d1 = KrD(Lower(2), Upper(3))
     d2 = KrD(Lower(2), Lower(2))
 
-    @test evaluate(MD.UnaryOperation(d1, A)) == Sym("A", Upper(3), Lower(4))
-    @test evaluate(MD.UnaryOperation(d2, A)) == Sym("A", Lower(2), Lower(4))
+    @test evaluate(MD.UnaryOperation(d1, A)) == Tensor("A", Upper(3), Lower(4))
+    @test evaluate(MD.UnaryOperation(d2, A)) == Tensor("A", Lower(2), Lower(4))
 end
 
 @testset "evaluate UnaryOperation KrD-KrD" begin
@@ -64,25 +64,25 @@ end
 end
 
 @testset "evaluate BinaryOperation vector-KrD" begin
-    x = Sym("x", Upper(2))
+    x = Tensor("x", Upper(2))
     d1 = KrD(Lower(2), Upper(3))
     d2 = KrD(Lower(2), Lower(2))
 
-    @test evaluate(MD.BinaryOperation{*}(d1, x)) == Sym("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(x, d1)) == Sym("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(d2, x)) == Sym("x", Lower(2))
-    @test evaluate(MD.BinaryOperation{*}(x, d2)) == Sym("x", Lower(2))
+    @test evaluate(MD.BinaryOperation{*}(d1, x)) == Tensor("x", Upper(3))
+    @test evaluate(MD.BinaryOperation{*}(x, d1)) == Tensor("x", Upper(3))
+    @test evaluate(MD.BinaryOperation{*}(d2, x)) == Tensor("x", Lower(2))
+    @test evaluate(MD.BinaryOperation{*}(x, d2)) == Tensor("x", Lower(2))
 end
 
 @testset "evaluate BinaryOperation matrix-KrD" begin
-    A = Sym("A", Upper(2), Lower(4))
+    A = Tensor("A", Upper(2), Lower(4))
     d1 = KrD(Lower(2), Upper(3))
     d2 = KrD(Lower(2), Lower(2))
 
-    @test evaluate(MD.BinaryOperation{*}(d1, A)) == Sym("A", Upper(3), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(A, d1)) == Sym("A", Upper(3), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(d2, A)) == Sym("A", Lower(2), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Sym("A", Lower(2), Lower(4))
+    @test evaluate(MD.BinaryOperation{*}(d1, A)) == Tensor("A", Upper(3), Lower(4))
+    @test evaluate(MD.BinaryOperation{*}(A, d1)) == Tensor("A", Upper(3), Lower(4))
+    @test evaluate(MD.BinaryOperation{*}(d2, A)) == Tensor("A", Lower(2), Lower(4))
+    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Tensor("A", Lower(2), Lower(4))
 end
 
 @testset "evaluate BinaryOperation KrD-KrD" begin
@@ -94,32 +94,32 @@ end
 end
 
 @testset "evaluate BinaryOperation*" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(2))
-    y = Sym("y", Upper(3))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(3))
 
     @test evaluate(MD.BinaryOperation{*}(A, x)) == MD.BinaryOperation{*}(A, x)
     @test evaluate(MD.BinaryOperation{*}(A, y)) == MD.BinaryOperation{*}(A, y)
 end
 
-@testset "diff Sym" begin
-    x = Sym("x", Upper(2))
-    y = Sym("y", Upper(3))
-    A = Sym("A", Upper(4), Lower(5))
+@testset "diff Tensor" begin
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(3))
+    A = Tensor("A", Upper(4), Lower(5))
 
     @test MD.diff(x, x) == KrD(Upper(2), Lower(2))
     @test MD.diff(y, x) == Zero(Upper(3), Lower(2))
     @test MD.diff(A, x) == Zero(Upper(4), Lower(5), Lower(2))
 
-    @test MD.diff(x, Sym("x", Upper(1))) == KrD(Upper(2), Lower(1))
-    @test MD.diff(y, Sym("y", Upper(4))) == KrD(Upper(3), Lower(4))
-    @test MD.diff(A, Sym("A", Upper(6), Lower(7))) == MD.BinaryOperation{*}(KrD(Upper(4), Lower(6)), KrD(Lower(5), Upper(7)))
+    @test MD.diff(x, Tensor("x", Upper(1))) == KrD(Upper(2), Lower(1))
+    @test MD.diff(y, Tensor("y", Upper(4))) == KrD(Upper(3), Lower(4))
+    @test MD.diff(A, Tensor("A", Upper(6), Lower(7))) == MD.BinaryOperation{*}(KrD(Upper(4), Lower(6)), KrD(Lower(5), Upper(7)))
 end
 
 @testset "diff KrD" begin
-    x = Sym("x", Upper(3))
-    y = Sym("y", Lower(4))
-    A = Sym("A", Upper(5), Lower(6))
+    x = Tensor("x", Upper(3))
+    y = Tensor("y", Lower(4))
+    A = Tensor("A", Upper(5), Lower(6))
     d = KrD(Upper(1), Lower(2))
 
     @test MD.diff(d, x) == MD.BinaryOperation{*}(d, Zero(Lower(3)))
@@ -128,20 +128,20 @@ end
 end
 
 @testset "diff UnaryOperation" begin
-    x = Sym("x", Upper(2))
+    x = Tensor("x", Upper(2))
 
     op = MD.UnaryOperation(KrD(Lower(2), Lower(2)), x)
 
-    @test MD.diff(op, Sym("x", Upper(3))) == MD.UnaryOperation(KrD(Lower(2), Lower(2)), KrD(Upper(2), Lower(3)))
+    @test MD.diff(op, Tensor("x", Upper(3))) == MD.UnaryOperation(KrD(Lower(2), Lower(2)), KrD(Upper(2), Lower(3)))
 end
 
 @testset "diff BinaryOperation{*}" begin
-    x = Sym("x", Upper(2))
-    y = Sym("y", Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Lower(2))
 
     op = MD.BinaryOperation{*}(x, y)
 
-    D = MD.diff(op, Sym("x", Upper(3)))
+    D = MD.diff(op, Tensor("x", Upper(3)))
 
     @test typeof(D) == MD.BinaryOperation{+}
     @test D.arg1 == MD.BinaryOperation{*}(x, Zero(Lower(2), Lower(3)))
@@ -149,42 +149,42 @@ end
 end
 
 @testset "diff BinaryOperation{+}" begin
-    x = Sym("x", Upper(2))
-    y = Sym("y", Upper(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(2))
 
     op = MD.BinaryOperation{+}(x, y)
 
-    D = MD.diff(op, Sym("x", Upper(3)))
+    D = MD.diff(op, Tensor("x", Upper(3)))
 
     @test D == MD.BinaryOperation{+}(KrD(Upper(2), Lower(3)), Zero(Upper(2), Lower(3)))
 end
 
 @testset "Differentiate Ax" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(3))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
 
     e = A * x
 
-    @test equivalent(D(e, Sym("x", Upper(4))), A)
+    @test equivalent(D(e, Tensor("x", Upper(4))), A)
 end
 
 @testset "Differentiate xᵀA " begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(3))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
 
     e = x' * A
 
-    @test equivalent(D(e, Sym("x", Upper(4))), Sym("A", Lower(1), Lower(2)))
+    @test equivalent(D(e, Tensor("x", Upper(4))), Tensor("A", Lower(1), Lower(2)))
 end
 
 @testset "Differentiate xᵀAx" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(3))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
 
     e = x' * A * x
 
-    differential_form = MD.D(e, Sym("x", Upper(4)))
+    differential_form = MD.D(e, Tensor("x", Upper(4)))
 
     @test equivalent(differential_form.arg1, evaluate(x' * A))
-    @test equivalent(differential_form.arg2, evaluate(MD.BinaryOperation{*}(x', Sym("A", Lower(1), Lower(2)))))
+    @test equivalent(differential_form.arg2, evaluate(MD.BinaryOperation{*}(x', Tensor("A", Lower(1), Lower(2)))))
 end

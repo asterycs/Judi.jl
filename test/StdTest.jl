@@ -8,9 +8,9 @@ MD = MatrixDiff
     y = create_vector("y")
     A = create_vector("A")
 
-    @test x == Sym("x", Upper(1))
-    @test y == Sym("y", Upper(2))
-    @test A == Sym("A", Upper(3))
+    @test x == Tensor("x", Upper(1))
+    @test y == Tensor("y", Upper(2))
+    @test A == Tensor("A", Upper(3))
 end
 
 @testset "create matrix" begin
@@ -18,7 +18,7 @@ end
     B = create_matrix("B")
     X = create_matrix("X")
 
-    @test A == Sym("A", Upper(4), Lower(5))
-    @test B == Sym("B", Upper(6), Lower(7))
-    @test X == Sym("X", Upper(8), Lower(9))
+    @test A == Tensor("A", Upper(4), Lower(5))
+    @test B == Tensor("B", Upper(6), Lower(7))
+    @test X == Tensor("X", Upper(8), Lower(9))
 end

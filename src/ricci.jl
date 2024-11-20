@@ -6,7 +6,7 @@ import Base.adjoint
 import Base.show
 
 export Upper, Lower
-export Sym, KrD, Zero
+export Tensor, KrD, Zero
 
 export equivalent
 
@@ -78,11 +78,11 @@ abstract type TensorValue end
 
 IndexSet = Vector{LowerOrUpperIndex}
 
-struct Sym <: TensorValue
+struct Tensor <: TensorValue
     id::String
     indices::IndexSet
 
-    function Sym(id, indices::LowerOrUpperIndex...)
+    function Tensor(id, indices::LowerOrUpperIndex...)
         # Convert type
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
@@ -100,11 +100,11 @@ struct Sym <: TensorValue
     end
 end
 
-function ==(left::Sym, right::Sym)
+function ==(left::Tensor, right::Tensor)
     return left.id == right.id && left.indices == right.indices
 end
 
-function equivalent(left::Sym, right::Sym)
+function equivalent(left::Tensor, right::Tensor)
     return left.id == right.id && all(typeof.(left.indices) .== typeof.(right.indices))
 end
 
@@ -207,7 +207,7 @@ function eliminated_indices(arg::IndexSet)
     return last(_eliminate_indices(arg))
 end
 
-function get_free_indices(arg::Union{Sym, KrD, Zero})
+function get_free_indices(arg::Union{Tensor, KrD, Zero})
     arg.indices
 end
 
@@ -231,11 +231,11 @@ function can_contract(arg1, arg2::KrD)
     return can_contract_weak(arg1, arg2)
 end
 
-function can_contract(arg1::KrD, arg2::Sym)
+function can_contract(arg1::KrD, arg2::Tensor)
     return can_contract_weak(arg2, arg1)
 end
 
-function can_contract(arg1::Sym, arg2::KrD)
+function can_contract(arg1::Tensor, arg2::KrD)
     return can_contract_weak(arg1, arg2)
 end
 
@@ -280,15 +280,15 @@ function can_contract_weak(arg1, arg2::KrD)
     return false
 end
 
-function can_contract(arg1::Sym, arg2::Sym)
+function can_contract(arg1::Tensor, arg2::Tensor)
     return can_contract_strong(arg2, arg1)
 end
 
-function can_contract(arg1, arg2::Sym)
+function can_contract(arg1, arg2::Tensor)
     return can_contract_strong(arg2, arg1)
 end
 
-function can_contract(arg1::Sym, arg2)
+function can_contract(arg1::Tensor, arg2)
     return can_contract_strong(arg1, arg2)
 end
 
@@ -473,7 +473,7 @@ function adjoint(arg::BinaryOperation{+})
     return Adjoint(arg)
 end
 
-function adjoint(arg::Union{Sym, KrD, Zero})
+function adjoint(arg::Union{Tensor, KrD, Zero})
     return Adjoint(arg)
 end
 
@@ -503,7 +503,7 @@ function script(index::Upper)
     return join(text)
 end
 
-function to_string(arg::Sym)
+function to_string(arg::Tensor)
     scripts = [script(i) for i ∈ arg.indices]
 
     arg.id * join(scripts)
@@ -545,7 +545,7 @@ function to_string(arg::BinaryOperation{+})
     return to_string(arg.arg1) * " + " * to_string(arg.arg2)
 end
 
-function to_std_string(arg::Sym)
+function to_std_string(arg::Tensor)
     return arg.id
 end
 

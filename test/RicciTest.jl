@@ -3,15 +3,15 @@ using Test
 
 MD = MatrixDiff
 
-@testset "Sym constructor throws on invalid input" begin
-    @test_throws DomainError Sym("A", Upper(2), Lower(2))
-    @test_throws DomainError Sym("A", Lower(2), Lower(2))
+@testset "Tensor constructor throws on invalid input" begin
+    @test_throws DomainError Tensor("A", Upper(2), Lower(2))
+    @test_throws DomainError Tensor("A", Lower(2), Lower(2))
 
-    A = Sym("A", Upper(1), Lower(2))
-    B = Sym("B", Lower(1), Lower(2))
-    x = Sym("x", Upper(1))
-    y = Sym("y", Lower(1))
-    z = Sym("z")
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Lower(1), Lower(2))
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Lower(1))
+    z = Tensor("z")
 end
 
 @testset "index equality operator" begin
@@ -52,7 +52,7 @@ end
 
 @testset "UnaryOperation equality operator" begin
     a = KrD(Upper(1), Upper(1))
-    b = Sym("b", Lower(1))
+    b = Tensor("b", Lower(1))
 
     left = MD.UnaryOperation(a, b)
 
@@ -62,8 +62,8 @@ end
 end
 
 @testset "BinaryOperation equality operator" begin
-    a = Sym("a", Upper(1))
-    b = Sym("b", Lower(1))
+    a = Tensor("a", Upper(1))
+    b = Tensor("b", Lower(1))
 
     left = MD.BinaryOperation{*}(a, b)
 
@@ -107,9 +107,9 @@ end
     @test MD.eliminated_indices(IdxUnion[]) == IdxUnion[]
 end
 
-@testset "get_free_indices with Sym-Sym and one matching pair" begin
-    xt = Sym("x", Lower(1)) # row vector
-    A = Sym("A", Upper(1), Lower(2))
+@testset "get_free_indices with Tensor-Tensor and one matching pair" begin
+    xt = Tensor("x", Lower(1)) # row vector
+    A = Tensor("A", Upper(1), Lower(2))
 
     op1 = MD.BinaryOperation{*}(xt, A)
     op2 = MD.BinaryOperation{*}(A, xt)
@@ -118,8 +118,8 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices with Sym-KrD and one matching pair" begin
-    x = Sym("x", Upper(1))
+@testset "get_free_indices with Tensor-KrD and one matching pair" begin
+    x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
 
     op1 = MD.BinaryOperation{*}(x, δ)
@@ -129,8 +129,8 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices with Sym-KrD and two matching pairs" begin
-    x = Sym("x", Upper(1))
+@testset "get_free_indices with Tensor-KrD and two matching pairs" begin
+    x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(1))
 
     op1 = MD.BinaryOperation{*}(x, δ)
@@ -140,8 +140,8 @@ end
     @test MD.get_free_indices(op2) == [Lower(1)]
 end
 
-@testset "get_free_indices with scalar Sym-KrD" begin
-    x = Sym("x")
+@testset "get_free_indices with scalar Tensor-KrD" begin
+    x = Tensor("x")
     δ = KrD(Lower(1), Lower(1))
 
     op1 = MD.BinaryOperation{*}(x, δ)
@@ -151,9 +151,9 @@ end
     @test MD.get_free_indices(op2) == [Lower(1); Lower(1)]
 end
 
-@testset "get_free_indices with Sym-Sym and no matching pairs" begin
-    x = Sym("x", Upper(1))
-    A = Sym("A", Upper(1), Lower(2))
+@testset "get_free_indices with Tensor-Tensor and no matching pairs" begin
+    x = Tensor("x", Upper(1))
+    A = Tensor("A", Upper(1), Lower(2))
 
     op1 = MD.BinaryOperation{*}(x, A)
     op2 = MD.BinaryOperation{*}(A, x)
@@ -163,41 +163,41 @@ end
 end
 
 @testset "is_contraction_unambigous vector-vector with matching pair" begin
-    x = Sym("x", Upper(1))
-    y = Sym("y", Lower(1))
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Lower(1))
 
     @test MD.is_contraction_unambigous(x, y)
     @test MD.is_contraction_unambigous(y, x)
 end
 
 @testset "is_contraction_unambigous vector-vector with non-matching pair" begin
-    x = Sym("x", Lower(1))
-    y = Sym("y", Lower(1))
+    x = Tensor("x", Lower(1))
+    y = Tensor("y", Lower(1))
 
     @test !MD.is_contraction_unambigous(x, y)
     @test !MD.is_contraction_unambigous(y, x)
 end
 
 @testset "is_contraction_unambigous matrix-vector with matching pair" begin
-    x = Sym("x", Upper(2))
-    A = Sym("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    A = Tensor("A", Upper(1), Lower(2))
 
     @test MD.is_contraction_unambigous(A, x)
     @test MD.is_contraction_unambigous(x, A)
 end
 
 @testset "is_contraction_unambigous matrix-vector with non-matching pair" begin
-    x = Sym("x", Lower(3))
-    A = Sym("A", Upper(1), Lower(2))
+    x = Tensor("x", Lower(3))
+    A = Tensor("A", Upper(1), Lower(2))
 
     @test MD.is_contraction_unambigous(A, x)
     @test MD.is_contraction_unambigous(x, A)
 end
 
 @testset "is_valid_matrix_multiplication fails with invalid input" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(1))
-    y = Sym("y", Lower(2))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Lower(2))
 
     @test !MD.is_valid_matrix_multiplication(A, x)
     @test !MD.is_valid_matrix_multiplication(x, A)
@@ -206,10 +206,10 @@ end
 end
 
 @testset "is_valid_matrix_multiplication succeeds with valid input" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(2))
-    y = Sym("y", Lower(1))
-    z = Sym("z", Lower(2))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Lower(1))
+    z = Tensor("z", Lower(2))
 
     @test MD.is_valid_matrix_multiplication(A, x)
     @test MD.is_valid_matrix_multiplication(y, A)
@@ -217,10 +217,10 @@ end
 end
 
 @testset "create BinaryOperation with matching indices" begin
-    x = Sym("x", Upper(2))
-    y = Sym("y", Lower(1))
-    z = Sym("z")
-    A = Sym("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Lower(1))
+    z = Tensor("z")
+    A = Tensor("A", Upper(1), Lower(2))
 
     @test typeof(A * x) == MD.BinaryOperation{*}
     @test typeof(y * A) == MD.BinaryOperation{*}
@@ -229,7 +229,7 @@ end
 end
 
 @testset "update_index column vector" begin
-    x = Sym("x", Upper(3))
+    x = Tensor("x", Upper(3))
 
     @test MD.update_index(x, Upper(3), Upper(3)) == x
 
@@ -244,7 +244,7 @@ end
 end
 
 @testset "update_index row vector" begin
-    x = Sym("x", Lower(3))
+    x = Tensor("x", Lower(3))
 
     @test MD.update_index(x, Lower(3), Lower(3)) == x
 
@@ -259,7 +259,7 @@ end
 end
 
 @testset "update_index matrix" begin
-    A = Sym("A", Upper(1), Lower(2))
+    A = Tensor("A", Upper(1), Lower(2))
 
     @test MD.update_index(A, Lower(2), Lower(2)) == A
 
@@ -271,33 +271,33 @@ end
 end
 
 @testset "transpose vector" begin
-    x = Sym("x", Upper(1))
-    y = Sym("y", Lower(1))
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Lower(1))
 
-    @test evaluate(x') == Sym("x", Lower(1))
-    @test evaluate(y') == Sym("y", Upper(1))
+    @test evaluate(x') == Tensor("x", Lower(1))
+    @test evaluate(y') == Tensor("y", Upper(1))
 end
 
 @testset "combined update_index and transpose vector" begin
-    x = Sym("x", Upper(2))
+    x = Tensor("x", Upper(2))
 
     updated_transpose = evaluate(MD.update_index(x', Lower(2), Lower(1)))
 
-    @test updated_transpose == Sym("x", Lower(1))
+    @test updated_transpose == Tensor("x", Lower(1))
 end
 
 @testset "transpose matrix" begin
-    A = Sym("A", Upper(1), Lower(2))
+    A = Tensor("A", Upper(1), Lower(2))
 
     A_transpose = evaluate(A')
-    @test A_transpose == Sym("A", Lower(1), Upper(2))
+    @test A_transpose == Tensor("A", Lower(1), Upper(2))
 end
 
 @testset "can_contract" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(2))
-    y = Sym("y", Upper(3))
-    z = Sym("z", Lower(1))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(3))
+    z = Tensor("z", Lower(1))
     d = KrD(Lower(1), Lower(1))
 
     @test MD.can_contract(A, x)
@@ -311,8 +311,8 @@ end
 end
 
 @testset "create BinaryOperation with non-matching indices matrix-vector" begin
-    x = Sym("x", Upper(3))
-    A = Sym("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
+    A = Tensor("A", Upper(1), Lower(2))
 
     op1 = A * x
 
@@ -334,15 +334,15 @@ end
 end
 
 @testset "create BinaryOperation with non-compatible matrix-vector fails" begin
-    x = Sym("x", Upper(3))
-    A = Sym("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
+    A = Tensor("A", Upper(1), Lower(2))
 
     @test_throws DomainError x * A
 end
 
 @testset "create BinaryOperation with non-matching indices vector-vector" begin
-    x = Sym("x", Upper(2))
-    y = Sym("y", Upper(1))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(1))
 
     op1 = x' * y
 
@@ -361,8 +361,8 @@ end
 
 # TODO: Scalars not implemented
 # @testset "create BinaryOperation with non-matching indices scalar-matrix" begin
-#     A = Sym("A", Upper(1), Lower(2))
-#     z = Sym("z")
+#     A = Tensor("A", Upper(1), Lower(2))
+#     z = Tensor("z")
 
 #     op1 = A * z
 #     op2 = z * A
@@ -381,8 +381,8 @@ end
 # end
 
 # @testset "create BinaryOperation with non-matching indices scalar-vector" begin
-#     x = Sym("x", Upper(3))
-#     z = Sym("z")
+#     x = Tensor("x", Upper(3))
+#     z = Tensor("z")
 
 #     op1 = z * x
 #     op2 = x * z
@@ -401,11 +401,11 @@ end
 # end
 
 @testset "to_string output is correct for primitive types" begin
-    A = Sym("A", Upper(1), Lower(2))
-    B = Sym("B", Upper(1), Upper(2), Upper(3), Lower(4), Upper(5), Lower(6), Lower(7))
-    x = Sym("x", Upper(2))
-    y = Sym("y", Lower(1))
-    z = Sym("z")
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(1), Upper(2), Upper(3), Lower(4), Upper(5), Lower(6), Lower(7))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Lower(1))
+    z = Tensor("z")
     d1 = KrD(Upper(1), Upper(1))
     d2 = KrD(Upper(3), Lower(4))
     zero = Zero(Upper(1), Lower(3), Lower(4))
@@ -421,8 +421,8 @@ end
 end
 
 @testset "to_string output is correct for BinaryOperation" begin
-    a = Sym("a")
-    b = Sym("b")
+    a = Tensor("a")
+    b = Tensor("b")
 
     mul = MD.BinaryOperation{*}(a, b)
     add = MD.BinaryOperation{+}(a, b)
@@ -436,9 +436,9 @@ end
 end
 
 @testset "to_std_string output is correct with matrix-vector contraction" begin
-    A = Sym("A", Upper(1), Lower(2))
-    x = Sym("x", Upper(2))
-    y = Sym("y", Upper(1))
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(1))
 
     function contract(l, r)
         return evaluate(MD.BinaryOperation{*}(l, r))
