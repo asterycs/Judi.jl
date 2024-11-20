@@ -20,7 +20,7 @@ jobs:
       actions: write
       contents: read
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         version:
           - 'lts'
