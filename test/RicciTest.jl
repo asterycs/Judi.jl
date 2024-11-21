@@ -453,3 +453,23 @@ end
     @test to_std_string(contract(A', y)) == "Aᵀy"
     @test to_std_string(contract(y, A')) == "Aᵀy"
 end
+
+@testset "to_std_string output is correct with matrix-matrix contraction" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(2), Lower(3))
+    C = Tensor("C", Lower(1), Upper(3))
+    D = Tensor("D", Lower(3), Upper(2))
+
+    function contract(l, r)
+        return evaluate(MD.BinaryOperation{*}(l, r))
+    end
+
+    @test to_std_string(contract(A, B)) == "AB"
+    @test to_std_string(contract(B, A)) == "AB"
+    @test to_std_string(contract(A, C)) == "CᵀA"
+    @test to_std_string(contract(C, A)) == "CᵀA"
+    @test to_std_string(contract(A, D)) == "ADᵀ"
+    @test to_std_string(contract(D, A)) == "ADᵀ"
+    @test to_std_string(contract(C, D)) == "(DC)ᵀ"
+    @test to_std_string(contract(D, C)) == "(DC)ᵀ"
+end

@@ -394,6 +394,14 @@ function is_contraction_unambigous(arg1, arg2)
         end
     end
 
+    # Otherwise, check if this is a matrix-matrix or a matrix-vector multiplication.
+    # We don't updated the indices here.
+    if length(arg1_indices) <= 2 && length(arg2_indices) <= 2
+        if typeof(flip(arg1_indices[end])) == typeof(arg2_indices[1])
+            return true
+        end
+    end
+
     return false
 end
 
@@ -603,11 +611,12 @@ end
 function to_std_string(arg::BinaryOperation{*})
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
+    arg_ids = get_free_indices(arg)
 
     if !can_contract(arg.arg1, arg.arg2)
         return to_std_string(arg.arg1) * to_std_string(arg.arg2)
     else
-        if length(get_free_indices(arg)) == 1 # result is a vector
+        if length(arg_ids) <= 1 # The result is a vector or a scalar
             arg1 = arg.arg1
             arg2 = arg.arg2
 
@@ -631,6 +640,44 @@ function to_std_string(arg::BinaryOperation{*})
                     return to_std_string(arg2) * "ᵀ" * to_std_string(arg1) * "ᵀ"
                 end
             end
+
+            throw(DomainError(arg, "Cannot write expression in standard notation"))
+        elseif length(arg_ids) == 2 # The result is a matrix
+            if !(typeof(arg_ids[1]) == Upper && typeof(arg_ids[2]) == Lower) &&
+               !(typeof(arg_ids[1]) == Lower && typeof(arg_ids[2]) == Upper)
+                throw(DomainError(arg, "Cannot write expression in standard notation"))
+            end
+            if length(arg1_ids) == 2 && length(arg2_ids) == 2
+                if flip(arg1_ids[end]) == arg2_ids[1]
+                    if typeof(arg1_ids[end]) == Lower
+                        return to_std_string(arg.arg1) * to_std_string(arg.arg2)
+                    else
+                        return "(" * to_std_string(arg.arg2) * to_std_string(arg.arg1) * ")ᵀ"
+                    end
+                elseif flip(arg1_ids[1]) == arg2_ids[1]
+                    if typeof(arg1_ids[1]) == Lower
+                        return to_std_string(arg.arg1) * "ᵀ" * to_std_string(arg.arg2)
+                    else
+                        return to_std_string(arg.arg2) * "ᵀ" * to_std_string(arg.arg1)
+                    end
+                elseif flip(arg1_ids[end]) == arg2_ids[end]
+                    if typeof(arg1_ids[end]) == Lower
+                        return to_std_string(arg.arg1) * to_std_string(arg.arg2) * "ᵀ"
+                    else
+                        return to_std_string(arg.arg2) * to_std_string(arg.arg1) * "ᵀ"
+                    end
+                elseif flip(arg1_ids[1]) == arg2_ids[end]
+                    if typeof(arg1_ids[1]) == Lower
+                        return "(" * to_std_string(arg.arg1) * to_std_string(arg.arg2) * ")ᵀ"
+                    else
+                        return to_std_string(arg.arg2) * to_std_string(arg.arg1)
+                    end
+                end
+            end
+
+            throw(DomainError(arg, "Cannot write expression in standard notation"))
+        else
+            throw(DomainError(arg, "Cannot write expression in standard notation"))
         end
     end
 end
