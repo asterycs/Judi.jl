@@ -183,8 +183,30 @@ end
 
     e = x' * A * x
 
-    differential_form = MD.D(e, Tensor("x", Upper(4)))
+    differential_form = D(e, Tensor("x", Upper(4)))
 
     @test equivalent(differential_form.arg1, evaluate(x' * A))
     @test equivalent(differential_form.arg2, evaluate(MD.BinaryOperation{*}(x', Tensor("A", Lower(1), Lower(2)))))
+end
+
+@testset "Differentiate A(x + 2x)" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
+
+    e = x' * A * x
+
+    differential_form = D(A * (x + 2 * x), Tensor("x", Upper(7)))
+
+    @test equivalent(differential_form, 3 * A)
+end
+
+@testset "Differentiate A(2x + x)" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
+
+    e = x' * A * x
+
+    differential_form = D(A * (x + 2 * x), Tensor("x", Upper(7)))
+
+    @test equivalent(differential_form, 3 * A)
 end

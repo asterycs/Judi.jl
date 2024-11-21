@@ -76,7 +76,16 @@ end
 
 abstract type TensorValue end
 
+Value = Union{TensorValue, Number}
 IndexSet = Vector{LowerOrUpperIndex}
+
+function get_free_indices(arg::Number)
+    return LowerOrUpperIndex[]
+end
+
+function equivalent(arg1::Number, arg2::Number)
+    return arg1 == arg2
+end
 
 struct Tensor <: TensorValue
     id::String
@@ -141,8 +150,8 @@ function ==(left::Zero, right::Zero)
 end
 
 struct BinaryOperation{Op} <: TensorValue where Op
-    arg1::TensorValue
-    arg2::TensorValue
+    arg1::Value
+    arg2::Value
 end
 
 function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
@@ -164,6 +173,10 @@ end
 function ==(left::UnaryOperation, right::UnaryOperation)
     return left.arg == right.arg && left.op == right.op
 end
+
+NonTrivialValue = Union{Tensor, KrD, BinaryOperation{*}, BinaryOperation{+}, Real}
+# TODO: Rename BinaryOperation{*} and align with Mult below
+NonTrivialNonMult = Union{Tensor, KrD, BinaryOperation{+}, Real}
 
 function _eliminate_indices(arg::IndexSet)
     available = Union{Nothing, Lower, Upper}[i for i ∈ arg]
@@ -219,15 +232,32 @@ function get_free_indices(arg::BinaryOperation{*})
     eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
 end
 
+function get_free_indices(arg::BinaryOperation{+})
+    arg1_ids = get_free_indices(arg.arg1)
+    arg2_ids = get_free_indices(arg.arg2)
+
+    @assert arg1_ids == arg2_ids
+
+    return arg1_ids
+end
+
 function are_indices_unique(indices::IndexSet)
     return length(unique(indices)) == length(indices)
 end
 
-function can_contract(arg1::KrD, arg2)
+function can_contract(arg1::Real, arg2::TensorValue)
+    return false
+end
+
+function can_contract(arg1::TensorValue, arg2::Real)
+    return false
+end
+
+function can_contract(arg1::KrD, arg2::TensorValue)
     return can_contract_weak(arg2, arg1)
 end
 
-function can_contract(arg1, arg2::KrD)
+function can_contract(arg1::TensorValue, arg2::KrD)
     return can_contract_weak(arg1, arg2)
 end
 
@@ -243,7 +273,7 @@ function can_contract(arg1::KrD, arg2::KrD)
     return can_contract_weak(arg1, arg2) || can_contract_weak(arg2, arg1)
 end
 
-function can_contract_weak(arg1, arg2::KrD)
+function can_contract_weak(arg1::TensorValue, arg2::KrD)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
@@ -284,11 +314,11 @@ function can_contract(arg1::Tensor, arg2::Tensor)
     return can_contract_strong(arg2, arg1)
 end
 
-function can_contract(arg1, arg2::Tensor)
+function can_contract(arg1::TensorValue, arg2::Tensor)
     return can_contract_strong(arg2, arg1)
 end
 
-function can_contract(arg1::Tensor, arg2)
+function can_contract(arg1::Tensor, arg2::TensorValue)
     return can_contract_strong(arg1, arg2)
 end
 
@@ -396,7 +426,11 @@ function is_valid_matrix_multiplication(arg1, arg2)
     return true
 end
 
-function *(arg1::TensorValue, arg2::TensorValue)
+function *(arg1::TensorValue, arg2::Number)
+    return arg2 * arg1
+end
+
+function *(arg1::Value, arg2::TensorValue)
     if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
         return BinaryOperation{*}(arg1, arg2)
     else
@@ -431,6 +465,7 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
+# TODO: This doesn't make sense. Make adjoint applicable only to MatrixSymbols.
 struct Adjoint <: TensorValue
     expr
 end
@@ -541,12 +576,20 @@ function to_string(arg::BinaryOperation{*})
     return parenthesize(arg.arg1) * parenthesize(arg.arg2)
 end
 
+function to_string(arg::Adjoint)
+    return to_string(arg.expr) * "ᵀ"
+end
+
 function to_string(arg::BinaryOperation{+})
     return to_string(arg.arg1) * " + " * to_string(arg.arg2)
 end
 
 function to_std_string(arg::Tensor)
     return arg.id
+end
+
+function to_std_string(arg::Real)
+    return to_string(arg)
 end
 
 function to_std_string(arg::UnaryOperation)
@@ -562,7 +605,7 @@ function to_std_string(arg::BinaryOperation{*})
     arg2_ids = get_free_indices(arg.arg2)
 
     if !can_contract(arg.arg1, arg.arg2)
-        return arg
+        return to_std_string(arg.arg1) * to_std_string(arg.arg2)
     else
         if length(get_free_indices(arg)) == 1 # result is a vector
             arg1 = arg.arg1
