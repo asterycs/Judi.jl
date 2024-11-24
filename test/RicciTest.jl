@@ -454,6 +454,36 @@ end
     @test to_std_string(contract(y, A')) == "Aᵀy"
 end
 
+@testset "to_std_string output is correct with all covariant bilinar form-vector contraction" begin
+    A = Tensor("A", Lower(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(1))
+
+    function contract(l, r)
+        return evaluate(MD.BinaryOperation{*}(l, r))
+    end
+
+    @test to_std_string(contract(A, x)) == "xᵀAᵀ"
+    @test to_std_string(contract(x, A)) == "xᵀAᵀ"
+    @test to_std_string(contract(A, y)) == "yᵀA"
+    @test to_std_string(contract(y, A)) == "yᵀA"
+end
+
+@testset "to_std_string output is correct with all contravariant bilinear form-vector contraction" begin
+    A = Tensor("A", Upper(1), Upper(2))
+    x = Tensor("x", Lower(2))
+    y = Tensor("y", Lower(1))
+
+    function contract(l, r)
+        return evaluate(MD.BinaryOperation{*}(l, r))
+    end
+
+    @test to_std_string(contract(A, x)) == "Ax"
+    @test to_std_string(contract(x, A)) == "Ax"
+    @test to_std_string(contract(A, y)) == "Aᵀy"
+    @test to_std_string(contract(y, A)) == "Aᵀy"
+end
+
 @testset "to_std_string output is correct with matrix-matrix contraction" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))

@@ -627,7 +627,8 @@ function to_std_string(arg::BinaryOperation{*})
 
             # arg1 is 2d matrix, arg2 is 1d
 
-            if typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower
+            if (typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower) ||
+               (typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Upper)
                 if flip(arg1_ids[1]) == arg2_ids[1]
                     if typeof(arg1_ids[1]) == Upper
                         return to_std_string(arg2) * "ᵀ" * to_std_string(arg1)
@@ -643,9 +644,15 @@ function to_std_string(arg::BinaryOperation{*})
                         return to_std_string(arg2) * "ᵀ" * to_std_string(arg1) * "ᵀ"
                     end
                 end
-            else
+            elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Lower
                 if flip(arg1_ids[end]) == arg2_ids[1]
                     return to_std_string(arg2) * "ᵀ" * to_std_string(arg1) * "ᵀ"
+                else
+                    return to_std_string(arg2) * "ᵀ" * to_std_string(arg1)
+                end
+            else # typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Upper
+                if flip(arg1_ids[end]) == arg2_ids[1]
+                    return to_std_string(arg1) * to_std_string(arg2)
                 else
                     return to_std_string(arg1) * "ᵀ" * to_std_string(arg2)
                 end
