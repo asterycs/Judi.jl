@@ -1,14 +1,5 @@
 export evaluate
 
-export D
-
-function D(expr, wrt::Tensor)
-    linear_form = diff(expr, wrt)
-    linear_form = evaluate(linear_form)
-
-    linear_form
-end
-
 function diff(arg::Tensor, wrt::Tensor)
     if arg.id == wrt.id
         @assert length(arg.indices) == length(wrt.indices)
