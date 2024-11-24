@@ -326,9 +326,10 @@ end
     @test typeof(op2) == MD.BinaryOperation{*}
     @test MD.can_contract(op2.arg1, op2.arg2)
     @test typeof(op2.arg1) == MD.BinaryOperation{*}
-    @test typeof(op2.arg1.arg1) == MD.BinaryOperation{*}
-    @test op2.arg1.arg1.arg1 == x
-    @test op2.arg1.arg1.arg2 == KrD(Lower(3), Lower(3))
+    @test typeof(op2.arg1.arg1) == MD.Adjoint
+    @test typeof(op2.arg1.arg1.expr) == MD.BinaryOperation{*}
+    @test op2.arg1.arg1.expr.arg1 == x
+    @test op2.arg1.arg1.expr.arg2 == KrD(Lower(3), Lower(3))
     @test op2.arg1.arg2 == KrD(Upper(3), Lower(1))
     @test op2.arg2 == A
 end

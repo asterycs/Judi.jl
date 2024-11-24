@@ -449,7 +449,7 @@ function *(arg1::Value, arg2::TensorValue)
         arg1_free_indices = get_free_indices(arg1)
         arg2_free_indices = get_free_indices(arg2)
 
-        return BinaryOperation{*}(update_index(unwrap(arg1), arg1_free_indices[end], flip(arg2_free_indices[1])), unwrap(arg2))
+        return BinaryOperation{*}(update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])), arg2)
     end
 end
 
@@ -483,25 +483,7 @@ function get_free_indices(arg::Adjoint)
 
     @assert length(free_indices) <= 2
 
-    return reverse(LowerOrUpperIndex[flip(i) for i ∈ free_indices])
-end
-
-function unwrap(arg::Adjoint)
-    free_indices = get_free_indices(arg)
-
-    @assert length(free_indices) <= 2
-
-    e = arg.expr
-
-    for i ∈ free_indices
-        e = BinaryOperation{*}(e, KrD(i, i))
-    end
-
-    return e
-end
-
-function unwrap(arg)
-    return arg
+    return reverse(LowerOrUpperIndex[i for i ∈ free_indices])
 end
 
 function adjoint(arg::UnaryOperation)
@@ -517,7 +499,17 @@ function adjoint(arg::BinaryOperation{+})
 end
 
 function adjoint(arg::Union{Tensor, KrD, Zero})
-    return Adjoint(arg)
+    free_indices = get_free_indices(arg)
+
+    @assert length(free_indices) <= 2
+
+    e = arg
+
+    for i ∈ free_indices
+        e = BinaryOperation{*}(e, KrD(flip(i), flip(i)))
+    end
+
+    return Adjoint(e)
 end
 
 function script(index::Lower)
@@ -585,7 +577,7 @@ function to_string(arg::BinaryOperation{*})
 end
 
 function to_string(arg::Adjoint)
-    return to_string(arg.expr) * "ᵀ"
+    return to_string(arg.expr)
 end
 
 function to_string(arg::BinaryOperation{+})

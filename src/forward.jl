@@ -30,6 +30,10 @@ function diff(arg::Real, wrt::Tensor)
     return Zero([flip(i) for i ∈ wrt.indices]...)
 end
 
+function diff(arg::Adjoint, wrt::Tensor)
+    return diff(arg.expr, wrt)
+end
+
 function diff(arg::UnaryOperation, wrt::Tensor)
     UnaryOperation(arg.op, diff(arg.arg, wrt))
 end
@@ -43,15 +47,7 @@ function diff(arg::BinaryOperation{+}, wrt::Tensor)
 end
 
 function evaluate(arg::Adjoint)
-    free_indices = get_free_indices(arg)
-
-    e = arg.expr
-
-    for i ∈ free_indices
-        e = BinaryOperation{*}(e, KrD(i, i))
-    end
-
-    return evaluate(e)
+    return evaluate(arg.expr)
 end
 
 function evaluate(arg::Union{Tensor, KrD, Zero, Real})
