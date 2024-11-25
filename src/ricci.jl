@@ -487,15 +487,24 @@ function get_free_indices(arg::Adjoint)
 end
 
 function adjoint(arg::UnaryOperation)
+    @assert false, "Not implemented"
     return Adjoint(arg)
 end
 
 function adjoint(arg::BinaryOperation{*})
-    return Adjoint(arg)
+    free_ids = get_free_indices(arg)
+
+    t = arg
+
+    for i ∈ free_ids
+        t = BinaryOperation{*}(t, KrD(flip(i), flip(i)))
+    end
+
+    return Adjoint(t)
 end
 
 function adjoint(arg::BinaryOperation{+})
-    return Adjoint(arg)
+    return arg.arg1' + arg.arg2'
 end
 
 function adjoint(arg::Union{Tensor, KrD, Zero})
