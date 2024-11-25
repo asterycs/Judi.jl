@@ -48,10 +48,55 @@ function to_std_string(arg::UnaryOperation)
     @assert false, "Not implemented"
 end
 
-function to_std_string(arg::BinaryOperation{+})
-    return "(" * to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2) * ")"
+function parenthesize_std(arg)
+    return to_std_string(arg)
 end
 
+function parenthesize_std(arg::BinaryOperation{+})
+    return "(" * to_std_string(arg) * ")"
+end
+
+function throw_not_std()
+    throw(DomainError(arg, "Cannot write expression in standard notation"))
+end
+
+function to_std_string(arg::BinaryOperation{+})
+    arg1_ids = get_free_indices(arg.arg1)
+    arg2_ids = get_free_indices(arg.arg2)
+
+    @assert are_indices_equivalent(arg.arg1, arg.arg2)
+
+    if length(arg1_ids) == 1
+        return to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2)
+    elseif length(arg2_ids) == 2
+        if (typeof(arg1_ids[1]) == Upper && typeof(arg1_ids[2]) == Lower) &&
+           (typeof(arg2_ids[1]) == Upper && typeof(arg2_ids[2]) == Lower)
+
+            return to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2)
+
+        elseif (typeof(arg1_ids[1]) == Upper && typeof(arg1_ids[2]) == Lower) &&
+               (typeof(arg2_ids[1]) == Lower && typeof(arg2_ids[2]) == Upper)
+
+            if arg1_ids[1] == arg2_ids[2] && arg1_ids[2] == arg2_ids[1]
+                return to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2) * "ᵀ"
+            else
+                throw_not_std()
+            end
+        elseif (typeof(arg1_ids[1]) == Lower && typeof(arg1_ids[2]) == Upper) &&
+               (typeof(arg2_ids[1]) == Upper && typeof(arg2_ids[2]) == Lower)
+
+            if arg1_ids[1] == arg2_ids[2] && arg1_ids[2] == arg2_ids[1]
+                return to_std_string(arg.arg1) * "ᵀ " * string(+) * " " * to_std_string(arg.arg2)
+            else
+                throw_not_std()
+            end
+        end
+    else
+        throw_not_std()
+    end
+end
+
+# TODO: Refactor this method
 function to_std_string(arg::BinaryOperation{*})
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
@@ -102,11 +147,11 @@ function to_std_string(arg::BinaryOperation{*})
                 end
             end
 
-            throw(DomainError(arg, "Cannot write expression in standard notation"))
+            throw_not_std()
         elseif length(arg_ids) == 2 # The result is a matrix
             if !(typeof(arg_ids[1]) == Upper && typeof(arg_ids[2]) == Lower) &&
                !(typeof(arg_ids[1]) == Lower && typeof(arg_ids[2]) == Upper)
-                throw(DomainError(arg, "Cannot write expression in standard notation"))
+               throw_not_std()
             end
             if length(arg1_ids) == 2 && length(arg2_ids) == 2
                 if flip(arg1_ids[end]) == arg2_ids[1]
@@ -136,9 +181,9 @@ function to_std_string(arg::BinaryOperation{*})
                 end
             end
 
-            throw(DomainError(arg, "Cannot write expression in standard notation"))
+            throw_not_std()
         else
-            throw(DomainError(arg, "Cannot write expression in standard notation"))
+            throw_not_std()
         end
     end
 end

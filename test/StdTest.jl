@@ -91,3 +91,18 @@ end
     @test to_std_string(contract(C, D)) == "(DC)ᵀ"
     @test to_std_string(contract(D, C)) == "(DC)ᵀ"
 end
+
+@testset "to_std_string output is correct with matrix-matrix sum" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(1), Lower(2))
+    C = Tensor("C", Lower(2), Upper(1))
+
+    function sum(l, r)
+        return evaluate(MD.BinaryOperation{+}(l, r))
+    end
+
+    @test to_std_string(sum(A, B)) == "A + B"
+    @test to_std_string(sum(B, A)) == "B + A"
+    @test to_std_string(sum(A, C)) == "A + Cᵀ"
+    @test to_std_string(sum(C, A)) == "Cᵀ + A"
+end
