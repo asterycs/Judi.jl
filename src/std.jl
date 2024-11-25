@@ -120,30 +120,30 @@ function to_std_string(arg::BinaryOperation{*})
                (typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Upper)
                 if flip(arg1_ids[1]) == arg2_ids[1]
                     if typeof(arg1_ids[1]) == Upper
-                        return to_std_string(arg2) * "ᵀ" * to_std_string(arg1)
+                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
                     else
-                        return to_std_string(arg1) * "ᵀ" * to_std_string(arg2)
+                        return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2)
                     end
                 end
 
                 if flip(arg1_ids[end]) == arg2_ids[1]
                     if typeof(arg1_ids[end]) == Lower
-                        return to_std_string(arg1) * "" * to_std_string(arg2)
+                        return parenthesize_std(arg1) * "" * parenthesize_std(arg2)
                     else
-                        return to_std_string(arg2) * "ᵀ" * to_std_string(arg1) * "ᵀ"
+                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
                     end
                 end
             elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Lower
                 if flip(arg1_ids[end]) == arg2_ids[1]
-                    return to_std_string(arg2) * "ᵀ" * to_std_string(arg1) * "ᵀ"
+                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
                 else
-                    return to_std_string(arg2) * "ᵀ" * to_std_string(arg1)
+                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
                 end
             else # typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Upper
                 if flip(arg1_ids[end]) == arg2_ids[1]
-                    return to_std_string(arg1) * to_std_string(arg2)
+                    return parenthesize_std(arg1) * parenthesize_std(arg2)
                 else
-                    return to_std_string(arg1) * "ᵀ" * to_std_string(arg2)
+                    return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2)
                 end
             end
 
@@ -156,27 +156,27 @@ function to_std_string(arg::BinaryOperation{*})
             if length(arg1_ids) == 2 && length(arg2_ids) == 2
                 if flip(arg1_ids[end]) == arg2_ids[1]
                     if typeof(arg1_ids[end]) == Lower
-                        return to_std_string(arg.arg1) * to_std_string(arg.arg2)
+                        return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
                     else
-                        return "(" * to_std_string(arg.arg2) * to_std_string(arg.arg1) * ")ᵀ"
+                        return "(" * parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1) * ")ᵀ"
                     end
                 elseif flip(arg1_ids[1]) == arg2_ids[1]
                     if typeof(arg1_ids[1]) == Lower
-                        return to_std_string(arg.arg1) * "ᵀ" * to_std_string(arg.arg2)
+                        return parenthesize_std(arg.arg1) * "ᵀ" * parenthesize_std(arg.arg2)
                     else
-                        return to_std_string(arg.arg2) * "ᵀ" * to_std_string(arg.arg1)
+                        return parenthesize_std(arg.arg2) * "ᵀ" * parenthesize_std(arg.arg1)
                     end
                 elseif flip(arg1_ids[end]) == arg2_ids[end]
                     if typeof(arg1_ids[end]) == Lower
-                        return to_std_string(arg.arg1) * to_std_string(arg.arg2) * "ᵀ"
+                        return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2) * "ᵀ"
                     else
-                        return to_std_string(arg.arg2) * to_std_string(arg.arg1) * "ᵀ"
+                        return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1) * "ᵀ"
                     end
                 elseif flip(arg1_ids[1]) == arg2_ids[end]
                     if typeof(arg1_ids[1]) == Lower
-                        return "(" * to_std_string(arg.arg1) * to_std_string(arg.arg2) * ")ᵀ"
+                        return "(" * parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2) * ")ᵀ"
                     else
-                        return to_std_string(arg.arg2) * to_std_string(arg.arg1)
+                        return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
                     end
                 end
             end
