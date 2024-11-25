@@ -257,6 +257,12 @@ function evaluate(::typeof(+), arg1, arg2::Zero)
     return evaluate(arg1)
 end
 
+function evaluate(::typeof(+), arg1, arg2)
+    @assert are_indices_equivalent(arg1, arg2)
+
+    return BinaryOperation{+}(arg1, arg2)
+end
+
 function evaluate(::typeof(+), arg1::NonTrivialNonMult, arg2::BinaryOperation{*})
     return evaluate(+, evaluate(arg2), evaluate(arg1))
 end
