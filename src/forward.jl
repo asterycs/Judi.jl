@@ -222,7 +222,7 @@ function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
     return Zero(new_indices...)
 end
 
-function are_indices_equivalent(arg1, arg2)
+function are_indices_equivalent(arg1::Value, arg2::Value)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
