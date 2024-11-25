@@ -25,7 +25,7 @@ struct Lower
     letter::Letter
 end
 
-LowerOrUpperIndex = Union{Lower, Upper}
+LowerOrUpperIndex = Union{Lower,Upper}
 
 function flip(index::Lower)
     return Upper(index.letter)
@@ -65,7 +65,7 @@ function hash(arg::LowerOrUpperIndex)
     h
 end
 
-global const NEXT_LETTER = Ref{Letter}(1)
+const global NEXT_LETTER = Ref{Letter}(1)
 
 function get_next_letter()
     tmp = NEXT_LETTER[]
@@ -76,7 +76,7 @@ end
 
 abstract type TensorValue end
 
-Value = Union{TensorValue, Number}
+Value = Union{TensorValue,Number}
 IndexSet = Vector{LowerOrUpperIndex}
 
 function get_free_indices(arg::Number)
@@ -149,20 +149,23 @@ function ==(left::Zero, right::Zero)
     return left.indices == right.indices
 end
 
-struct BinaryOperation{Op} <: TensorValue where Op
+struct BinaryOperation{Op} <: TensorValue where {Op}
     arg1::Value
     arg2::Value
 end
 
-function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where Op
+function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where {Op}
     same_args = left.arg1 == right.arg1 && left.arg2 == right.arg2
     same_args = same_args || (left.arg1 == right.arg2 && left.arg2 == right.arg1)
     return same_args
 end
 
 function equivalent(left::BinaryOperation{*}, right::BinaryOperation{*})
-    same_types = typeof(left.arg1) == typeof(right.arg1) && typeof(left.arg2) == typeof(right.arg2)
-    return same_types && equivalent(left.arg1, left.arg1) && equivalent(left.arg2, left.arg2)
+    same_types =
+        typeof(left.arg1) == typeof(right.arg1) && typeof(left.arg2) == typeof(right.arg2)
+    return same_types &&
+           equivalent(left.arg1, left.arg1) &&
+           equivalent(left.arg2, left.arg2)
 end
 
 struct UnaryOperation <: TensorValue
@@ -174,12 +177,12 @@ function ==(left::UnaryOperation, right::UnaryOperation)
     return left.arg == right.arg && left.op == right.op
 end
 
-NonTrivialValue = Union{Tensor, KrD, BinaryOperation{*}, BinaryOperation{+}, Real}
+NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
 # TODO: Rename BinaryOperation{*} and align with Mult below
-NonTrivialNonMult = Union{Tensor, KrD, BinaryOperation{+}, Real}
+NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
 
 function _eliminate_indices(arg::IndexSet)
-    available = Union{Nothing, Lower, Upper}[i for i ∈ arg]
+    available = Union{Nothing,Lower,Upper}[i for i ∈ arg]
     eliminated = LowerOrUpperIndex[]
 
     for i ∈ eachindex(available)
@@ -220,7 +223,7 @@ function eliminated_indices(arg::IndexSet)
     return last(_eliminate_indices(arg))
 end
 
-function get_free_indices(arg::Union{Tensor, KrD, Zero})
+function get_free_indices(arg::Union{Tensor,KrD,Zero})
     arg.indices
 end
 
@@ -281,10 +284,10 @@ function can_contract_weak(arg1::TensorValue, arg2::KrD)
     # Duplicate pairs such that several indices in arg2 matches one index in
     # arg1 are allowed.
 
-    pairs = Dict{Letter, Int}()
+    pairs = Dict{Letter,Int}()
 
     for j ∈ arg2_indices
-        pairs_in_sweep = Dict{Letter, Int}()
+        pairs_in_sweep = Dict{Letter,Int}()
 
         for i ∈ arg1_indices
             if flip(i) == j
@@ -327,7 +330,7 @@ function can_contract_strong(arg1, arg2)
     arg2_indices = get_free_indices(arg2)
 
     # If there is exactly one matching index pair then the contraction is unambigous.
-    pairs = Dict{Letter, Int}()
+    pairs = Dict{Letter,Int}()
 
     for i ∈ arg1_indices
         for j ∈ arg2_indices
@@ -358,12 +361,13 @@ function is_contraction_unambigous(arg1, arg2)
     end
 
     # Check that there are no contractions within the arguments.
-    if !isempty(eliminated_indices(arg1_indices)) || !isempty(eliminated_indices(arg2_indices))
+    if !isempty(eliminated_indices(arg1_indices)) ||
+       !isempty(eliminated_indices(arg2_indices))
         return false
     end
 
     # Otherwise, if there is exactly one matching index pair then the contraction is unambigous.
-    pairs = Dict{Letter, Int}()
+    pairs = Dict{Letter,Int}()
 
     for i ∈ arg1_indices
         for j ∈ arg2_indices
@@ -449,7 +453,10 @@ function *(arg1::Value, arg2::TensorValue)
         arg1_free_indices = get_free_indices(arg1)
         arg2_free_indices = get_free_indices(arg2)
 
-        return BinaryOperation{*}(update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])), arg2)
+        return BinaryOperation{*}(
+            update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])),
+            arg2,
+        )
     end
 end
 
@@ -475,7 +482,7 @@ end
 
 # TODO: This doesn't make sense. Make adjoint applicable only to MatrixSymbols.
 struct Adjoint <: TensorValue
-    expr
+    expr::Any
 end
 
 function get_free_indices(arg::Adjoint)
@@ -507,7 +514,7 @@ function adjoint(arg::BinaryOperation{+})
     return arg.arg1' + arg.arg2'
 end
 
-function adjoint(arg::Union{Tensor, KrD, Zero})
+function adjoint(arg::Union{Tensor,KrD,Zero})
     free_indices = get_free_indices(arg)
 
     @assert length(free_indices) <= 2
@@ -537,11 +544,21 @@ function script(index::Upper)
     text = []
 
     for d ∈ reverse(digits(index.letter))
-        if d == 0 push!(text, Char(0x2070)) end
-        if d == 1 push!(text, Char(0x00B9)) end
-        if d == 2 push!(text, Char(0x00B2)) end
-        if d == 3 push!(text, Char(0x00B3)) end
-        if d > 3 push!(text, Char(0x2070 + d)) end
+        if d == 0
+            push!(text, Char(0x2070))
+        end
+        if d == 1
+            push!(text, Char(0x00B9))
+        end
+        if d == 2
+            push!(text, Char(0x00B2))
+        end
+        if d == 3
+            push!(text, Char(0x00B3))
+        end
+        if d > 3
+            push!(text, Char(0x2070 + d))
+        end
     end
 
     return join(text)

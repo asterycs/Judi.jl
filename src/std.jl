@@ -3,7 +3,7 @@ export create_vector
 
 export differential
 
-const global REGISTERED_SYMBOLS = Dict{String, Tensor}()
+const global REGISTERED_SYMBOLS = Dict{String,Tensor}()
 
 function create_matrix(name::String)
     T = Tensor(name, Upper(get_next_letter()), Lower(get_next_letter()))
@@ -78,7 +78,12 @@ function to_std_string(arg::BinaryOperation{+})
                (typeof(arg2_ids[1]) == Lower && typeof(arg2_ids[2]) == Upper)
 
             if arg1_ids[1] == arg2_ids[2] && arg1_ids[2] == arg2_ids[1]
-                return to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2) * "ᵀ"
+                return to_std_string(arg.arg1) *
+                       " " *
+                       string(+) *
+                       " " *
+                       to_std_string(arg.arg2) *
+                       "ᵀ"
             else
                 throw_not_std()
             end
@@ -86,7 +91,11 @@ function to_std_string(arg::BinaryOperation{+})
                (typeof(arg2_ids[1]) == Upper && typeof(arg2_ids[2]) == Lower)
 
             if arg1_ids[1] == arg2_ids[2] && arg1_ids[2] == arg2_ids[1]
-                return to_std_string(arg.arg1) * "ᵀ " * string(+) * " " * to_std_string(arg.arg2)
+                return to_std_string(arg.arg1) *
+                       "ᵀ " *
+                       string(+) *
+                       " " *
+                       to_std_string(arg.arg2)
             else
                 throw_not_std()
             end
@@ -151,14 +160,17 @@ function to_std_string(arg::BinaryOperation{*})
         elseif length(arg_ids) == 2 # The result is a matrix
             if !(typeof(arg_ids[1]) == Upper && typeof(arg_ids[2]) == Lower) &&
                !(typeof(arg_ids[1]) == Lower && typeof(arg_ids[2]) == Upper)
-               throw_not_std()
+                throw_not_std()
             end
             if length(arg1_ids) == 2 && length(arg2_ids) == 2
                 if flip(arg1_ids[end]) == arg2_ids[1]
                     if typeof(arg1_ids[end]) == Lower
                         return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
                     else
-                        return "(" * parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1) * ")ᵀ"
+                        return "(" *
+                               parenthesize_std(arg.arg2) *
+                               parenthesize_std(arg.arg1) *
+                               ")ᵀ"
                     end
                 elseif flip(arg1_ids[1]) == arg2_ids[1]
                     if typeof(arg1_ids[1]) == Lower
@@ -174,7 +186,10 @@ function to_std_string(arg::BinaryOperation{*})
                     end
                 elseif flip(arg1_ids[1]) == arg2_ids[end]
                     if typeof(arg1_ids[1]) == Lower
-                        return "(" * parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2) * ")ᵀ"
+                        return "(" *
+                               parenthesize_std(arg.arg1) *
+                               parenthesize_std(arg.arg2) *
+                               ")ᵀ"
                     else
                         return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
                     end

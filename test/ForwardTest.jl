@@ -107,15 +107,23 @@ end
     d = KrD(Upper(3), Lower(4))
     x = Tensor("x", Lower(3))
 
-    @test evaluate(*, MD.BinaryOperation{*}(A, d), x) == MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
-    @test evaluate(*, MD.BinaryOperation{*}(d, A), x) == MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
-    @test evaluate(*, x, MD.BinaryOperation{*}(A, d)) == MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
-    @test evaluate(*, x, MD.BinaryOperation{*}(d, A)) == MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
+    @test evaluate(*, MD.BinaryOperation{*}(A, d), x) ==
+          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
+    @test evaluate(*, MD.BinaryOperation{*}(d, A), x) ==
+          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
+    @test evaluate(*, x, MD.BinaryOperation{*}(A, d)) ==
+          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
+    @test evaluate(*, x, MD.BinaryOperation{*}(d, A)) ==
+          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
 
-    @test evaluate(*, MD.BinaryOperation{*}(d, A), x) == MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
-    @test evaluate(*, MD.BinaryOperation{*}(A, d), x) == MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
-    @test evaluate(*, x, MD.BinaryOperation{*}(d, A)) == MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
-    @test evaluate(*, x, MD.BinaryOperation{*}(A, d)) == MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
+    @test evaluate(*, MD.BinaryOperation{*}(d, A), x) ==
+          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
+    @test evaluate(*, MD.BinaryOperation{*}(A, d), x) ==
+          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
+    @test evaluate(*, x, MD.BinaryOperation{*}(d, A)) ==
+          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
+    @test evaluate(*, x, MD.BinaryOperation{*}(A, d)) ==
+          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
 end
 
 @testset "diff Tensor" begin
@@ -129,7 +137,8 @@ end
 
     @test MD.diff(x, Tensor("x", Upper(1))) == KrD(Upper(2), Lower(1))
     @test MD.diff(y, Tensor("y", Upper(4))) == KrD(Upper(3), Lower(4))
-    @test MD.diff(A, Tensor("A", Upper(6), Lower(7))) == MD.BinaryOperation{*}(KrD(Upper(4), Lower(6)), KrD(Lower(5), Upper(7)))
+    @test MD.diff(A, Tensor("A", Upper(6), Lower(7))) ==
+          MD.BinaryOperation{*}(KrD(Upper(4), Lower(6)), KrD(Lower(5), Upper(7)))
 end
 
 @testset "diff KrD" begin
@@ -148,7 +157,8 @@ end
 
     op = MD.UnaryOperation(KrD(Lower(2), Lower(2)), x)
 
-    @test MD.diff(op, Tensor("x", Upper(3))) == MD.UnaryOperation(KrD(Lower(2), Lower(2)), KrD(Upper(2), Lower(3)))
+    @test MD.diff(op, Tensor("x", Upper(3))) ==
+          MD.UnaryOperation(KrD(Lower(2), Lower(2)), KrD(Upper(2), Lower(3)))
 end
 
 @testset "diff BinaryOperation{*}" begin
@@ -202,7 +212,10 @@ end
     differential_form = differential(e, "x")
 
     @test equivalent(differential_form.arg1, evaluate(x' * A))
-    @test equivalent(differential_form.arg2, evaluate(MD.BinaryOperation{*}(x', Tensor("A", Lower(1), Lower(2)))))
+    @test equivalent(
+        differential_form.arg2,
+        evaluate(MD.BinaryOperation{*}(x', Tensor("A", Lower(1), Lower(2)))),
+    )
 end
 
 @testset "Differentiate A(x + 2x)" begin

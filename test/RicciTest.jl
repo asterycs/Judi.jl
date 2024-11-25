@@ -88,7 +88,18 @@ end
 @testset "eliminate_indices removes correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
-    indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
+    indices = IdxUnion[
+        Lower(9)
+        Upper(9)
+        Upper(3)
+        Lower(2)
+        Lower(1)
+        Lower(3)
+        Lower(2)
+        Upper(3)
+        Upper(9)
+        Lower(9)
+    ]
 
     output = MD.eliminate_indices(indices)
 
@@ -99,7 +110,18 @@ end
 @testset "eliminated_indices retains correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
-    indices = IdxUnion[Lower(9); Upper(9); Upper(3); Lower(2); Lower(1); Lower(3); Lower(2); Upper(3); Upper(9); Lower(9)]
+    indices = IdxUnion[
+        Lower(9)
+        Upper(9)
+        Upper(3)
+        Lower(2)
+        Lower(1)
+        Lower(3)
+        Lower(2)
+        Upper(3)
+        Upper(9)
+        Lower(9)
+    ]
 
     output = MD.eliminated_indices(indices)
 

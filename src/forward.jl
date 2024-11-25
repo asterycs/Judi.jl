@@ -6,7 +6,7 @@ function diff(arg::Tensor, wrt::Tensor)
 
         D = nothing
 
-        for (u,l) ∈ zip(arg.indices, wrt.indices)
+        for (u, l) ∈ zip(arg.indices, wrt.indices)
             if isnothing(D)
                 D = KrD(u, flip(l))
             else
@@ -39,7 +39,10 @@ function diff(arg::UnaryOperation, wrt::Tensor)
 end
 
 function diff(arg::BinaryOperation{*}, wrt::Tensor)
-    BinaryOperation{+}(BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)), BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2))
+    BinaryOperation{+}(
+        BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)),
+        BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2),
+    )
 end
 
 function diff(arg::BinaryOperation{+}, wrt::Tensor)
@@ -50,7 +53,7 @@ function evaluate(arg::Adjoint)
     return evaluate(arg.expr)
 end
 
-function evaluate(arg::Union{Tensor, KrD, Zero, Real})
+function evaluate(arg::Union{Tensor,KrD,Zero,Real})
     arg
 end
 
@@ -71,14 +74,15 @@ function evaluate(::typeof(*), arg1::Zero, arg2::BinaryOperation{*})
 end
 
 function _evaluate_zero_times_bin(arg1::BinaryOperation{*}, arg2::Zero)
-    free_ids_left = eliminate_indices([get_free_indices(arg1.arg1); get_free_indices(arg1.arg2)])
+    free_ids_left =
+        eliminate_indices([get_free_indices(arg1.arg1); get_free_indices(arg1.arg2)])
 
     free_indices = eliminate_indices([free_ids_left; arg2.indices])
 
     return Zero(free_indices...)
 end
 
-function evaluate(::typeof(*), arg1::Union{Tensor, KrD}, arg2::BinaryOperation{*})
+function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::BinaryOperation{*})
     if can_contract(arg1, arg2.arg1)
         new_arg1 = evaluate(*, arg1, arg2.arg1)
         return BinaryOperation{*}(new_arg1, arg2.arg2)
@@ -90,7 +94,7 @@ function evaluate(::typeof(*), arg1::Union{Tensor, KrD}, arg2::BinaryOperation{*
     end
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Tensor, KrD})
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Tensor,KrD})
     if can_contract(arg1.arg2, arg2)
         new_arg2 = evaluate(*, arg1.arg2, arg2)
         return BinaryOperation{*}(arg1.arg1, new_arg2)
@@ -173,7 +177,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
     newarg
 end
 
-function evaluate(::typeof(*), arg1::Union{Tensor, KrD}, arg2::KrD)
+function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
     contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     if isempty(contracting_index) # Is an outer product
