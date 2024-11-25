@@ -96,7 +96,7 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Tensor, KrD
         return BinaryOperation{*}(arg1.arg1, new_arg2)
     elseif can_contract(arg1.arg1, arg2)
         new_arg1 = evaluate(*, arg1.arg1, arg2)
-        return BinaryOperation{*}(arg2.arg2, new_arg1)
+        return BinaryOperation{*}(arg1.arg2, new_arg1)
     else
         return BinaryOperation{*}(arg1, arg2)
     end
