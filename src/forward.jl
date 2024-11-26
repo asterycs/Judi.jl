@@ -125,7 +125,6 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
         return Zero(arg1.indices..., arg2.indices...)
     end
 
-    @assert length(contracting_index) == 2
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
@@ -141,7 +140,6 @@ function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
         return Zero(arg1.indices..., arg2.indices...)
     end
 
-    @assert length(contracting_index) == 2
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
@@ -157,18 +155,21 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
         return BinaryOperation{*}(arg1, arg2)
     end
 
-    @assert length(contracting_index) == 2
     @assert can_contract(arg1, arg2)
     @assert length(arg1.indices) == 2
 
     newarg = deepcopy(arg2)
     empty!(newarg.indices)
 
+    contracted = false
+
     for i ∈ arg2.indices
-        if flip(i) == arg1.indices[1]
+        if flip(i) == arg1.indices[1] && !contracted
             push!(newarg.indices, arg1.indices[2])
-        elseif flip(i) == arg1.indices[2]
+            contracted = true
+        elseif flip(i) == arg1.indices[2] && !contracted
             push!(newarg.indices, arg1.indices[1])
+            contracted = true
         else
             push!(newarg.indices, i)
         end
@@ -184,18 +185,21 @@ function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
         return BinaryOperation{*}(arg1, arg2)
     end
 
-    @assert length(contracting_index) == 2
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
     newarg = deepcopy(arg1)
     empty!(newarg.indices)
 
+    contracted = false
+
     for i ∈ arg1.indices
-        if flip(i) == arg2.indices[1]
+        if flip(i) == arg2.indices[1] && !contracted
             push!(newarg.indices, arg2.indices[2])
-        elseif flip(i) == arg2.indices[2]
+            contracted = true
+        elseif flip(i) == arg2.indices[2] && !contracted
             push!(newarg.indices, arg2.indices[1])
+            contracted = true
         else
             push!(newarg.indices, i)
         end

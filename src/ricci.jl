@@ -8,6 +8,8 @@ import Base.show
 export Upper, Lower
 export Tensor, KrD, Zero
 
+export tr
+
 export equivalent
 
 export flip
@@ -284,6 +286,7 @@ function can_contract(arg1::KrD, arg2::KrD)
     return can_contract_weak(arg1, arg2) || can_contract_weak(arg2, arg1)
 end
 
+# TODO: Rename to _can_contract(arg1::TensorValue, arg2::KrD)
 function can_contract_weak(arg1::TensorValue, arg2::KrD)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
@@ -314,7 +317,7 @@ function can_contract_weak(arg1::TensorValue, arg2::KrD)
         end
     end
 
-    if length(pairs) == 1
+    if length(pairs) == 1 || length(pairs) == 2
         return true
     end
 
@@ -438,6 +441,22 @@ function is_valid_matrix_multiplication(arg1, arg2)
     end
 
     return true
+end
+
+function tr(arg::TensorValue)
+    free_ids = get_free_indices(arg)
+
+    de = DomainError("Trace is defined only for matrices")
+
+    if length(free_ids) != 2
+        throw(de)
+    end
+
+    if all(typeof.(free_ids) .== Upper) || all(typeof.(free_ids) .== Lower)
+        throw(de)
+    end
+
+    return BinaryOperation{*}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
 end
 
 function *(arg1::TensorValue, arg2::Number)
