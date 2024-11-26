@@ -95,11 +95,6 @@ struct Tensor <: TensorValue
         # Convert type
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
-        # TODO: Allow this, it denotes the trace
-        if !isempty(eliminated_indices(indices))
-            throw(DomainError(indices, "Indices of $id are invalid"))
-        end
-
         letters = unique([i.letter for i ∈ indices])
         if length(letters) != length(indices)
             throw(DomainError(indices, "Indices of $id are invalid"))
@@ -181,46 +176,55 @@ NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
 # TODO: Rename BinaryOperation{*} and align with Mult below
 NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
 
-function _eliminate_indices(arg::IndexSet)
-    available = Union{Nothing,Lower,Upper}[i for i ∈ arg]
-    eliminated = LowerOrUpperIndex[]
-
-    for i ∈ eachindex(available)
-        if isnothing(available[i])
-            continue
-        end
-
-        for j ∈ eachindex(available)
-            if isnothing(available[j])
-                continue
-            end
-
-            if flip(available[j]) == available[i]
-                push!(eliminated, available[i])
-                push!(eliminated, available[j])
-                available[i] = nothing
-                available[j] = nothing
-            end
-        end
-    end
-
+function consolidate(indices::Vector{Union{Nothing,Lower,Upper}})
     filtered = LowerOrUpperIndex[]
 
-    for e ∈ available
+    for e ∈ indices
         if !isnothing(e)
             push!(filtered, e)
         end
     end
 
-    return filtered, eliminated
+    return filtered
 end
 
-function eliminate_indices(arg::IndexSet)
-    return first(_eliminate_indices(arg))
+function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
+    CanBeNothing = Union{Nothing,Lower,Upper}
+    available1 = CanBeNothing[i for i ∈ arg1]
+    available2 = CanBeNothing[i for i ∈ arg2]
+    eliminated = LowerOrUpperIndex[]
+
+    for i ∈ eachindex(available1)
+        if isnothing(available1[i])
+            continue
+        end
+
+        for j ∈ eachindex(available2)
+            if isnothing(available2[j])
+                continue
+            end
+
+            if flip(available2[j]) == available1[i]
+                push!(eliminated, available1[i])
+                push!(eliminated, available2[j])
+                available1[i] = nothing
+                available2[j] = nothing
+            end
+        end
+    end
+
+    filtered1 = consolidate(available1)
+    filtered2 = consolidate(available2)
+
+    return (filtered1, filtered2), eliminated
 end
 
-function eliminated_indices(arg::IndexSet)
-    return last(_eliminate_indices(arg))
+function eliminate_indices(arg1::IndexSet, arg2::IndexSet)
+    return first(_eliminate_indices(arg1, arg2))
+end
+
+function eliminated_indices(arg1::IndexSet, arg2::IndexSet)
+    return last(_eliminate_indices(arg1, arg2))
 end
 
 function get_free_indices(arg::Union{Tensor,KrD,Zero})
@@ -228,11 +232,15 @@ function get_free_indices(arg::Union{Tensor,KrD,Zero})
 end
 
 function get_free_indices(arg::UnaryOperation)
-    eliminate_indices([get_free_indices(arg.arg); get_free_indices(arg.op)])
+    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg.arg), get_free_indices(arg.op))
+
+    return [arg1_free_indices; arg2_free_indices]
 end
 
 function get_free_indices(arg::BinaryOperation{*})
-    eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
+    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg.arg1), get_free_indices(arg.arg2))
+
+    return [arg1_free_indices; arg2_free_indices]
 end
 
 function get_free_indices(arg::BinaryOperation{+})
@@ -357,12 +365,6 @@ function is_contraction_unambigous(arg1, arg2)
 
     # Check that indices are unique.
     if !are_indices_unique(arg1_indices) || !are_indices_unique(arg2_indices)
-        return false
-    end
-
-    # Check that there are no contractions within the arguments.
-    if !isempty(eliminated_indices(arg1_indices)) ||
-       !isempty(eliminated_indices(arg2_indices))
         return false
     end
 

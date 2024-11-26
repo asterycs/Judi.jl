@@ -88,12 +88,15 @@ end
 @testset "eliminate_indices removes correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
-    indices = IdxUnion[
+    indicesl = IdxUnion[
         Lower(9)
         Upper(9)
         Upper(3)
         Lower(2)
         Lower(1)
+    ]
+
+    indicesr = IdxUnion[
         Lower(3)
         Lower(2)
         Upper(3)
@@ -101,21 +104,24 @@ end
         Lower(9)
     ]
 
-    output = MD.eliminate_indices(indices)
+    l, r = MD.eliminate_indices(indicesl, indicesr)
 
-    @test output == [Lower(2); Lower(1); Lower(2); Upper(3)]
-    @test MD.eliminate_indices(IdxUnion[]) == IdxUnion[]
+    @test [l; r] == [Lower(2); Lower(1); Lower(2); Upper(3)]
+    @test MD.eliminate_indices(IdxUnion[], IdxUnion[]) == (IdxUnion[], IdxUnion[])
 end
 
 @testset "eliminated_indices retains correct indices" begin
     IdxUnion = MD.LowerOrUpperIndex
 
-    indices = IdxUnion[
+    indicesl = IdxUnion[
         Lower(9)
         Upper(9)
         Upper(3)
         Lower(2)
         Lower(1)
+    ]
+
+    indicesr = IdxUnion[
         Lower(3)
         Lower(2)
         Upper(3)
@@ -123,10 +129,10 @@ end
         Lower(9)
     ]
 
-    output = MD.eliminated_indices(indices)
+    eliminated = MD.eliminated_indices(indicesl, indicesr)
 
-    @test output == IdxUnion[Lower(9); Upper(9); Upper(3); Lower(3); Upper(9); Lower(9)]
-    @test MD.eliminated_indices(IdxUnion[]) == IdxUnion[]
+    @test eliminated == IdxUnion[Lower(9); Upper(9); Upper(9); Lower(9); Upper(3); Lower(3)]
+    @test MD.eliminated_indices(IdxUnion[], IdxUnion[]) == IdxUnion[]
 end
 
 @testset "get_free_indices with Tensor-Tensor and one matching pair" begin

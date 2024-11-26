@@ -74,12 +74,12 @@ function evaluate(::typeof(*), arg1::Zero, arg2::BinaryOperation{*})
 end
 
 function _evaluate_zero_times_bin(arg1::BinaryOperation{*}, arg2::Zero)
-    free_ids_left =
-        eliminate_indices([get_free_indices(arg1.arg1); get_free_indices(arg1.arg2)])
+    arg1arg1_free, arg1arg2_free =
+        eliminate_indices(get_free_indices(arg1.arg1), get_free_indices(arg1.arg2))
 
-    free_indices = eliminate_indices([free_ids_left; arg2.indices])
+    arg1_free, arg2_free = eliminate_indices([arg1arg1_free; arg1arg2_free], arg2.indices)
 
-    return Zero(free_indices...)
+    return Zero(arg1_free..., arg2_free...)
 end
 
 function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::BinaryOperation{*})
@@ -107,19 +107,19 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Tensor,KrD}
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::Tensor)
-    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(new_indices...)
+    return Zero(arg1_free_indices..., arg2_free_indices...)
 end
 
 function evaluate(::typeof(*), arg1::Tensor, arg2::Zero)
-    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(new_indices...)
+    return Zero(arg1_free_indices..., arg2_free_indices...)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
-    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     if isempty(contracting_index)
         return Zero(arg1.indices..., arg2.indices...)
@@ -129,13 +129,13 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
-    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(new_indices...)
+    return Zero(arg1_free_indices..., arg2_free_indices...)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
-    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     if isempty(contracting_index)
         return Zero(arg1.indices..., arg2.indices...)
@@ -145,13 +145,13 @@ function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
-    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(new_indices...)
+    return Zero(arg1_free_indices..., arg2_free_indices...)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
-    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     if isempty(contracting_index) # Is an outer product
         return BinaryOperation{*}(arg1, arg2)
@@ -178,7 +178,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
 end
 
 function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
-    contracting_index = eliminated_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     if isempty(contracting_index) # Is an outer product
         return BinaryOperation{*}(arg1, arg2)
@@ -221,7 +221,7 @@ end
 # end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
-    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
+    new_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     return Zero(new_indices...)
 end
