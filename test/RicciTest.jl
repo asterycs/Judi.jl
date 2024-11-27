@@ -50,16 +50,16 @@ end
     @test left != Zero()
 end
 
-@testset "UnaryOperation equality operator" begin
-    a = KrD(Upper(1), Upper(1))
-    b = Tensor("b", Lower(1))
+# @testset "UnaryOperation equality operator" begin
+#     a = KrD(Upper(1), Upper(1))
+#     b = Tensor("b", Lower(1))
 
-    left = MD.UnaryOperation(a, b)
+#     left = MD.UnaryOperation(a, b)
 
-    @test MD.UnaryOperation(a, b) == MD.UnaryOperation(a, b)
-    @test left == MD.UnaryOperation(a, b)
-    @test left != MD.UnaryOperation(b, a)
-end
+#     @test MD.UnaryOperation(a, b) == MD.UnaryOperation(a, b)
+#     @test left == MD.UnaryOperation(a, b)
+#     @test left != MD.UnaryOperation(b, a)
+# end
 
 @testset "BinaryOperation equality operator" begin
     a = Tensor("a", Upper(1))

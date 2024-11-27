@@ -45,16 +45,6 @@ function same(old::Upper, letter::Letter)
     return Upper(letter)
 end
 
-function ==(left::LowerOrUpperIndex, right::LowerOrUpperIndex)
-    if typeof(left) == typeof(right)
-        if left.letter == right.letter
-            return true
-        end
-    end
-
-    return false
-end
-
 function hash(arg::LowerOrUpperIndex)
     h::UInt = 0
 
@@ -77,6 +67,14 @@ function get_next_letter()
 end
 
 abstract type TensorValue end
+
+# Shortcut for simpler comparison from
+# https://stackoverflow.com/questions/62336686/struct-equality-with-arrays
+function ==(a::T, b::T) where T <: TensorValue
+    f = fieldnames(T)
+
+    return (getfield.(Ref(a),f) == getfield.(Ref(b),f)) || (reverse(getfield.(Ref(a),f)) == getfield.(Ref(b),f))
+end
 
 Value = Union{TensorValue,Number}
 IndexSet = Vector{LowerOrUpperIndex}
@@ -106,10 +104,6 @@ struct Tensor <: TensorValue
     end
 end
 
-function ==(left::Tensor, right::Tensor)
-    return left.id == right.id && left.indices == right.indices
-end
-
 function equivalent(left::Tensor, right::Tensor)
     return left.id == right.id && all(typeof.(left.indices) .== typeof.(right.indices))
 end
@@ -122,10 +116,6 @@ struct KrD <: TensorValue
 
         new(indices)
     end
-end
-
-function ==(left::KrD, right::KrD)
-    return left.indices == right.indices
 end
 
 function equivalent(left::KrD, right::KrD)
@@ -142,19 +132,9 @@ struct Zero <: TensorValue
     end
 end
 
-function ==(left::Zero, right::Zero)
-    return left.indices == right.indices
-end
-
 struct BinaryOperation{Op} <: TensorValue where {Op}
     arg1::Value
     arg2::Value
-end
-
-function ==(left::BinaryOperation{Op}, right::BinaryOperation{Op}) where {Op}
-    same_args = left.arg1 == right.arg1 && left.arg2 == right.arg2
-    same_args = same_args || (left.arg1 == right.arg2 && left.arg2 == right.arg1)
-    return same_args
 end
 
 function equivalent(left::BinaryOperation{*}, right::BinaryOperation{*})
@@ -168,10 +148,6 @@ end
 struct UnaryOperation <: TensorValue
     op::TensorValue
     arg::TensorValue
-end
-
-function ==(left::UnaryOperation, right::UnaryOperation)
-    return left.arg == right.arg && left.op == right.op
 end
 
 NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
