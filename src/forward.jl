@@ -34,8 +34,8 @@ function diff(arg::Adjoint, wrt::Tensor)
     return diff(arg.expr, wrt)
 end
 
-function diff(arg::UnaryOperation, wrt::Tensor)
-    UnaryOperation(arg.op, diff(arg.arg, wrt))
+function diff(arg::Sin, wrt::Tensor)
+    return BinaryOperation{*}(Cos(arg.arg), diff(arg.arg, wrt))
 end
 
 function diff(arg::BinaryOperation{*}, wrt::Tensor)
@@ -57,12 +57,12 @@ function evaluate(arg::Union{Tensor,KrD,Zero,Real})
     arg
 end
 
-function evaluate(arg::UnaryOperation)
-    if typeof(arg.op) == KrD
-        return evaluate(*, evaluate(arg.arg), arg.op)
-    end
+function evaluate(arg::Sin)
+    return Sin(evaluate(arg.arg))
+end
 
-    return arg
+function evaluate(arg::Cos)
+    return Cos(evaluate(arg.arg))
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Zero)
@@ -228,23 +228,6 @@ function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
     new_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     return Zero(new_indices...)
-end
-
-function are_indices_equivalent(arg1::Value, arg2::Value)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    if length(arg1_indices) != length(arg2_indices)
-        return false
-    end
-
-    U = union(arg1_indices, arg2_indices)
-
-    if length(U) == length(arg1_indices)
-        return true
-    end
-
-    return false
 end
 
 function evaluate(::typeof(+), arg1::Zero, arg2::Zero)

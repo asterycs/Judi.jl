@@ -9,6 +9,7 @@ export Upper, Lower
 export Tensor, KrD, Zero
 
 export tr
+export Sin, Cos
 
 export equivalent
 
@@ -145,8 +146,17 @@ function equivalent(left::BinaryOperation{*}, right::BinaryOperation{*})
            equivalent(left.arg2, left.arg2)
 end
 
-struct UnaryOperation <: TensorValue
-    op::TensorValue
+abstract type UnaryOperation <: TensorValue end
+
+function equivalent(arg1::T, arg2::T) where {T <: UnaryOperation}
+    return equivalent(arg1.arg, arg2.arg)
+end
+
+struct Sin <: UnaryOperation
+    arg::TensorValue
+end
+
+struct Cos <: UnaryOperation
     arg::TensorValue
 end
 
@@ -205,14 +215,34 @@ function eliminated_indices(arg1::IndexSet, arg2::IndexSet)
     return last(_eliminate_indices(arg1, arg2))
 end
 
+function are_indices_equivalent(arg1::IndexSet, arg2::IndexSet)
+
+    if length(arg1) != length(arg2)
+        return false
+    end
+
+    U = union(arg1, arg2)
+
+    if length(U) == length(arg1)
+        return true
+    end
+
+    return false
+end
+
+function are_indices_equivalent(arg1::Value, arg2::Value)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    return are_indices_equivalent(arg1_indices, arg2_indices)
+end
+
 function get_free_indices(arg::Union{Tensor,KrD,Zero})
     arg.indices
 end
 
-function get_free_indices(arg::UnaryOperation)
-    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg.arg), get_free_indices(arg.op))
-
-    return [arg1_free_indices; arg2_free_indices]
+function get_free_indices(arg::Cos)
+    return get_free_indices(arg.arg)
 end
 
 function get_free_indices(arg::BinaryOperation{*})
@@ -225,7 +255,7 @@ function get_free_indices(arg::BinaryOperation{+})
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
 
-    @assert arg1_ids == arg2_ids
+    @assert are_indices_equivalent(arg1_ids, arg2_ids)
 
     return arg1_ids
 end
@@ -491,7 +521,6 @@ function get_free_indices(arg::Adjoint)
 end
 
 function adjoint(arg::UnaryOperation)
-    @assert false, "Not implemented"
     return Adjoint(arg)
 end
 
@@ -583,8 +612,12 @@ function to_string(arg::Zero)
     "0" * join(scripts)
 end
 
-function to_string(arg::UnaryOperation)
-    @assert false, "Not implemented"
+function to_string(arg::Sin)
+    return "sin($(arg.arg))"
+end
+
+function to_string(arg::Cos)
+    return "cos($(arg.arg))"
 end
 
 function parenthesize(arg)
