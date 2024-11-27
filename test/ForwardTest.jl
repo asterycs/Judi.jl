@@ -185,6 +185,16 @@ end
     @test D == MD.BinaryOperation{+}(KrD(Upper(2), Lower(3)), Zero(Upper(2), Lower(3)))
 end
 
+@testset "diff trace" begin
+    A = Tensor("A", Upper(1), Lower(2))
+
+    op = tr(A)
+
+    D = MD.diff(op, Tensor("A", Upper(3), Lower(4)))
+
+    @test equivalent(evaluate(D), KrD(Upper(1), Lower(2)))
+end
+
 @testset "Differentiate Ax" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
