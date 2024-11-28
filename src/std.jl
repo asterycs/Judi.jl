@@ -105,7 +105,6 @@ function to_std_string(arg::BinaryOperation{+})
     end
 end
 
-# TODO: Refactor this method
 function to_std_string(arg::BinaryOperation{*})
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
@@ -114,7 +113,7 @@ function to_std_string(arg::BinaryOperation{*})
     if !can_contract(arg.arg1, arg.arg2)
         return to_std_string(arg.arg1) * to_std_string(arg.arg2)
     else
-        if length(arg_ids) <= 1 # The result is a vector or a scalar
+        if length(arg_ids) == 1 # The result is a vector
             arg1 = arg.arg1
             arg2 = arg.arg2
 
@@ -125,43 +124,48 @@ function to_std_string(arg::BinaryOperation{*})
 
             # arg1 is 2d matrix, arg2 is 1d
 
-            if (typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower) ||
-               (typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Upper)
-                if flip(arg1_ids[1]) == arg2_ids[1]
-                    if typeof(arg1_ids[1]) == Upper
+            if typeof(arg_ids[1]) == Lower
+                if typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower
+                    if flip(arg1_ids[1]) == arg2_ids[1]
                         return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
+                    else
+                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
+                    end
+                elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Upper
+                    if flip(arg1_ids[1]) == arg2_ids[1]
+                        return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2) * "ᵀ"
+                    else
+                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
+                    end
+                elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Lower
+                    if flip(arg1_ids[end]) == arg2_ids[1]
+                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
+                    else
+                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
+                    end
+                 end
+            else # typeof(arg_ids[1]) == Upper
+                if typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower
+                    if flip(arg1_ids[1]) == arg2_ids[1]
+                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
+                    else
+                        return parenthesize_std(arg1) * parenthesize_std(arg2)
+                    end
+                elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Upper
+                    if flip(arg1_ids[2]) == arg2_ids[1]
+                        return parenthesize_std(arg1) * parenthesize_std(arg2)
+                    else
+                        return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2)
+                    end
+                elseif typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Upper
+                    if flip(arg1_ids[end]) == arg2_ids[1]
+                        return parenthesize_std(arg1) * parenthesize_std(arg2)
                     else
                         return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2)
                     end
                 end
-
-                if flip(arg1_ids[end]) == arg2_ids[1]
-                    if typeof(arg1_ids[end]) == Lower
-                        return parenthesize_std(arg1) * "" * parenthesize_std(arg2)
-                    else
-                        return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
-                    end
-                end
-            elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Lower
-                if flip(arg1_ids[end]) == arg2_ids[1]
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
-                else
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
-                end
-            else # typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Upper
-                if flip(arg1_ids[end]) == arg2_ids[1]
-                    return parenthesize_std(arg1) * parenthesize_std(arg2)
-                else
-                    return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2)
-                end
             end
-
-            throw_not_std()
         elseif length(arg_ids) == 2 # The result is a matrix
-            if !(typeof(arg_ids[1]) == Upper && typeof(arg_ids[2]) == Lower) &&
-               !(typeof(arg_ids[1]) == Lower && typeof(arg_ids[2]) == Upper)
-                throw_not_std()
-            end
             if length(arg1_ids) == 2 && length(arg2_ids) == 2
                 if flip(arg1_ids[end]) == arg2_ids[1]
                     if typeof(arg1_ids[end]) == Lower
