@@ -37,7 +37,27 @@ function differential(expr, wrt::String)
 end
 
 function to_std_string(arg::Tensor)
-    return arg.id
+    if length(arg.indices) == 2
+        if typeof(arg.indices[1]) == Upper && typeof(arg.indices[2]) == Lower
+            return arg.id
+        end
+
+        if typeof(arg.indices[1]) == Lower && typeof(arg.indices[2]) == Upper
+            return arg.id * "ᵀ"
+        end
+    end
+
+    if length(arg.indices) == 1
+        if typeof(arg.indices[1]) == Upper
+            return arg.id
+        end
+
+        if typeof(arg.indices[1]) == Lower
+            return arg.id * "ᵀ"
+        end
+    end
+
+    throw_not_std()
 end
 
 function to_std_string(arg::Real)
@@ -56,53 +76,18 @@ function parenthesize_std(arg::BinaryOperation{+})
     return "(" * to_std_string(arg) * ")"
 end
 
+function get_sym(arg::Tensor)
+    return arg.id
+end
+
 function throw_not_std()
-    throw(DomainError(arg, "Cannot write expression in standard notation"))
+    throw(DomainError("Cannot write expression in standard notation"))
 end
 
 function to_std_string(arg::BinaryOperation{+})
-    arg1_ids = get_free_indices(arg.arg1)
-    arg2_ids = get_free_indices(arg.arg2)
-
     @assert are_indices_equivalent(arg.arg1, arg.arg2)
 
-    if length(arg1_ids) == 1
-        return to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2)
-    elseif length(arg2_ids) == 2
-        if (typeof(arg1_ids[1]) == Upper && typeof(arg1_ids[2]) == Lower) &&
-           (typeof(arg2_ids[1]) == Upper && typeof(arg2_ids[2]) == Lower)
-
-            return to_std_string(arg.arg1) * " " * string(+) * " " * to_std_string(arg.arg2)
-
-        elseif (typeof(arg1_ids[1]) == Upper && typeof(arg1_ids[2]) == Lower) &&
-               (typeof(arg2_ids[1]) == Lower && typeof(arg2_ids[2]) == Upper)
-
-            if arg1_ids[1] == arg2_ids[2] && arg1_ids[2] == arg2_ids[1]
-                return to_std_string(arg.arg1) *
-                       " " *
-                       string(+) *
-                       " " *
-                       to_std_string(arg.arg2) *
-                       "ᵀ"
-            else
-                throw_not_std()
-            end
-        elseif (typeof(arg1_ids[1]) == Lower && typeof(arg1_ids[2]) == Upper) &&
-               (typeof(arg2_ids[1]) == Upper && typeof(arg2_ids[2]) == Lower)
-
-            if arg1_ids[1] == arg2_ids[2] && arg1_ids[2] == arg2_ids[1]
-                return to_std_string(arg.arg1) *
-                       "ᵀ " *
-                       string(+) *
-                       " " *
-                       to_std_string(arg.arg2)
-            else
-                throw_not_std()
-            end
-        end
-    else
-        throw_not_std()
-    end
+    return to_std_string(arg.arg1) * " + " * to_std_string(arg.arg2)
 end
 
 function to_std_string(arg::BinaryOperation{*})
@@ -128,7 +113,7 @@ function to_std_string(arg::BinaryOperation{*})
         if typeof(arg_ids[1]) == Lower
             if typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower
                 if flip(arg1_ids[1]) == arg2_ids[1]
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
+                    return parenthesize_std(arg2) * parenthesize_std(arg1)
                 else
                     return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
                 end
@@ -136,15 +121,19 @@ function to_std_string(arg::BinaryOperation{*})
                 if flip(arg1_ids[1]) == arg2_ids[1]
                     return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2) * "ᵀ"
                 else
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
+                    return parenthesize_std(arg2) * parenthesize_std(arg1)
                 end
             elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Lower
+                if typeof(arg1) != Tensor
+                    throw_not_std()
+                end
+
                 if flip(arg1_ids[end]) == arg2_ids[1]
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
+                    return parenthesize_std(arg2) * "ᵀ" * get_sym(arg1) * "ᵀ"
                 else
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
+                    return parenthesize_std(arg2) * "ᵀ" * get_sym(arg1)
                 end
-                end
+            end
         else # typeof(arg_ids[1]) == Upper
             if typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower
                 if flip(arg1_ids[1]) == arg2_ids[1]
@@ -156,13 +145,17 @@ function to_std_string(arg::BinaryOperation{*})
                 if flip(arg1_ids[2]) == arg2_ids[1]
                     return parenthesize_std(arg1) * parenthesize_std(arg2)
                 else
-                    return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2)
+                    return parenthesize_std(arg1) * parenthesize_std(arg2)
                 end
             elseif typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Upper
+                if typeof(arg1) != Tensor || typeof(arg2) != Tensor
+                    throw_not_std()
+                end
+
                 if flip(arg1_ids[end]) == arg2_ids[1]
-                    return parenthesize_std(arg1) * parenthesize_std(arg2)
+                    return get_sym(arg1) * get_sym(arg2)
                 else
-                    return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2)
+                    return get_sym(arg1) * "ᵀ" * get_sym(arg2)
                 end
             end
         end
@@ -172,29 +165,25 @@ function to_std_string(arg::BinaryOperation{*})
                 if typeof(arg1_ids[end]) == Lower
                     return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
                 else
-                    return "(" *
-                            parenthesize_std(arg.arg2) *
-                            parenthesize_std(arg.arg1) *
-                            ")ᵀ"
+                    return  parenthesize_std(arg.arg2) *
+                            parenthesize_std(arg.arg1)
                 end
             elseif flip(arg1_ids[1]) == arg2_ids[1]
                 if typeof(arg1_ids[1]) == Lower
-                    return parenthesize_std(arg.arg1) * "ᵀ" * parenthesize_std(arg.arg2)
+                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
                 else
-                    return parenthesize_std(arg.arg2) * "ᵀ" * parenthesize_std(arg.arg1)
+                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
                 end
             elseif flip(arg1_ids[end]) == arg2_ids[end]
                 if typeof(arg1_ids[end]) == Lower
-                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2) * "ᵀ"
+                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
                 else
-                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1) * "ᵀ"
+                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
                 end
             elseif flip(arg1_ids[1]) == arg2_ids[end]
                 if typeof(arg1_ids[1]) == Lower
-                    return "(" *
-                            parenthesize_std(arg.arg1) *
-                            parenthesize_std(arg.arg2) *
-                            ")ᵀ"
+                    return  parenthesize_std(arg.arg1) *
+                            parenthesize_std(arg.arg2)
                 else
                     return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
                 end

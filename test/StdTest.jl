@@ -88,8 +88,8 @@ end
     @test to_std_string(contract(C, A)) == "CᵀA"
     @test to_std_string(contract(A, D)) == "ADᵀ"
     @test to_std_string(contract(D, A)) == "ADᵀ"
-    @test to_std_string(contract(C, D)) == "(DC)ᵀ"
-    @test to_std_string(contract(D, C)) == "(DC)ᵀ"
+    @test to_std_string(contract(C, D)) == "DᵀCᵀ"
+    @test to_std_string(contract(D, C)) == "DᵀCᵀ"
 end
 
 @testset "to_std_string output is correct with matrix-matrix sum" begin
