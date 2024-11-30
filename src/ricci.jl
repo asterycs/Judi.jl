@@ -138,12 +138,20 @@ struct BinaryOperation{Op} <: TensorValue where {Op}
     arg2::Value
 end
 
-function equivalent(left::BinaryOperation{*}, right::BinaryOperation{*})
+function equivalent(left::BinaryOperation, right::BinaryOperation)
+    if typeof(left) != typeof(right)
+        return false
+    end
+
     same_types =
-        typeof(left.arg1) == typeof(right.arg1) && typeof(left.arg2) == typeof(right.arg2)
+        (typeof(left.arg1) == typeof(right.arg1) && typeof(left.arg2) == typeof(right.arg2)) ||
+        (typeof(left.arg1) == typeof(right.arg2) && typeof(left.arg2) == typeof(right.arg1))
+
     return same_types &&
-           equivalent(left.arg1, left.arg1) &&
-           equivalent(left.arg2, left.arg2)
+           (equivalent(left.arg1, right.arg1) &&
+           equivalent(left.arg2, right.arg2)) ||
+           (equivalent(left.arg1, right.arg2) &&
+           equivalent(left.arg2, right.arg1))
 end
 
 abstract type UnaryOperation <: TensorValue end

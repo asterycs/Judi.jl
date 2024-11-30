@@ -73,6 +73,19 @@ end
     @test left != MD.BinaryOperation{+}(a, b)
 end
 
+@testset "BinaryOperation equivalent" begin
+    a = Tensor("a", Upper(1))
+    b = Tensor("b", Lower(1))
+
+    left = MD.BinaryOperation{*}(a, b)
+
+    @test equivalent(MD.BinaryOperation{*}(a, b), MD.BinaryOperation{*}(a, b))
+    @test equivalent(left, MD.BinaryOperation{*}(a, b))
+    @test equivalent(left, MD.BinaryOperation{*}(b, a))
+    @test !equivalent(left, MD.BinaryOperation{+}(a, b))
+    @test !equivalent(left, MD.BinaryOperation{*}(a, Tensor("x", Upper(1))))
+end
+
 @testset "index hash function" begin
     @test hash(Lower(3)) == hash(Lower(3))
     @test hash(Lower(3)) != hash(Lower(1))
