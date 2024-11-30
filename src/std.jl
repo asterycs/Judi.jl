@@ -163,7 +163,7 @@ function to_std_string(arg::BinaryOperation{*})
     arg_ids = get_free_indices(arg)
 
     if !can_contract(arg.arg1, arg.arg2)
-        return _to_std_string(arg.arg1) * _to_std_string(arg.arg2)
+        return to_std_string(arg.arg1) * to_std_string(arg.arg2)
     end
 
     if length(arg_ids) == 1 # The result is a vector
