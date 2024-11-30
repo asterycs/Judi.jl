@@ -127,6 +127,20 @@ function to_std_string(arg::Tensor)
     throw_not_std()
 end
 
+function to_std_string(arg::KrD)
+    if length(arg.indices) == 2
+        if typeof(arg.indices[1]) == Upper && typeof(arg.indices[2]) == Lower
+            return "I"
+        end
+
+        if typeof(arg.indices[1]) == Lower && typeof(arg.indices[2]) == Upper
+            return "I"
+        end
+    end
+
+    throw_not_std()
+end
+
 function to_std_string(arg::Real)
     return to_string(arg)
 end

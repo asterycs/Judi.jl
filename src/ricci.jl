@@ -570,7 +570,9 @@ end
 function adjoint(arg::Union{Tensor,KrD,Zero})
     free_indices = get_free_indices(arg)
 
-    @assert length(free_indices) <= 2
+    if length(free_indices) > 2
+        throw(DomainError(arg.id, "Adjoint is only defined for vectors and matrices"))
+    end
 
     e = arg
 
