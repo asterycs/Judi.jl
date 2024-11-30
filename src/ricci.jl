@@ -481,21 +481,37 @@ function *(arg1::TensorValue, arg2::Number)
 end
 
 function *(arg1::Value, arg2::TensorValue)
-    if isempty(get_free_indices(arg1)) || isempty(get_free_indices(arg2))
+    arg1_free_indices = get_free_indices(arg1)
+    arg2_free_indices = get_free_indices(arg2)
+
+    if isempty(arg1_free_indices) || isempty(arg2_free_indices)
         return BinaryOperation{*}(arg1, arg2)
-    else
-        if !is_contraction_unambigous(arg1, arg2)
-            throw(DomainError((arg1, arg2), "Invalid multiplication"))
-        end
+    end
 
-        arg1_free_indices = get_free_indices(arg1)
-        arg2_free_indices = get_free_indices(arg2)
+    if length(arg1_free_indices) > 2
+        throw(DomainError(arg1, "Multiplication involving tensor \"$arg1\" is ambiguous"))
+    end
 
+    if length(arg2_free_indices) > 2
+        throw(DomainError(arg2, "Multiplication involving tensor \"$arg2\" is ambiguous"))
+    end
+
+    if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper
         return BinaryOperation{*}(
             update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])),
             arg2,
         )
     end
+
+    if length(arg1_free_indices) == 1 && length(arg2_free_indices) == 1 &&
+        typeof(arg1_free_indices[end]) == Upper && typeof(arg2_free_indices[1]) == Lower
+        return BinaryOperation{*}(
+            arg1,
+            update_index(arg2, arg2_free_indices[end], same(arg2_free_indices[end], get_next_letter())),
+        )
+    end
+
+    throw(DomainError((arg1, arg2), "Multiplication with $arg1 and $arg2 is ambiguous"))
 end
 
 function +(arg1::TensorValue, arg2::TensorValue)

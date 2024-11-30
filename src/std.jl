@@ -162,8 +162,12 @@ function to_std_string(arg::BinaryOperation{*})
     arg2_ids = get_free_indices(arg.arg2)
     arg_ids = get_free_indices(arg)
 
-    if !can_contract(arg.arg1, arg.arg2)
+    if arg.arg1 isa Real || arg.arg2 isa Real
         return to_std_string(arg.arg1) * to_std_string(arg.arg2)
+    end
+
+    if !can_contract(arg.arg1, arg.arg2)
+        return to_std_string(arg.arg1) * " ⊗ " * to_std_string(arg.arg2)
     end
 
     if length(arg_ids) == 1 # The result is a vector
