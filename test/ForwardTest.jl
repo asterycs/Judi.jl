@@ -176,7 +176,7 @@ end
 
     e = A * x
 
-    @test equivalent(differential(e, "x"), A)
+    @test equivalent(derivative(e, "x"), A)
 end
 
 @testset "Differentiate xᵀA " begin
@@ -185,7 +185,7 @@ end
 
     e = x' * A
 
-    @test equivalent(differential(e, "x"), Tensor("A", Lower(1), Lower(2)))
+    @test equivalent(derivative(e, "x"), Tensor("A", Lower(1), Lower(2)))
 end
 
 @testset "Differentiate xᵀAx" begin
@@ -194,7 +194,7 @@ end
 
     e = x' * A * x
 
-    D = differential(e, "x")
+    D = derivative(e, "x")
 
     @test equivalent(D.arg1, evaluate(x' * A))
     @test equivalent(
@@ -209,9 +209,9 @@ end
 
     e = x' * A * x
 
-    differential_form = differential(A * (x + 2 * x), "x")
+    D = derivative(A * (x + 2 * x), "x")
 
-    @test equivalent(differential_form, 3 * A)
+    @test equivalent(D, 3 * A)
 end
 
 @testset "Differentiate A(2x + x)" begin
@@ -220,7 +220,7 @@ end
 
     e = x' * A * x
 
-    differential_form = differential(A * (x + 2 * x), "x")
+    D = derivative(A * (x + 2 * x), "x")
 
-    @test equivalent(differential_form, 3 * A)
+    @test equivalent(D, 3 * A)
 end

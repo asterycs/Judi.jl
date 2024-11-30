@@ -106,3 +106,43 @@ end
     @test to_std_string(sum(A, C)) == "A + Cᵀ"
     @test to_std_string(sum(C, A)) == "Cᵀ + A"
 end
+
+@testset "Test derivative interface" begin
+    A = create_matrix("A")
+    B = create_matrix("B")
+    x = create_vector("x")
+
+    @test equivalent(derivative(x' * A * x, "A"), evaluate(x*x')) # scalar input works
+    @test equivalent(derivative(A * x, "x"), A) # vector input works
+    @test_throws DomainError derivative(A * x, "ö") # ö is undefined
+end
+
+@testset "Test gradient interface checks" begin
+    A = create_matrix("A")
+    B = create_matrix("B")
+    x = create_vector("x")
+
+    @test_throws DomainError gradient(A * x, "x") # input not a scalar
+    @test_throws DomainError gradient(x' * A * x, "A") # A is a matrix
+    @test_throws DomainError gradient(x' * A * x, "ö") # ö is undefined
+end
+
+@testset "Test jacobian interface checks" begin
+    A = create_matrix("A")
+    B = create_matrix("B")
+    x = create_vector("x")
+
+    @test_throws DomainError jacobian(x' * A * x, "x") # input not a vector
+    @test_throws DomainError jacobian(A * x, "A") # A is a matrix
+    @test_throws DomainError jacobian(A * x, "ö") # ö is undefined
+end
+
+@testset "Test hessian interface checks" begin
+    A = create_matrix("A")
+    B = create_matrix("B")
+    x = create_vector("x")
+
+    @test_throws DomainError hessian(A * x, "x") # input not a scalar
+    @test_throws DomainError hessian(x' * A * x, "A") # A is a matrix
+    @test_throws DomainError hessian(x' *   A * x, "ö") # ö is undefined
+end

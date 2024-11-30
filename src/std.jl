@@ -1,7 +1,10 @@
 export create_matrix
 export create_vector
 
-export differential
+export derivative
+export gradient
+export jacobian
+export hessian
 
 const global REGISTERED_SYMBOLS = Dict{String,Tensor}()
 
@@ -21,19 +24,83 @@ function create_vector(name::String)
     return T
 end
 
-function differential(expr, wrt::String)
+function derivative(expr, wrt::String)
     ∂ = Tensor(wrt)
 
     if wrt ∈ keys(REGISTERED_SYMBOLS)
         for index ∈ REGISTERED_SYMBOLS[wrt].indices
             push!(∂.indices, same(index, get_next_letter()))
         end
+    else
+        throw(DomainError(wrt, "Unknown symbol $wrt"))
     end
 
-    linear_form = diff(expr, ∂)
-    linear_form = evaluate(linear_form)
+    D = diff(expr, ∂)
 
-    linear_form
+    return evaluate(D)
+end
+
+function gradient(expr, wrt::String)
+    free_indices = get_free_indices(evaluate(expr))
+
+    if !isempty(free_indices)
+        throw(DomainError(evaluate(expr), "Input is not a scalar"))
+    end
+
+    if wrt ∈ keys(REGISTERED_SYMBOLS)
+        if length(REGISTERED_SYMBOLS[wrt].indices) != 1
+            throw(DomainError(wrt, "\"$wrt\" is not a vector"))
+        end
+    else
+        throw(DomainError(wrt, "Unknown symbol \"$wrt\""))
+    end
+
+    D = derivative(expr, wrt)
+    gradient = evaluate(D')
+
+    return gradient
+end
+
+function jacobian(expr, wrt::String)
+    free_indices = get_free_indices(evaluate(expr))
+
+    if length(free_indices) != 1 || typeof(free_indices[1]) != Upper
+        throw(DomainError(evaluate(expr), "Input is not a column vector"))
+    end
+
+    if wrt ∈ keys(REGISTERED_SYMBOLS)
+        if length(REGISTERED_SYMBOLS[wrt].indices) != 1
+            throw(DomainError(wrt, "\"$wrt\" is not a vector"))
+        end
+    else
+        throw(DomainError(wrt, "Unknown symbol \"$wrt\""))
+    end
+
+    D = derivative(expr, wrt)
+
+    return D
+end
+
+function hessian(expr, wrt::String)
+    free_indices = get_free_indices(evaluate(expr))
+
+    if !isempty(free_indices)
+        throw(DomainError(evaluate(expr), "Input is not a scalar"))
+    end
+
+    if wrt ∈ keys(REGISTERED_SYMBOLS)
+        if length(REGISTERED_SYMBOLS[wrt].indices) != 1
+            throw(DomainError(wrt, "\"$wrt\" is not a vector"))
+        end
+    else
+        throw(DomainError(wrt, "Unknown symbol \"$wrt\""))
+    end
+
+    D = derivative(expr, wrt)
+    g = evaluate(D')
+    H = derivative(g, wrt)
+
+    return H
 end
 
 function to_std_string(arg::Tensor)
