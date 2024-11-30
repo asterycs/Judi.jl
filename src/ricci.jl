@@ -534,9 +534,8 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
-# TODO: This doesn't make sense. Make adjoint applicable only to MatrixSymbols.
 struct Adjoint <: TensorValue
-    expr::Any
+    expr::TensorValue
 end
 
 function get_free_indices(arg::Adjoint)
