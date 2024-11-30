@@ -194,12 +194,12 @@ end
 
     e = x' * A * x
 
-    differential_form = differential(e, "x")
+    D = differential(e, "x")
 
-    @test equivalent(differential_form.arg1, evaluate(x' * A))
+    @test equivalent(D.arg1, evaluate(x' * A))
     @test equivalent(
-        differential_form.arg2,
-        evaluate(MD.BinaryOperation{*}(x', Tensor("A", Lower(1), Lower(2)))),
+        D.arg2,
+        evaluate(MD.BinaryOperation{*}(Tensor("A", Lower(1), Lower(3)), x)),
     )
 end
 
