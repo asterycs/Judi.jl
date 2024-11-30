@@ -232,8 +232,7 @@ function to_std_string(arg::BinaryOperation{*})
                 if typeof(arg1_ids[end]) == Lower
                     return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
                 else
-                    return  parenthesize_std(arg.arg2) *
-                            parenthesize_std(arg.arg1)
+                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
                 end
             elseif flip(arg1_ids[1]) == arg2_ids[1]
                 if typeof(arg1_ids[1]) == Lower
@@ -249,8 +248,7 @@ function to_std_string(arg::BinaryOperation{*})
                 end
             elseif flip(arg1_ids[1]) == arg2_ids[end]
                 if typeof(arg1_ids[1]) == Lower
-                    return  parenthesize_std(arg.arg1) *
-                            parenthesize_std(arg.arg2)
+                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
                 else
                     return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
                 end
@@ -260,4 +258,3 @@ function to_std_string(arg::BinaryOperation{*})
 
     throw_not_std()
 end
-    

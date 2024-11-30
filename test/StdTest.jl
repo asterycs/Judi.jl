@@ -112,7 +112,7 @@ end
     B = create_matrix("B")
     x = create_vector("x")
 
-    @test equivalent(derivative(x' * A * x, "A"), evaluate(x*x')) # scalar input works
+    @test equivalent(derivative(x' * A * x, "A"), evaluate(x * x')) # scalar input works
     @test equivalent(derivative(A * x, "x"), A) # vector input works
     @test_throws DomainError derivative(A * x, "ö") # ö is undefined
 end
@@ -144,5 +144,5 @@ end
 
     @test_throws DomainError hessian(A * x, "x") # input not a scalar
     @test_throws DomainError hessian(x' * A * x, "A") # A is a matrix
-    @test_throws DomainError hessian(x' *   A * x, "ö") # ö is undefined
+    @test_throws DomainError hessian(x' * A * x, "ö") # ö is undefined
 end

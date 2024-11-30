@@ -107,13 +107,15 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Union{Tensor,KrD}
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::Tensor)
-    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    arg1_free_indices, arg2_free_indices =
+        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     return Zero(arg1_free_indices..., arg2_free_indices...)
 end
 
 function evaluate(::typeof(*), arg1::Tensor, arg2::Zero)
-    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    arg1_free_indices, arg2_free_indices =
+        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     return Zero(arg1_free_indices..., arg2_free_indices...)
 end
@@ -128,7 +130,8 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
-    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    arg1_free_indices, arg2_free_indices =
+        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     return Zero(arg1_free_indices..., arg2_free_indices...)
 end
@@ -143,7 +146,8 @@ function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
-    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    arg1_free_indices, arg2_free_indices =
+        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     return Zero(arg1_free_indices..., arg2_free_indices...)
 end

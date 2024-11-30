@@ -71,10 +71,11 @@ abstract type TensorValue end
 
 # Shortcut for simpler comparison from
 # https://stackoverflow.com/questions/62336686/struct-equality-with-arrays
-function ==(a::T, b::T) where T <: TensorValue
+function ==(a::T, b::T) where {T<:TensorValue}
     f = fieldnames(T)
 
-    return (getfield.(Ref(a),f) == getfield.(Ref(b),f)) || (reverse(getfield.(Ref(a),f)) == getfield.(Ref(b),f))
+    return (getfield.(Ref(a), f) == getfield.(Ref(b), f)) ||
+           (reverse(getfield.(Ref(a), f)) == getfield.(Ref(b), f))
 end
 
 Value = Union{TensorValue,Number}
@@ -144,19 +145,20 @@ function equivalent(left::BinaryOperation, right::BinaryOperation)
     end
 
     same_types =
-        (typeof(left.arg1) == typeof(right.arg1) && typeof(left.arg2) == typeof(right.arg2)) ||
+        (
+            typeof(left.arg1) == typeof(right.arg1) &&
+            typeof(left.arg2) == typeof(right.arg2)
+        ) ||
         (typeof(left.arg1) == typeof(right.arg2) && typeof(left.arg2) == typeof(right.arg1))
 
     return same_types &&
-           (equivalent(left.arg1, right.arg1) &&
-           equivalent(left.arg2, right.arg2)) ||
-           (equivalent(left.arg1, right.arg2) &&
-           equivalent(left.arg2, right.arg1))
+           (equivalent(left.arg1, right.arg1) && equivalent(left.arg2, right.arg2)) ||
+           (equivalent(left.arg1, right.arg2) && equivalent(left.arg2, right.arg1))
 end
 
 abstract type UnaryOperation <: TensorValue end
 
-function equivalent(arg1::T, arg2::T) where {T <: UnaryOperation}
+function equivalent(arg1::T, arg2::T) where {T<:UnaryOperation}
     return equivalent(arg1.arg, arg2.arg)
 end
 
@@ -254,7 +256,8 @@ function get_free_indices(arg::Cos)
 end
 
 function get_free_indices(arg::BinaryOperation{*})
-    arg1_free_indices, arg2_free_indices = eliminate_indices(get_free_indices(arg.arg1), get_free_indices(arg.arg2))
+    arg1_free_indices, arg2_free_indices =
+        eliminate_indices(get_free_indices(arg.arg1), get_free_indices(arg.arg2))
 
     return [arg1_free_indices; arg2_free_indices]
 end
