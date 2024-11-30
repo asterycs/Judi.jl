@@ -401,46 +401,41 @@ end
     @test op2.arg2 == x
 end
 
-# TODO: Scalars not implemented
-# @testset "create BinaryOperation with non-matching indices scalar-matrix" begin
-#     A = Tensor("A", Upper(1), Lower(2))
-#     z = Tensor("z")
+@testset "create BinaryOperation{*} with non-matching indices scalar-matrix" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    z = Tensor("z")
 
-#     op1 = A * z
-#     op2 = z * A
+    op1 = A * z
+    op2 = z * A
 
-#     @test typeof(op1) == MD.BinaryOperation
-#     @test MD.can_contract(op1.arg1, op1.arg2)
-#     @test op1.op == *
-#     @test op1.arg1 == A
-#     @test op1.arg2 == z
+    @test typeof(op1) == MD.BinaryOperation{*}
+    @test !MD.can_contract(op1.arg1, op1.arg2)
+    @test op1.arg1 == A
+    @test op1.arg2 == z
 
-#     @test typeof(op2) == MD.BinaryOperation
-#     @test MD.can_contract(op2.arg1, op2.arg2)
-#     @test op2.op == *
-#     @test op2.arg1 == z
-#     @test op2.arg2 == A
-# end
+    @test typeof(op2) == MD.BinaryOperation{*}
+    @test !MD.can_contract(op2.arg1, op2.arg2)
+    @test op2.arg1 == z
+    @test op2.arg2 == A
+end
 
-# @testset "create BinaryOperation with non-matching indices scalar-vector" begin
-#     x = Tensor("x", Upper(3))
-#     z = Tensor("z")
+@testset "create BinaryOperation{*} with non-matching indices scalar-vector" begin
+    x = Tensor("x", Upper(3))
+    z = Tensor("z")
 
-#     op1 = z * x
-#     op2 = x * z
+    op1 = z * x
+    op2 = x * z
 
-#     @test typeof(op1) == MD.BinaryOperation
-#     @test MD.can_contract(op1.arg1, op1.arg2)
-#     @test op1.op == *
-#     @test op1.arg1 == z
-#     @test op1.arg2 == x
+    @test typeof(op1) == MD.BinaryOperation{*}
+    @test !MD.can_contract(op1.arg1, op1.arg2)
+    @test op1.arg1 == z
+    @test op1.arg2 == x
 
-#     @test typeof(op2) == MD.BinaryOperation
-#     @test MD.can_contract(op2.arg1, op2.arg2)
-#     @test op2.op == *
-#     @test op2.arg1 == x
-#     @test op2.arg2 == z
-# end
+    @test typeof(op2) == MD.BinaryOperation{*}
+    @test !MD.can_contract(op2.arg1, op2.arg2)
+    @test op2.arg1 == x
+    @test op2.arg2 == z
+end
 
 @testset "to_string output is correct for primitive types" begin
     A = Tensor("A", Upper(1), Lower(2))
