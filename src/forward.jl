@@ -4,20 +4,16 @@ function diff(arg::Tensor, wrt::Tensor)
     if arg.id == wrt.id
         @assert length(arg.indices) == length(wrt.indices)
 
-        D = nothing
+        D = 1
 
         for (u, l) ∈ zip(arg.indices, wrt.indices)
-            if isnothing(D)
-                D = KrD(u, flip(l))
-            else
-                D = BinaryOperation{*}(D, KrD(u, flip(l)))
-            end
+            D = BinaryOperation{*}(D, KrD(u, flip(l)))
         end
 
-        return D
-    else
-        return Zero(arg.indices..., [flip(i) for i ∈ wrt.indices]...)
+        return evaluate(D) # evaluate to get rid of the constant factor
     end
+
+    return Zero(arg.indices..., [flip(i) for i ∈ wrt.indices]...)
 end
 
 function diff(arg::KrD, wrt::Tensor)
@@ -80,6 +76,20 @@ function _evaluate_zero_times_bin(arg1::BinaryOperation{*}, arg2::Zero)
     arg1_free, arg2_free = eliminate_indices([arg1arg1_free; arg1arg2_free], arg2.indices)
 
     return Zero(arg1_free..., arg2_free...)
+end
+
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Real)
+    return evaluate(*, arg2, arg1)
+end
+
+function evaluate(::typeof(*), arg1::Real, arg2::BinaryOperation{*})
+    if arg2.arg1 isa Real
+        return BinaryOperation{*}(arg1 * arg2.arg1, arg2.arg2)
+    elseif arg2.arg2 isa Real
+        return BinaryOperation{*}(arg1 * arg2.arg2, arg2.arg1)
+    else
+        return BinaryOperation{*}(arg1, evaluate(arg2))
+    end
 end
 
 function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::BinaryOperation{*})
@@ -212,21 +222,29 @@ function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
     newarg
 end
 
+function evaluate(::typeof(*), arg1::BinaryOperation{+}, arg2::KrD)
+    return evaluate(+, evaluate(*, evaluate(arg1.arg1), arg2), evaluate(*, evaluate(arg1.arg2), arg2))
+end
+
+function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{+})
+    return evaluate(+, evaluate(*, arg1, evaluate(arg2.arg1)), evaluate(*, arg1, evaluate(arg2.arg2)))
+end
+
 function evaluate(::typeof(*), arg1, arg2)
     return BinaryOperation{*}(evaluate(arg1), evaluate(arg2))
 end
 
-# function evaluate(::typeof(*), arg1::TensorValue, arg2::Real)
-#     evaluate(*, arg2, arg1)
-# end
+function evaluate(::typeof(*), arg1::TensorValue, arg2::Real)
+    evaluate(*, arg2, arg1)
+end
 
-# function evaluate(::typeof(*), arg1::Real, arg2::TensorValue)
-#     if arg1 == 1
-#         return arg2
-#     else
-#         BinaryOperation{*}(arg1, arg2)
-#     end
-# end
+function evaluate(::typeof(*), arg1::Real, arg2::TensorValue)
+    if arg1 == 1
+        return arg2
+    else
+        BinaryOperation{*}(arg1, arg2)
+    end
+end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
     new_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
@@ -252,8 +270,16 @@ function evaluate(::typeof(+), arg1, arg2::Zero)
     return evaluate(arg1)
 end
 
+function evaluate(::typeof(+), arg1::Real, arg2::Real)
+    return arg1 + arg2
+end
+
 function evaluate(::typeof(+), arg1, arg2)
     @assert are_indices_equivalent(arg1, arg2)
+
+    if arg1 == arg2
+        return BinaryOperation{*}(2, arg1)
+    end
 
     return BinaryOperation{+}(arg1, arg2)
 end

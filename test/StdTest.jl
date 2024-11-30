@@ -137,12 +137,36 @@ end
     @test_throws DomainError jacobian(A * x, "ö") # ö is undefined
 end
 
-@testset "Test hessian interface checks" begin
+@testset "hessian interface checks" begin
     A = create_matrix("A")
-    B = create_matrix("B")
     x = create_vector("x")
 
     @test_throws DomainError hessian(A * x, "x") # input not a scalar
     @test_throws DomainError hessian(x' * A * x, "A") # A is a matrix
     @test_throws DomainError hessian(x' * A * x, "ö") # ö is undefined
+end
+
+@testset "to_std_string of gradient" begin
+    A = create_matrix("A")
+    x = create_vector("x")
+
+    @test to_std_string(gradient(x' * x, "x")) == "2x"
+    @test to_std_string(gradient(tr(x * x'), "x")) == "2x"
+end
+
+@testset "to_std_string of jacobian" begin
+    A = create_matrix("A")
+    x = create_vector("x")
+
+    @test to_std_string(jacobian(A * x, "x")) == "A"
+    @test to_std_string(jacobian(A' * x, "x")) == "Aᵀ"
+end
+
+@testset "to_std_string of hessian" begin
+    A = create_matrix("A")
+    x = create_vector("x")
+
+    @test to_std_string(hessian(x' * A * x, "x")) == "Aᵀ + A"
+    @test to_std_string(hessian(2 * x' * A * x, "x")) == "2Aᵀ + 2A"
+    @test to_std_string(hessian(2 * x' * x, "x")) == "4I"
 end
