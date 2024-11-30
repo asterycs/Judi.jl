@@ -107,9 +107,8 @@ end
     @test to_std_string(sum(C, A)) == "Cᵀ + A"
 end
 
-@testset "Test derivative interface" begin
+@testset "derivative interface checks" begin
     A = create_matrix("A")
-    B = create_matrix("B")
     x = create_vector("x")
 
     @test equivalent(derivative(x' * A * x, "A"), evaluate(x * x')) # scalar input works
@@ -117,9 +116,8 @@ end
     @test_throws DomainError derivative(A * x, "ö") # ö is undefined
 end
 
-@testset "Test gradient interface checks" begin
+@testset "gradient interface checks" begin
     A = create_matrix("A")
-    B = create_matrix("B")
     x = create_vector("x")
 
     @test_throws DomainError gradient(A * x, "x") # input not a scalar
@@ -127,9 +125,8 @@ end
     @test_throws DomainError gradient(x' * A * x, "ö") # ö is undefined
 end
 
-@testset "Test jacobian interface checks" begin
+@testset "jacobian interface checks" begin
     A = create_matrix("A")
-    B = create_matrix("B")
     x = create_vector("x")
 
     @test_throws DomainError jacobian(x' * A * x, "x") # input not a vector
