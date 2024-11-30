@@ -5,11 +5,62 @@
 
 ## Symbolic differentiation of vector/matrix/tensor expressions in Julia
 
-This library implements symbolic matrix differentiation. The implementation is based on the ideas presented in
+This library computes symbolic derivatives of expressions involving vectors and matrices from Julia syntax.
 
-> S. Laue, M. Mitterreiter, and J. Giesen.  
+### Example
+
+Create a matrix and a vector:
+
+```julia
+using MatrixDiff
+
+A = create_matrix("A")
+x = create_vector("x")
+```
+Create an expression:
+```julia
+expr = x' * A * x
+```
+The variable `expr` now contains an internal representation of the expression `x' * A * x`.
+
+Compute the gradient and the Hessian with respect to the vector `x`. Please note that the second argument is of type `String`.
+```julia
+g = gradient(expr, "x")
+H = hessian(expr, "x")
+```
+Convert the gradient and the Hessian into standard notation using `to_std_string`:
+```julia
+to_std_string(g) # "Aᵀx + Ax"
+to_std_string(H) # "Aᵀ + A"
+```
+
+Jacobians can be computed with `jacobian`:
+
+```julia
+to_std_string(jacobian(A * x, "x")) # "A"
+```
+
+The method `derivative` can be used to compute arbitrary derivatives.
+
+```julia
+to_std_string(derivative(A, "A")) # "I ⊗ I"
+```
+The method `to_std_string` will throw an exception when given an expression that that cannot be converted to
+standard notation.
+
+There be dragons! Issues are welcome.
+
+### Installation
+
+This library is not yet published in the general registry. To install it directly from Github:
+
+```julia
+using Pkg; Pkg.add("https://github.com/asterycs/MatrixDiff.jl.git")
+```
+
+### Acknowledgements
+
+The implementation is based on the ideas presented in
+
+> S. Laue, M. Mitterreiter, and J. Giesen.
 > Computing Higher Order Derivatives of Matrix and Tensor Expressions, NeurIPS 2018.
-
-### Current status
-
-This library is currently in prototype stage. Many details are still missing and the behavior of the existing parts are changing frequently. Most notably, a user friendly API is still missing. The user currently has to know a bit of Ricci notation in order to use it.
