@@ -280,7 +280,8 @@ end
     @test MD.is_valid_matrix_multiplication(A, z')
 end
 
-@testset "create BinaryOperation with matching indices" begin
+# TODO: Make this test more precise
+@testset "multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     z = Tensor("z")
@@ -374,7 +375,7 @@ end
     @test MD.can_contract(z, A)
 end
 
-@testset "create BinaryOperation with non-matching indices matrix-vector" begin
+@testset "multiplication with non-matching indices matrix-vector" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -398,14 +399,14 @@ end
     @test op2.arg2 == A
 end
 
-@testset "create BinaryOperation with non-compatible matrix-vector fails" begin
+@testset "multiplication with non-compatible matrix-vector fails" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
     @test_throws DomainError x * A
 end
 
-@testset "create BinaryOperation with non-matching indices vector-vector" begin
+@testset "vector inner product with mismatching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(1))
 
@@ -424,7 +425,7 @@ end
     @test op2.arg2 == x
 end
 
-@testset "create BinaryOperation{*} with non-matching indices scalar-matrix" begin
+@testset "multiplication with non-matching indices scalar-matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
     z = Tensor("z")
 
@@ -442,7 +443,7 @@ end
     @test op2.arg2 == A
 end
 
-@testset "create BinaryOperation{*} with non-matching indices scalar-vector" begin
+@testset "multiplication with non-matching indices scalar-vector" begin
     x = Tensor("x", Upper(3))
     z = Tensor("z")
 
