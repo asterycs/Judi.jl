@@ -1,8 +1,9 @@
 import Base.==
-import Base.hash
 import Base.*
 import Base.+
 import Base.adjoint
+import Base.broadcast
+import Base.hash
 import Base.show
 
 export Upper, Lower
@@ -38,11 +39,19 @@ function flip(index::Upper)
     return Lower(index.letter)
 end
 
-function same(old::Lower, letter::Letter)
+function flip_to(index::Lower, letter::Letter)
+    return Upper(letter)
+end
+
+function flip_to(index::Upper, letter::Letter)
     return Lower(letter)
 end
 
-function same(old::Upper, letter::Letter)
+function same_to(old::Lower, letter::Letter)
+    return Lower(letter)
+end
+
+function same_to(old::Upper, letter::Letter)
     return Upper(letter)
 end
 
@@ -81,6 +90,7 @@ end
 Value = Union{TensorValue,Number}
 IndexSet = Vector{LowerOrUpperIndex}
 
+# TODO: Replace number with real
 function get_free_indices(arg::Number)
     return LowerOrUpperIndex[]
 end
@@ -188,8 +198,8 @@ end
 
 function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
     CanBeNothing = Union{Nothing,Lower,Upper}
-    available1 = CanBeNothing[i for i ∈ arg1]
-    available2 = CanBeNothing[i for i ∈ arg2]
+    available1 = CanBeNothing[i for i ∈ unique(arg1)]
+    available2 = CanBeNothing[i for i ∈ unique(arg2)]
     eliminated = LowerOrUpperIndex[]
 
     for i ∈ eachindex(available1)
@@ -202,7 +212,7 @@ function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
                 continue
             end
 
-            if flip(available2[j]) == available1[i]
+            if flip(available2[j]) == available1[i] # contraction
                 push!(eliminated, available1[i])
                 push!(eliminated, available2[j])
                 available1[i] = nothing
@@ -211,8 +221,8 @@ function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
         end
     end
 
-    filtered1 = consolidate(available1)
-    filtered2 = consolidate(available2)
+    filtered1 = filter(i -> i ∈ available1, arg1)
+    filtered2 = filter(i -> i ∈ available2, arg2)
 
     return (filtered1, filtered2), eliminated
 end
@@ -250,11 +260,13 @@ function is_permutation(arg1::TensorValue, arg2::TensorValue)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    return is_permutation(arg1_indices, arg2_indices)
+    return is_permutation(unique(arg1_indices), unique(arg2_indices))
 end
 
 function get_free_indices(arg::Union{Tensor,KrD,Zero})
-    arg.indices
+    @assert length(unique(arg.indices)) == length(arg.indices)
+
+    return arg.indices
 end
 
 function get_free_indices(arg::Cos)
@@ -482,6 +494,27 @@ function tr(arg::TensorValue)
     return BinaryOperation{*}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
 end
 
+function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
+    arg1_free_indices = get_free_indices(arg1)
+    arg2_free_indices = get_free_indices(arg2)
+
+    if length(arg1_free_indices) != length(arg2_free_indices)
+        return throw(DomainError((arg1, arg2), "Cannot do elementwise multiplication with inputs of different order"))
+    end
+
+    if typeof.(arg1_free_indices) != typeof.(arg2_free_indices)
+        return throw(DomainError((arg1, arg2), "Elementwise multiplication is ambiguous for tensors with different co/contravariance"))
+    end
+
+    new_arg1 = arg1
+
+    for (li, ri) ∈ zip(arg1_free_indices, arg2_free_indices)
+        new_arg1 = update_index(new_arg1, li, ri)
+    end
+
+    return BinaryOperation{*}(new_arg1, arg2)
+end
+
 function *(arg1::TensorValue, arg2::Number)
     return arg2 * arg1
 end
@@ -524,7 +557,7 @@ function +(arg1::TensorValue, arg2::TensorValue)
     BinaryOperation{+}(arg1, arg2)
 end
 
-function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
+function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     indices = get_free_indices(arg)
 
     if from == to
@@ -532,10 +565,7 @@ function update_index(arg, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     end
 
     @assert from ∈ indices
-
-    if typeof(from) == typeof(flip(to))
-        throw(DomainError((from, to), "requested a transpose which isn't allowed"))
-    end
+    @assert typeof(from) != typeof(flip(to))
 
     return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
@@ -561,8 +591,8 @@ function adjoint(arg::BinaryOperation{*})
 
     t = arg
 
-    for i ∈ free_ids
-        t = BinaryOperation{*}(t, KrD(flip(i), flip(i)))
+    for i ∈ union(free_ids)
+        t = BinaryOperation{*}(t, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
     return Adjoint(t)
@@ -582,7 +612,7 @@ function adjoint(arg::Union{Tensor,KrD,Zero})
     e = arg
 
     for i ∈ free_indices
-        e = BinaryOperation{*}(e, KrD(flip(i), flip(i)))
+        e = BinaryOperation{*}(e, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
     return Adjoint(e)

@@ -293,6 +293,70 @@ end
     @test typeof(A * z) == MD.BinaryOperation{*}
 end
 
+@testset "elementwise multiplication matrix-matrix" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(3), Lower(4))
+
+    op1 = A .* A
+
+    @test typeof(op1) == MD.BinaryOperation{*}
+    @test evaluate(op1.arg1) == Tensor("A", Upper(1), Lower(2))
+    @test evaluate(op1.arg2) == Tensor("A", Upper(1), Lower(2))
+
+    op2 = A .* B
+
+    @test typeof(op2) == MD.BinaryOperation{*}
+    @test evaluate(op2.arg1) == Tensor("A", Upper(3), Lower(4))
+    @test evaluate(op2.arg2) == Tensor("B", Upper(3), Lower(4))
+
+    op3 = A' .* B'
+
+    @test typeof(op3) == MD.BinaryOperation{*}
+    @test evaluate(op3.arg1) == Tensor("A", Lower(3), Upper(4))
+    @test evaluate(op3.arg2) == Tensor("B", Lower(3), Upper(4))
+end
+
+@testset "elementwise multiplication vector-vector" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Upper(2))
+
+    op1 = x .* x
+
+    @test typeof(op1) == MD.BinaryOperation{*}
+    @test evaluate(op1.arg1) == Tensor("x", Upper(1))
+    @test evaluate(op1.arg2) == Tensor("x", Upper(1))
+
+    op2 = x .* y
+
+    @test typeof(op2) == MD.BinaryOperation{*}
+    @test evaluate(op2.arg1) == Tensor("x", Upper(2))
+    @test evaluate(op2.arg2) == Tensor("y", Upper(2))
+
+    op3 = x' .* y'
+
+    @test typeof(op3) == MD.BinaryOperation{*}
+    @test evaluate(op3.arg1) == Tensor("x", Lower(2))
+    @test evaluate(op3.arg2) == Tensor("y", Lower(2))
+end
+
+@testset "elementwise multiplication with ambiguous input fails" begin
+    x = Tensor("x", Upper(1))
+    A = Tensor("A", Upper(3), Lower(4))
+    B = Tensor("B", Upper(5), Upper(6))
+    T = Tensor("T", Upper(7), Lower(8), Lower(9))
+
+    @test_throws DomainError x .* x'
+    @test_throws DomainError x' .* x
+    @test_throws DomainError x .* A
+    @test_throws DomainError A .* x
+    @test_throws DomainError A .* x'
+    @test_throws DomainError x' .* A
+    @test_throws DomainError A .* B
+    @test_throws DomainError B .* A
+    @test_throws DomainError A .* T
+    @test_throws DomainError T .* A
+end
+
 @testset "update_index column vector" begin
     x = Tensor("x", Upper(3))
 
