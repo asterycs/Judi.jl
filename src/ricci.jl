@@ -67,7 +67,8 @@ function hash(arg::LowerOrUpperIndex)
     h
 end
 
-const global NEXT_LETTER = Ref{Letter}(1)
+# TODO: Find a better solution for this. Perhaps a set with taken indices?
+const global NEXT_LETTER = Ref{Letter}(100)
 
 function get_next_letter()
     tmp = NEXT_LETTER[]
@@ -107,8 +108,7 @@ struct Tensor <: TensorValue
         # Convert type
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
-        letters = unique([i.letter for i ∈ indices])
-        if length(letters) != length(indices)
+        if length(unique(indices)) != length(indices)
             throw(DomainError(indices, "Indices of $id are invalid"))
         end
 
@@ -126,6 +126,10 @@ struct KrD <: TensorValue
     function KrD(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
+        if length(unique(indices)) != length(indices)
+            throw(DomainError(indices, "Indices of δ are invalid"))
+        end
+
         new(indices)
     end
 end
@@ -139,6 +143,10 @@ struct Zero <: TensorValue
 
     function Zero(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
+
+        if length(unique(indices)) != length(indices)
+            throw(DomainError(indices, "Indices of $id are invalid"))
+        end
 
         new(indices)
     end
@@ -546,7 +554,7 @@ function *(arg1::Value, arg2::TensorValue)
         typeof(arg1_free_indices[end]) == Upper && typeof(arg2_free_indices[1]) == Lower
         return BinaryOperation{*}(
             arg1,
-            update_index(arg2, arg2_free_indices[end], same(arg2_free_indices[end], get_next_letter())),
+            update_index(arg2, arg2_free_indices[end], same_to(arg2_free_indices[end], get_next_letter())),
         )
     end
 
@@ -565,7 +573,7 @@ function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUppe
     end
 
     @assert from ∈ indices
-    @assert typeof(from) != typeof(flip(to))
+    @assert typeof(from) != typeof(flip(to)) "update_index shall not transpose"
 
     return BinaryOperation{*}(arg, KrD(flip(from), to))
 end

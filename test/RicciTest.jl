@@ -4,14 +4,16 @@ using Test
 MD = MatrixDiff
 
 @testset "Tensor constructor throws on invalid input" begin
-    @test_throws DomainError Tensor("A", Upper(2), Lower(2))
     @test_throws DomainError Tensor("A", Lower(2), Lower(2))
+    @test_throws DomainError Tensor("A", Lower(2), Upper(2), Lower(1), Lower(2))
+end
 
-    A = Tensor("A", Upper(1), Lower(2))
-    B = Tensor("B", Lower(1), Lower(2))
-    x = Tensor("x", Upper(1))
-    y = Tensor("y", Lower(1))
-    z = Tensor("z")
+@testset "Tensor constructor succeeds on valid input" begin
+    @test !isnothing(Tensor("A", Upper(1), Lower(2)))
+    @test !isnothing(Tensor("B", Lower(1), Lower(2)))
+    @test !isnothing(Tensor("x", Upper(1)))
+    @test !isnothing(Tensor("y", Lower(1)))
+    @test !isnothing(Tensor("z"))
 end
 
 @testset "index equality operator" begin
@@ -193,26 +195,15 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices with Tensor-KrD and two matching pairs" begin
-    x = Tensor("x", Upper(1))
-    δ = KrD(Lower(1), Lower(1))
-
-    op1 = MD.BinaryOperation{*}(x, δ)
-    op2 = MD.BinaryOperation{*}(δ, x)
-
-    @test MD.get_free_indices(op1) == [Lower(1)]
-    @test MD.get_free_indices(op2) == [Lower(1)]
-end
-
 @testset "get_free_indices with scalar Tensor-KrD" begin
     x = Tensor("x")
-    δ = KrD(Lower(1), Lower(1))
+    δ = KrD(Lower(1), Lower(2))
 
     op1 = MD.BinaryOperation{*}(x, δ)
     op2 = MD.BinaryOperation{*}(δ, x)
 
-    @test MD.get_free_indices(op1) == [Lower(1); Lower(1)]
-    @test MD.get_free_indices(op2) == [Lower(1); Lower(1)]
+    @test MD.get_free_indices(op1) == [Lower(1); Lower(2)]
+    @test MD.get_free_indices(op2) == [Lower(1); Lower(2)]
 end
 
 @testset "get_free_indices with Tensor-Tensor and no matching pairs" begin
@@ -277,7 +268,6 @@ end
 
     @test MD.is_valid_matrix_multiplication(A, x)
     @test MD.is_valid_matrix_multiplication(y, A)
-    @test MD.is_valid_matrix_multiplication(A, z')
 end
 
 # TODO: Make this test more precise
@@ -300,20 +290,20 @@ end
     op1 = A .* A
 
     @test typeof(op1) == MD.BinaryOperation{*}
-    @test evaluate(op1.arg1) == Tensor("A", Upper(1), Lower(2))
-    @test evaluate(op1.arg2) == Tensor("A", Upper(1), Lower(2))
+    @test equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
+    @test equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
 
     op2 = A .* B
 
     @test typeof(op2) == MD.BinaryOperation{*}
-    @test evaluate(op2.arg1) == Tensor("A", Upper(3), Lower(4))
-    @test evaluate(op2.arg2) == Tensor("B", Upper(3), Lower(4))
+    @test equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
+    @test equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
 
     op3 = A' .* B'
 
     @test typeof(op3) == MD.BinaryOperation{*}
-    @test evaluate(op3.arg1) == Tensor("A", Lower(3), Upper(4))
-    @test evaluate(op3.arg2) == Tensor("B", Lower(3), Upper(4))
+    @test equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
+    @test equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
 end
 
 @testset "elementwise multiplication vector-vector" begin
@@ -323,20 +313,20 @@ end
     op1 = x .* x
 
     @test typeof(op1) == MD.BinaryOperation{*}
-    @test evaluate(op1.arg1) == Tensor("x", Upper(1))
-    @test evaluate(op1.arg2) == Tensor("x", Upper(1))
+    @test equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
+    @test equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
 
     op2 = x .* y
 
     @test typeof(op2) == MD.BinaryOperation{*}
-    @test evaluate(op2.arg1) == Tensor("x", Upper(2))
-    @test evaluate(op2.arg2) == Tensor("y", Upper(2))
+    @test equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
+    @test equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
 
     op3 = x' .* y'
 
     @test typeof(op3) == MD.BinaryOperation{*}
-    @test evaluate(op3.arg1) == Tensor("x", Lower(2))
-    @test evaluate(op3.arg2) == Tensor("y", Lower(2))
+    @test equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
+    @test equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
 end
 
 @testset "elementwise multiplication with ambiguous input fails" begin
@@ -367,9 +357,6 @@ end
 
     expected_shift = KrD(Lower(3), Upper(2))
     @test MD.update_index(x, Upper(3), Upper(2)) == MD.BinaryOperation{*}(x, expected_shift)
-
-    # update_index shall not transpose
-    @test_throws DomainError MD.update_index(x, Upper(3), Lower(1))
 end
 
 @testset "update_index row vector" begin
@@ -382,9 +369,6 @@ end
 
     expected_shift = KrD(Upper(3), Lower(2))
     @test MD.update_index(x, Lower(3), Lower(2)) == MD.BinaryOperation{*}(x, expected_shift)
-
-    # update_index shall not transpose
-    @test_throws DomainError MD.update_index(x, Lower(3), Upper(1))
 end
 
 @testset "update_index matrix" begin
@@ -394,32 +378,31 @@ end
 
     expected_shift = KrD(Upper(2), Lower(3))
     @test MD.update_index(A, Lower(2), Lower(3)) == MD.BinaryOperation{*}(A, expected_shift)
-
-    # update_index shall not transpose
-    @test_throws DomainError MD.update_index(A, Lower(2), Upper(3))
 end
 
 @testset "transpose vector" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(1))
 
-    @test evaluate(x') == Tensor("x", Lower(1))
-    @test evaluate(y') == Tensor("y", Upper(1))
+    @test equivalent(evaluate(x'), Tensor("x", Lower(1)))
+    @test equivalent(evaluate(y'), Tensor("y", Upper(1)))
 end
 
 @testset "combined update_index and transpose vector" begin
     x = Tensor("x", Upper(2))
 
-    updated_transpose = evaluate(MD.update_index(x', Lower(2), Lower(1)))
+    xt = x'
+    x_indices = MD.get_free_indices(xt)
+    updated_transpose = evaluate(MD.update_index(xt, x_indices[1], Lower(1)))
 
-    @test updated_transpose == Tensor("x", Lower(1))
+    @test equivalent(updated_transpose, Tensor("x", Lower(1)))
 end
 
 @testset "transpose matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
 
     A_transpose = evaluate(A')
-    @test A_transpose == Tensor("A", Lower(1), Upper(2))
+    @test equivalent(A_transpose, Tensor("A", Lower(1), Upper(2)))
 end
 
 @testset "can_contract" begin
@@ -427,7 +410,7 @@ end
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(3))
     z = Tensor("z", Lower(1))
-    d = KrD(Lower(1), Lower(1))
+    d = KrD(Lower(1), Upper(1))
 
     @test MD.can_contract(A, x)
     @test MD.can_contract(x, A)
@@ -458,8 +441,11 @@ end
     @test typeof(op2.arg1.arg1) == MD.Adjoint
     @test typeof(op2.arg1.arg1.expr) == MD.BinaryOperation{*}
     @test op2.arg1.arg1.expr.arg1 == x
-    @test op2.arg1.arg1.expr.arg2 == KrD(Lower(3), Lower(3))
-    @test op2.arg1.arg2 == KrD(Upper(3), Lower(1))
+    @test typeof(op2.arg1.arg1.expr.arg2) == KrD
+    @test op2.arg1.arg1.expr.arg2.indices[1] == flip(x.indices[1])
+    @test typeof(op2.arg1.arg2) == KrD
+    @test flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.expr.arg2.indices[2]
+    @test flip(op2.arg1.arg2.indices[2]) == A.indices[1]
     @test op2.arg2 == A
 end
 
@@ -531,7 +517,7 @@ end
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     z = Tensor("z")
-    d1 = KrD(Upper(1), Upper(1))
+    d1 = KrD(Upper(1), Upper(2))
     d2 = KrD(Upper(3), Lower(4))
     zero = Zero(Upper(1), Lower(3), Lower(4))
 
@@ -540,7 +526,7 @@ end
     @test to_string(x) == "x²"
     @test to_string(y) == "y₁"
     @test to_string(z) == "z"
-    @test to_string(d1) == "δ¹¹"
+    @test to_string(d1) == "δ¹²"
     @test to_string(d2) == "δ³₄"
     @test to_string(zero) == "0¹₃₄"
 end

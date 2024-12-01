@@ -8,9 +8,10 @@ MD = MatrixDiff
     y = create_vector("y")
     A = create_vector("A")
 
-    @test x == Tensor("x", Upper(1))
-    @test y == Tensor("y", Upper(2))
-    @test A == Tensor("A", Upper(3))
+    # TODO: Find a better way to keep track of the indices and remove all "equivalent"
+    @test equivalent(x, Tensor("x", Upper(1)))
+    @test equivalent(y, Tensor("y", Upper(2)))
+    @test equivalent(A, Tensor("A", Upper(3)))
 end
 
 @testset "create matrix" begin
@@ -18,15 +19,18 @@ end
     B = create_matrix("B")
     X = create_matrix("X")
 
-    @test A == Tensor("A", Upper(4), Lower(5))
-    @test B == Tensor("B", Upper(6), Lower(7))
-    @test X == Tensor("X", Upper(8), Lower(9))
+    @test equivalent(A, Tensor("A", Upper(4), Lower(5)))
+    @test equivalent(B, Tensor("B", Upper(6), Lower(7)))
+    @test equivalent(X, Tensor("X", Upper(8), Lower(9)))
 end
 
 @testset "to_std_string output is correct with matrix-vector contraction" begin
     A = Tensor("A", Upper(1), Lower(2))
+    At = Tensor("A", Lower(1), Upper(2))
     x = Tensor("x", Upper(2))
+    xt = Tensor("x", Lower(2))
     y = Tensor("y", Upper(1))
+    yt = Tensor("y", Lower(1))
 
     function contract(l, r)
         return evaluate(MD.BinaryOperation{*}(l, r))
@@ -34,12 +38,12 @@ end
 
     @test to_std_string(contract(A, x)) == "Ax"
     @test to_std_string(contract(x, A)) == "Ax"
-    @test to_std_string(contract(A, y')) == "yᵀA"
-    @test to_std_string(contract(y', A)) == "yᵀA"
-    @test to_std_string(contract(A', x')) == "xᵀAᵀ"
-    @test to_std_string(contract(x', A')) == "xᵀAᵀ"
-    @test to_std_string(contract(A', y)) == "Aᵀy"
-    @test to_std_string(contract(y, A')) == "Aᵀy"
+    @test to_std_string(contract(A, yt)) == "yᵀA"
+    @test to_std_string(contract(yt, A)) == "yᵀA"
+    @test to_std_string(contract(At, xt)) == "xᵀAᵀ"
+    @test to_std_string(contract(xt, At)) == "xᵀAᵀ"
+    @test to_std_string(contract(At, y)) == "Aᵀy"
+    @test to_std_string(contract(y, At)) == "Aᵀy"
 end
 
 @testset "to_std_string output is correct with all covariant bilinar form-vector contraction" begin

@@ -29,7 +29,7 @@ function derivative(expr, wrt::String)
 
     if wrt ∈ keys(REGISTERED_SYMBOLS)
         for index ∈ REGISTERED_SYMBOLS[wrt].indices
-            push!(∂.indices, same(index, get_next_letter()))
+            push!(∂.indices, same_to(index, get_next_letter()))
         end
     else
         throw(DomainError(wrt, "Unknown symbol $wrt"))
