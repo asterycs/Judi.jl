@@ -166,7 +166,7 @@ function throw_not_std()
 end
 
 function to_std_string(arg::BinaryOperation{+})
-    @assert are_indices_equivalent(arg.arg1, arg.arg2)
+    @assert is_permutation(arg.arg1, arg.arg2)
 
     return to_std_string(arg.arg1) * " + " * to_std_string(arg.arg2)
 end

@@ -253,19 +253,19 @@ function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
 end
 
 function evaluate(::typeof(+), arg1::Zero, arg2::Zero)
-    @assert are_indices_equivalent(arg1, arg2)
+    @assert is_permutation(arg1, arg2)
 
     arg1
 end
 
 function evaluate(::typeof(+), arg1::Zero, arg2)
-    @assert are_indices_equivalent(arg1, arg2)
+    @assert is_permutation(arg1, arg2)
 
     return evaluate(arg2)
 end
 
 function evaluate(::typeof(+), arg1, arg2::Zero)
-    @assert are_indices_equivalent(arg1, arg2)
+    @assert is_permutation(arg1, arg2)
 
     return evaluate(arg1)
 end
@@ -275,7 +275,7 @@ function evaluate(::typeof(+), arg1::Real, arg2::Real)
 end
 
 function evaluate(::typeof(+), arg1, arg2)
-    @assert are_indices_equivalent(arg1, arg2)
+    @assert is_permutation(arg1, arg2)
 
     if arg1 == arg2
         return BinaryOperation{*}(2, arg1)

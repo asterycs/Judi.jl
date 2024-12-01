@@ -225,26 +225,32 @@ function eliminated_indices(arg1::IndexSet, arg2::IndexSet)
     return last(_eliminate_indices(arg1, arg2))
 end
 
-function are_indices_equivalent(arg1::IndexSet, arg2::IndexSet)
+function count_values(input::AbstractArray{T}) where {T}
+    return Dict((i => count(==(i), input)) for i ∈ unique(input))
+end
 
-    if length(arg1) != length(arg2)
+function is_permutation(l::AbstractArray{T}, r::AbstractArray{T}) where {T}
+    if length(l) != length(r)
         return false
     end
 
-    U = union(arg1, arg2)
+    l_element_count = count_values(l)
+    r_element_count = count_values(r)
 
-    if length(U) == length(arg1)
-        return true
+    for index ∈ keys(l_element_count)
+        if l_element_count[index] != r_element_count[index]
+            return false
+        end
     end
 
-    return false
+    return true
 end
 
-function are_indices_equivalent(arg1::Value, arg2::Value)
+function is_permutation(arg1::TensorValue, arg2::TensorValue)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    return are_indices_equivalent(arg1_indices, arg2_indices)
+    return is_permutation(arg1_indices, arg2_indices)
 end
 
 function get_free_indices(arg::Union{Tensor,KrD,Zero})
@@ -266,7 +272,7 @@ function get_free_indices(arg::BinaryOperation{+})
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
 
-    @assert are_indices_equivalent(arg1_ids, arg2_ids)
+    @assert is_permutation(arg1_ids, arg2_ids)
 
     return arg1_ids
 end

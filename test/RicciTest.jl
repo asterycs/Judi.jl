@@ -61,6 +61,29 @@ end
 #     @test left != MD.UnaryOperation(b, a)
 # end
 
+@testset "is_permutation true positive" begin
+    l = [Lower(9); Upper(2); Lower(2); Lower(2)]
+    r = collect(reverse(l))
+
+    @test MD.is_permutation(l, l)
+    @test MD.is_permutation(l, r)
+    @test MD.is_permutation(r, l)
+    @test MD.is_permutation(r, r)
+end
+
+@testset "is_permutation true negative" begin
+    l = [Lower(9); Upper(2); Lower(2); Lower(2)]
+    r1 = [Lower(9); Upper(2); Lower(2)]
+    r2 = [Lower(9); Upper(2); Lower(2); Lower(2); Lower(2)]
+    r3 = []
+    r4 = [Lower(9); Upper(2); Upper(2); Lower(2)]
+
+    @test !MD.is_permutation(l, r1)
+    @test !MD.is_permutation(l, r2)
+    @test !MD.is_permutation(l, r3)
+    @test !MD.is_permutation(l, r4)
+end
+
 @testset "BinaryOperation equality operator" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
