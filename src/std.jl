@@ -166,7 +166,10 @@ function throw_not_std()
 end
 
 function to_std_string(arg::BinaryOperation{+})
-    @assert is_permutation(arg.arg1, arg.arg2)
+    arg1_index_types = typeof.(get_free_indices(arg.arg1))
+    arg2_index_types = typeof.(get_free_indices(arg.arg2))
+
+    @assert is_permutation(arg1_index_types, arg2_index_types)
 
     return to_std_string(arg.arg1) * " + " * to_std_string(arg.arg2)
 end

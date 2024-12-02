@@ -116,8 +116,18 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Tensor)
     end
 end
 
+function is_trace(arg1::TensorValue, arg2::KrD)
+    arg1_indices = get_free_indices(arg1)
+
+    if flip(arg2.indices[1]) ∈ arg1_indices && flip(arg2.indices[2]) ∈ arg1_indices
+        return true
+    end
+
+    return false
+end
+
 function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
-    if can_contract(arg1, arg2.arg1) && can_contract(arg1, arg2.arg2) # arg2 contains an element-wise multiplication
+    if can_contract(arg1, arg2.arg1) && can_contract(arg1, arg2.arg2) && !is_trace(arg1, arg2) # arg2 contains an element-wise multiplication
         return BinaryOperation{*}(evaluate(*, arg1, arg2.arg1), evaluate(*, arg1, arg2.arg2))
     elseif can_contract(arg1, arg2.arg1)
         new_arg1 = evaluate(*, arg1, arg2.arg1)
@@ -131,7 +141,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
-    if can_contract(arg1.arg1, arg2) && can_contract(arg1.arg2, arg2) # arg1 contains an element-wise multiplication
+    if can_contract(arg1.arg1, arg2) && can_contract(arg1.arg2, arg2) && !is_trace(arg1, arg2) # arg1 contains an element-wise multiplication
         return BinaryOperation{*}(evaluate(*, arg1.arg1, arg2), evaluate(*, arg1.arg2, arg2))
     elseif can_contract(arg1.arg2, arg2)
         new_arg2 = evaluate(*, arg1.arg2, arg2)
@@ -303,7 +313,10 @@ function evaluate(::typeof(+), arg1::Real, arg2::Real)
 end
 
 function evaluate(::typeof(+), arg1, arg2)
-    @assert is_permutation(arg1, arg2)
+    arg1_index_types = typeof.(get_free_indices(arg1))
+    arg2_index_types = typeof.(get_free_indices(arg2))
+
+    @assert is_permutation(arg1_index_types, arg2_index_types)
 
     if arg1 == arg2
         return BinaryOperation{*}(2, arg1)

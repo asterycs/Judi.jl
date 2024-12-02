@@ -32,31 +32,34 @@ end
     x = Tensor("x", Upper(1))
     z = Tensor("z")
 
-    @test evaluate(A') == Tensor("A", Lower(1), Upper(2))
-    @test evaluate(x') == Tensor("x", Lower(1))
+    @test equivalent(evaluate(A'), Tensor("A", Lower(1), Upper(2)))
+    @test equivalent(evaluate(x'), Tensor("x", Lower(1)))
     # @test evaluate(z') == Tensor("z") # Not implemented
 end
 
 @testset "evaluate BinaryOperation vector-KrD" begin
     x = Tensor("x", Upper(2))
     d1 = KrD(Lower(2), Upper(3))
-    d2 = KrD(Lower(2), Lower(2))
+    d2 = KrD(Lower(2), Upper(2))
 
     @test evaluate(MD.BinaryOperation{*}(d1, x)) == Tensor("x", Upper(3))
     @test evaluate(MD.BinaryOperation{*}(x, d1)) == Tensor("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(d2, x)) == Tensor("x", Lower(2))
-    @test evaluate(MD.BinaryOperation{*}(x, d2)) == Tensor("x", Lower(2))
+    @test evaluate(MD.BinaryOperation{*}(d2, x)) == Tensor("x", Upper(2))
+    @test evaluate(MD.BinaryOperation{*}(x, d2)) == Tensor("x", Upper(2))
 end
 
 @testset "evaluate BinaryOperation matrix-KrD" begin
     A = Tensor("A", Upper(2), Lower(4))
     d1 = KrD(Lower(2), Upper(3))
-    d2 = KrD(Lower(2), Lower(2))
+    d2 = KrD(Lower(2), Lower(3))
+    d3 = KrD(Upper(4), Lower(1))
 
     @test evaluate(MD.BinaryOperation{*}(d1, A)) == Tensor("A", Upper(3), Lower(4))
     @test evaluate(MD.BinaryOperation{*}(A, d1)) == Tensor("A", Upper(3), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(d2, A)) == Tensor("A", Lower(2), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Tensor("A", Lower(2), Lower(4))
+    @test evaluate(MD.BinaryOperation{*}(d2, A)) == Tensor("A", Lower(3), Lower(4))
+    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Tensor("A", Lower(3), Lower(4))
+    @test evaluate(MD.BinaryOperation{*}(d3, A)) == Tensor("A", Upper(2), Lower(1))
+    @test evaluate(MD.BinaryOperation{*}(A, d3)) == Tensor("A", Upper(2), Lower(1))
 end
 
 @testset "evaluate BinaryOperation KrD-KrD" begin
@@ -224,3 +227,5 @@ end
 
     @test equivalent(D, 3 * A)
 end
+
+# TODO: Test is_trace
