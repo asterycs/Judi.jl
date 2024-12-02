@@ -127,8 +127,13 @@ function is_trace(arg1::TensorValue, arg2::KrD)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
-    if can_contract(arg1, arg2.arg1) && can_contract(arg1, arg2.arg2) && !is_trace(arg1, arg2) # arg2 contains an element-wise multiplication
-        return BinaryOperation{*}(evaluate(*, arg1, arg2.arg1), evaluate(*, arg1, arg2.arg2))
+    if can_contract(arg1, arg2.arg1) &&
+       can_contract(arg1, arg2.arg2) &&
+       !is_trace(arg1, arg2) # arg2 contains an element-wise multiplication
+        return BinaryOperation{*}(
+            evaluate(*, arg1, arg2.arg1),
+            evaluate(*, arg1, arg2.arg2),
+        )
     elseif can_contract(arg1, arg2.arg1)
         new_arg1 = evaluate(*, arg1, arg2.arg1)
         return BinaryOperation{*}(new_arg1, evaluate(arg2.arg2))
@@ -141,8 +146,13 @@ function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
-    if can_contract(arg1.arg1, arg2) && can_contract(arg1.arg2, arg2) && !is_trace(arg1, arg2) # arg1 contains an element-wise multiplication
-        return BinaryOperation{*}(evaluate(*, arg1.arg1, arg2), evaluate(*, arg1.arg2, arg2))
+    if can_contract(arg1.arg1, arg2) &&
+       can_contract(arg1.arg2, arg2) &&
+       !is_trace(arg1, arg2) # arg1 contains an element-wise multiplication
+        return BinaryOperation{*}(
+            evaluate(*, arg1.arg1, arg2),
+            evaluate(*, arg1.arg2, arg2),
+        )
     elseif can_contract(arg1.arg2, arg2)
         new_arg2 = evaluate(*, arg1.arg2, arg2)
         return BinaryOperation{*}(evaluate(arg1.arg1), new_arg2)
@@ -261,11 +271,19 @@ function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{+}, arg2::KrD)
-    return evaluate(+, evaluate(*, evaluate(arg1.arg1), arg2), evaluate(*, evaluate(arg1.arg2), arg2))
+    return evaluate(
+        +,
+        evaluate(*, evaluate(arg1.arg1), arg2),
+        evaluate(*, evaluate(arg1.arg2), arg2),
+    )
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{+})
-    return evaluate(+, evaluate(*, arg1, evaluate(arg2.arg1)), evaluate(*, arg1, evaluate(arg2.arg2)))
+    return evaluate(
+        +,
+        evaluate(*, arg1, evaluate(arg2.arg1)),
+        evaluate(*, arg1, evaluate(arg2.arg2)),
+    )
 end
 
 function evaluate(::typeof(*), arg1, arg2)

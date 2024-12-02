@@ -507,11 +507,21 @@ function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
     arg2_free_indices = get_free_indices(arg2)
 
     if length(arg1_free_indices) != length(arg2_free_indices)
-        return throw(DomainError((arg1, arg2), "Cannot do elementwise multiplication with inputs of different order"))
+        return throw(
+            DomainError(
+                (arg1, arg2),
+                "Cannot do elementwise multiplication with inputs of different order",
+            ),
+        )
     end
 
     if typeof.(arg1_free_indices) != typeof.(arg2_free_indices)
-        return throw(DomainError((arg1, arg2), "Elementwise multiplication is ambiguous for tensors with different co/contravariance"))
+        return throw(
+            DomainError(
+                (arg1, arg2),
+                "Elementwise multiplication is ambiguous for tensors with different co/contravariance",
+            ),
+        )
     end
 
     new_arg1 = arg1
@@ -550,11 +560,17 @@ function *(arg1::Value, arg2::TensorValue)
         )
     end
 
-    if length(arg1_free_indices) == 1 && length(arg2_free_indices) == 1 &&
-        typeof(arg1_free_indices[end]) == Upper && typeof(arg2_free_indices[1]) == Lower
+    if length(arg1_free_indices) == 1 &&
+       length(arg2_free_indices) == 1 &&
+       typeof(arg1_free_indices[end]) == Upper &&
+       typeof(arg2_free_indices[1]) == Lower
         return BinaryOperation{*}(
             arg1,
-            update_index(arg2, arg2_free_indices[end], same_to(arg2_free_indices[end], get_next_letter())),
+            update_index(
+                arg2,
+                arg2_free_indices[end],
+                same_to(arg2_free_indices[end], get_next_letter()),
+            ),
         )
     end
 
