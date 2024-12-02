@@ -34,7 +34,7 @@ end
 
     @test equivalent(evaluate(A'), Tensor("A", Lower(1), Upper(2)))
     @test equivalent(evaluate(x'), Tensor("x", Lower(1)))
-    # @test evaluate(z') == Tensor("z") # Not implemented
+    @test evaluate(z') == Tensor("z")
 end
 
 @testset "evaluate BinaryOperation vector-KrD" begin
@@ -79,6 +79,25 @@ end
     @test evaluate(MD.BinaryOperation{*}(A, y)) == MD.BinaryOperation{*}(A, y)
 end
 
+@testset "evaluate unary operations" begin
+    A = Tensor("A", Upper(1), Lower(2))
+
+    ops = (Sin, Cos)
+
+    for op ∈ ops
+        @test typeof(op(A)) == op
+        @test op(A).arg == A
+    end
+end
+
+@testset "evaluate trace" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(2), Lower(3))
+
+    # @test evaluate(tr(A)) == Tensor("A", Upper(1), Lower(1)) # TODO: Triggers assertion
+    @test evaluate(tr(A * B)) == MD.BinaryOperation{*}(A, Tensor("B", Upper(2), Lower(1)))
+end
+
 @testset "evaluate outer product - contraction" begin
     A = Tensor("A", Upper(1), Lower(2))
     d = KrD(Upper(3), Lower(4))
@@ -101,6 +120,15 @@ end
           MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
     @test evaluate(*, x, MD.BinaryOperation{*}(A, d)) ==
           MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
+end
+
+@testset "is_trace output is correct" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    d = KrD(Upper(2), Lower(1))
+    d2 = KrD(Upper(2), Lower(3))
+
+    @test MD.is_trace(A, d)
+    @test !MD.is_trace(A, d2)
 end
 
 @testset "diff Tensor" begin
@@ -227,5 +255,3 @@ end
 
     @test equivalent(D, 3 * A)
 end
-
-# TODO: Test is_trace

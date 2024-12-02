@@ -88,15 +88,14 @@ function ==(a::T, b::T) where {T<:TensorValue}
            (reverse(getfield.(Ref(a), f)) == getfield.(Ref(b), f))
 end
 
-Value = Union{TensorValue,Number}
+Value = Union{TensorValue,Real}
 IndexSet = Vector{LowerOrUpperIndex}
 
-# TODO: Replace number with real
-function get_free_indices(arg::Number)
+function get_free_indices(arg::Real)
     return LowerOrUpperIndex[]
 end
 
-function equivalent(arg1::Number, arg2::Number)
+function equivalent(arg1::Real, arg2::Real)
     return arg1 == arg2
 end
 
@@ -126,7 +125,7 @@ struct KrD <: TensorValue
     function KrD(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
-        if length(unique(indices)) != length(indices)
+        if length(unique(indices)) != length(indices) || length(indices) != 2
             throw(DomainError(indices, "Indices of δ are invalid"))
         end
 
@@ -145,7 +144,7 @@ struct Zero <: TensorValue
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
         if length(unique(indices)) != length(indices)
-            throw(DomainError(indices, "Indices of $id are invalid"))
+            throw(DomainError(indices, "Indices of 0 are invalid"))
         end
 
         new(indices)
@@ -191,18 +190,6 @@ end
 NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
 # TODO: Rename BinaryOperation{*} and align with Mult below
 NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
-
-function consolidate(indices::Vector{Union{Nothing,Lower,Upper}})
-    filtered = LowerOrUpperIndex[]
-
-    for e ∈ indices
-        if !isnothing(e)
-            push!(filtered, e)
-        end
-    end
-
-    return filtered
-end
 
 function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
     CanBeNothing = Union{Nothing,Lower,Upper}
@@ -309,77 +296,7 @@ function can_contract(arg1::TensorValue, arg2::Real)
     return false
 end
 
-function can_contract(arg1::KrD, arg2::TensorValue)
-    return can_contract_weak(arg2, arg1)
-end
-
-function can_contract(arg1::TensorValue, arg2::KrD)
-    return can_contract_weak(arg1, arg2)
-end
-
-function can_contract(arg1::KrD, arg2::Tensor)
-    return can_contract_weak(arg2, arg1)
-end
-
-function can_contract(arg1::Tensor, arg2::KrD)
-    return can_contract_weak(arg1, arg2)
-end
-
-function can_contract(arg1::KrD, arg2::KrD)
-    return can_contract_weak(arg1, arg2) || can_contract_weak(arg2, arg1)
-end
-
-# TODO: Rename to _can_contract(arg1::TensorValue, arg2::KrD)
-function can_contract_weak(arg1::TensorValue, arg2::KrD)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    # If there is a matching index pair then the contraction is unambigous.
-    # Duplicate pairs such that several indices in arg2 matches one index in
-    # arg1 are allowed.
-
-    pairs = Dict{Letter,Int}()
-
-    for j ∈ arg2_indices
-        pairs_in_sweep = Dict{Letter,Int}()
-
-        for i ∈ arg1_indices
-            if flip(i) == j
-                if haskey(pairs_in_sweep, i.letter)
-                    return false
-                else
-                    pairs_in_sweep[i.letter] = 1
-
-                    if haskey(pairs, i.letter)
-                        pairs[i.letter] += 1
-                    else
-                        pairs[i.letter] = 0
-                    end
-                end
-            end
-        end
-    end
-
-    if length(pairs) == 1 || length(pairs) == 2
-        return true
-    end
-
-    return false
-end
-
-function can_contract(arg1::Tensor, arg2::Tensor)
-    return can_contract_strong(arg2, arg1)
-end
-
-function can_contract(arg1::TensorValue, arg2::Tensor)
-    return can_contract_strong(arg2, arg1)
-end
-
-function can_contract(arg1::Tensor, arg2::TensorValue)
-    return can_contract_strong(arg1, arg2)
-end
-
-function can_contract_strong(arg1, arg2)
+function can_contract(arg1::TensorValue, arg2::TensorValue)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
@@ -533,7 +450,7 @@ function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
     return BinaryOperation{*}(new_arg1, arg2)
 end
 
-function *(arg1::TensorValue, arg2::Number)
+function *(arg1::TensorValue, arg2::Real)
     return arg2 * arg1
 end
 
@@ -681,23 +598,23 @@ end
 function to_string(arg::Tensor)
     scripts = [script(i) for i ∈ arg.indices]
 
-    arg.id * join(scripts)
+    return arg.id * join(scripts)
 end
 
 function to_string(arg::KrD)
     scripts = [script(i) for i ∈ arg.indices]
 
-    "δ" * join(scripts)
+    return "δ" * join(scripts)
 end
 
 function to_string(arg::Real)
-    string(arg)
+    return string(arg)
 end
 
 function to_string(arg::Zero)
     scripts = [script(i) for i ∈ arg.indices]
 
-    "0" * join(scripts)
+    return "0" * join(scripts)
 end
 
 function to_string(arg::Sin)
@@ -729,5 +646,5 @@ function to_string(arg::BinaryOperation{+})
 end
 
 function Base.show(io::IO, expr::TensorValue)
-    print(io, to_string(expr))
+    return print(io, to_string(expr))
 end

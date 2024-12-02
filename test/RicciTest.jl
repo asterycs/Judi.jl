@@ -25,6 +25,12 @@ end
     @test left != Lower(1)
 end
 
+@testset "KrD constructor throws on invalid input" begin
+    @test_throws DomainError KrD(Upper(2), Upper(2))
+    @test_throws DomainError KrD(Lower(2), Lower(2))
+    @test_throws DomainError KrD(Lower(1))
+end
+
 @testset "KrD equality operator" begin
     left = KrD(Upper(1), Lower(2))
     @test KrD(Upper(1), Lower(2)) == KrD(Upper(1), Lower(2))
@@ -34,8 +40,12 @@ end
     @test left != KrD(Lower(1), Lower(2))
     @test left != KrD(Upper(3), Lower(2))
     @test left != KrD(Upper(1), Lower(3))
-    @test left != KrD(Upper(1))
-    @test left != KrD(Upper(1), Lower(2), Lower(3))
+end
+
+@testset "Zero constructor throws on invalid input" begin
+    @test_throws DomainError Zero(Upper(2), Upper(2))
+    @test_throws DomainError Zero(Lower(2), Lower(2))
+    @test_throws DomainError Zero(Lower(1), Upper(2), Lower(1))
 end
 
 @testset "Zero equality operator" begin
@@ -52,16 +62,36 @@ end
     @test left != Zero()
 end
 
-# @testset "UnaryOperation equality operator" begin
-#     a = KrD(Upper(1), Upper(1))
-#     b = Tensor("b", Lower(1))
+@testset "Sin constructor" begin
+    a = KrD(Upper(1), Lower(2))
+    b = Tensor("b", Upper(2))
 
-#     left = MD.UnaryOperation(a, b)
+    op = Sin(a * b)
 
-#     @test MD.UnaryOperation(a, b) == MD.UnaryOperation(a, b)
-#     @test left == MD.UnaryOperation(a, b)
-#     @test left != MD.UnaryOperation(b, a)
-# end
+    @test typeof(op) == Sin
+    @test typeof(op.arg) == MD.BinaryOperation{*}
+end
+
+@testset "Cos constructor" begin
+    a = KrD(Upper(1), Lower(2))
+    b = Tensor("b", Upper(2))
+
+    op = Cos(a * b)
+
+    @test typeof(op) == Cos
+    @test typeof(op.arg) == MD.BinaryOperation{*}
+end
+
+@testset "UnaryOperation equality operator" begin
+    a = KrD(Upper(1), Lower(2))
+    b = Tensor("b", Upper(2))
+
+    left = Sin(a * b)
+
+    @test left == Sin(a * b)
+    @test left != Cos(a * b)
+    @test left != -Sin(a * b)
+end
 
 @testset "is_permutation true positive" begin
     l = [Lower(9); Upper(2); Lower(2); Lower(2)]
@@ -184,6 +214,19 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
+@testset "get_free_indices with Tensor + Tensor" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Lower(2), Upper(1))
+
+    op1 = MD.BinaryOperation{+}(A, A)
+    op2 = MD.BinaryOperation{+}(A, B)
+    op3 = MD.BinaryOperation{+}(B, A)
+
+    @test MD.get_free_indices(op1) == [Upper(1); Lower(2)]
+    @test MD.get_free_indices(op2) == [Upper(1); Lower(2)]
+    @test MD.get_free_indices(op3) == [Lower(2); Upper(1)]
+end
+
 @testset "get_free_indices with Tensor-KrD and one matching pair" begin
     x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
@@ -270,17 +313,40 @@ end
     @test MD.is_valid_matrix_multiplication(y, A)
 end
 
-# TODO: Make this test more precise
 @testset "multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
-    z = Tensor("z")
     A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(2), Lower(3))
 
-    @test typeof(A * x) == MD.BinaryOperation{*}
-    @test typeof(y * A) == MD.BinaryOperation{*}
-    @test typeof(z * A) == MD.BinaryOperation{*}
-    @test typeof(A * z) == MD.BinaryOperation{*}
+    @test A * x == MD.BinaryOperation{*}(A, x)
+    @test y * A == MD.BinaryOperation{*}(y, A)
+    @test A * B == MD.BinaryOperation{*}(A, B)
+end
+
+@testset "multiplication with ambigous input fails" begin
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Lower(1))
+    A = Tensor("A", Upper(1), Lower(2), Lower(3))
+
+    @test_throws DomainError A * x
+    @test_throws DomainError y * A
+    @test_throws DomainError A * A
+end
+
+@testset "multiplication with scalars" begin
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Lower(1))
+    A = Tensor("A", Upper(1), Lower(2), Lower(3))
+    z = Tensor("z")
+    r = 42
+
+    for n ∈ (z, r)
+        for t ∈ (x, y, A, z)
+            @test n * t == MD.BinaryOperation{*}(n, t)
+            @test t * n == MD.BinaryOperation{*}(t, n)
+        end
+    end
 end
 
 @testset "elementwise multiplication matrix-matrix" begin
@@ -388,6 +454,12 @@ end
     @test equivalent(evaluate(y'), Tensor("y", Upper(1)))
 end
 
+@testset "transpose KrD" begin
+    d = KrD(Upper(1), Lower(2))
+
+    @test equivalent(evaluate(d'), KrD(Lower(1), Upper(2)))
+end
+
 @testset "combined update_index and transpose vector" begin
     x = Tensor("x", Upper(2))
 
@@ -398,11 +470,65 @@ end
     @test equivalent(updated_transpose, Tensor("x", Lower(1)))
 end
 
+@testset "transpose unary operations" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Lower(1))
+
+    ops = (Sin, Cos)
+
+    for op ∈ ops
+        op1 = evaluate(op(y * x)')
+        op2 = evaluate(op(x)')
+
+        @test typeof(op1) == op
+        @test evaluate(op1.arg) == y * x
+        @test equivalent(evaluate(op2).arg, Tensor("x", Lower(1)))
+    end
+end
+
 @testset "transpose matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
 
-    A_transpose = evaluate(A')
-    @test equivalent(A_transpose, Tensor("A", Lower(1), Upper(2)))
+    At = evaluate(A')
+    @test equivalent(At, Tensor("A", Lower(1), Upper(2)))
+end
+
+@testset "transpose BinaryOperation{*}" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+
+    op_t = evaluate((A * x)')
+    @test equivalent(
+        evaluate(op_t),
+        MD.BinaryOperation{*}(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
+    )
+end
+
+@testset "transpose BinaryOperation{+}" begin
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(2))
+
+    op_t = evaluate((x + y)')
+    @test equivalent(evaluate(op_t), Tensor("x", Lower(2)) + Tensor("y", Lower(2)))
+end
+
+@testset "trace with matrix input works" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(2), Lower(3))
+
+    @test isempty(MD.get_free_indices(tr(A)))
+    @test isempty(MD.get_free_indices(tr(A * B)))
+end
+
+@testset "trace with non-matrix input fails" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(2), Lower(3))
+    x = Tensor("x", Upper(3))
+
+    @test_throws DomainError tr(x)
+    @test_throws DomainError tr(A * x)
+    @test_throws DomainError tr(x + x)
+    @test_throws DomainError tr(A * B * x)
 end
 
 @testset "can_contract" begin
