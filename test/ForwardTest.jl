@@ -278,6 +278,16 @@ end
     @test equivalent(D, MD.BinaryOperation{*}(MD.Negate(MD.Sin(x)), KrD(Upper(2), Lower(3))))
 end
 
+@testset "diff negated vector" begin
+    x = Tensor("x", Upper(2))
+
+    op = -x
+
+    D = MD.diff(op, Tensor("x", Upper(3)))
+
+    @test equivalent(D, MD.Negate(KrD(Upper(2), Lower(3))))
+end
+
 @testset "Differentiate Ax" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
