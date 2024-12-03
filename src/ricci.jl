@@ -573,8 +573,26 @@ function adjoint(arg::BinaryOperation{*})
     return Adjoint(t)
 end
 
-function adjoint(arg::BinaryOperation{+})
-    return arg.arg1' + arg.arg2'
+function adjoint(arg::BinaryOperation{Op}) where {Op}
+    arg1_ids = get_free_indices(arg.arg1)
+    arg2_ids = get_free_indices(arg.arg2)
+
+    @assert length(arg1_ids) == length(arg2_ids)
+
+    arg1_t = arg.arg1
+    arg2_t = arg.arg2
+
+    new_ids = [get_next_letter() for _ ∈ 1:length(union(arg1_ids))]
+
+    for (i,index) ∈ enumerate(union(arg1_ids))
+        arg1_t = BinaryOperation{*}(arg1_t, KrD(flip(index), flip_to(index, new_ids[i])))
+    end
+
+    for (i,index) ∈ enumerate(union(arg2_ids))
+        arg2_t = BinaryOperation{*}(arg2_t, KrD(flip(index), flip_to(index, new_ids[i])))
+    end
+
+    return Adjoint(Op(arg1_t, arg2_t))
 end
 
 function adjoint(arg::Union{Tensor,KrD,Zero})
