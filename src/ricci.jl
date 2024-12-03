@@ -1,6 +1,7 @@
 import Base.==
 import Base.*
 import Base.+
+import Base.-
 import Base.adjoint
 import Base.broadcast
 import Base.hash
@@ -151,6 +152,10 @@ struct Zero <: TensorValue
     end
 end
 
+function equivalent(left::Zero, right::Zero)
+    return all(typeof.(left.indices) .== typeof.(right.indices))
+end
+
 struct BinaryOperation{Op} <: TensorValue where {Op}
     arg1::Value
     arg2::Value
@@ -177,6 +182,10 @@ abstract type UnaryOperation <: TensorValue end
 
 function equivalent(arg1::T, arg2::T) where {T<:UnaryOperation}
     return equivalent(arg1.arg, arg2.arg)
+end
+
+struct Negate <: UnaryOperation
+    arg::TensorValue
 end
 
 struct Sin <: UnaryOperation
@@ -268,6 +277,10 @@ function get_free_indices(arg::Cos)
     return get_free_indices(arg.arg)
 end
 
+function get_free_indices(arg::Negate)
+    return get_free_indices(arg.arg)
+end
+
 function get_free_indices(arg::BinaryOperation{*})
     arg1_free_indices, arg2_free_indices =
         eliminate_indices(get_free_indices(arg.arg1), get_free_indices(arg.arg2))
@@ -275,11 +288,11 @@ function get_free_indices(arg::BinaryOperation{*})
     return [arg1_free_indices; arg2_free_indices]
 end
 
-function get_free_indices(arg::BinaryOperation{+})
+function get_free_indices(arg::BinaryOperation{Op}) where {Op}
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
 
-    @assert is_permutation(arg1_ids, arg2_ids)
+    @assert is_permutation(typeof.(arg1_ids), typeof.(arg2_ids))
 
     return arg1_ids
 end
@@ -498,6 +511,10 @@ function +(arg1::TensorValue, arg2::TensorValue)
     BinaryOperation{+}(arg1, arg2)
 end
 
+function -(arg1::TensorValue, arg2::TensorValue)
+    BinaryOperation{-}(arg1, arg2)
+end
+
 function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
     indices = get_free_indices(arg)
 
@@ -509,6 +526,10 @@ function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUppe
     @assert typeof(from) != typeof(flip(to)) "update_index shall not transpose"
 
     return BinaryOperation{*}(arg, KrD(flip(from), to))
+end
+
+function -(arg::TensorValue)
+    return Negate(arg)
 end
 
 struct Adjoint <: TensorValue
@@ -617,6 +638,10 @@ function to_string(arg::Zero)
     return "0" * join(scripts)
 end
 
+function to_string(arg::Negate)
+    return "-$(arg.arg)"
+end
+
 function to_string(arg::Sin)
     return "sin($(arg.arg))"
 end
@@ -633,6 +658,10 @@ function parenthesize(arg::BinaryOperation{+})
     return "(" * to_string(arg) * ")"
 end
 
+function parenthesize(arg::BinaryOperation{-})
+    return "(" * to_string(arg) * ")"
+end
+
 function to_string(arg::BinaryOperation{*})
     return parenthesize(arg.arg1) * parenthesize(arg.arg2)
 end
@@ -641,8 +670,8 @@ function to_string(arg::Adjoint)
     return to_string(arg.expr)
 end
 
-function to_string(arg::BinaryOperation{+})
-    return to_string(arg.arg1) * " + " * to_string(arg.arg2)
+function to_string(arg::BinaryOperation{Op}) where {Op}
+    return to_string(arg.arg1) * " " * string(Op) * " " * to_string(arg.arg2)
 end
 
 function Base.show(io::IO, expr::TensorValue)

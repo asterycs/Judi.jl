@@ -37,7 +37,39 @@ end
     @test evaluate(z') == Tensor("z")
 end
 
-@testset "evaluate BinaryOperation vector-KrD" begin
+@testset "evaluate BinaryOperation{+-} Matrix and KrD" begin
+    X = Tensor("X", Upper(2), Lower(3))
+    d = KrD(Upper(4), Lower(5))
+
+    for op ∈ (+, -)
+        op1 = MD.BinaryOperation{op}(d, X)
+        op2 = MD.BinaryOperation{op}(X, d)
+        @test evaluate(op1) == op1
+        @test evaluate(op2) == op2
+    end
+end
+
+@testset "evaluate Matrix + Zero" begin
+    X = Tensor("X", Upper(2), Lower(3))
+    Z = Zero(Upper(2), Lower(3))
+
+    op1 = MD.BinaryOperation{+}(Z, X)
+    op2 = MD.BinaryOperation{+}(X, Z)
+    @test evaluate(op1) == X
+    @test evaluate(op2) == X
+end
+
+@testset "evaluate Matrix - Zero" begin
+    X = Tensor("X", Upper(2), Lower(3))
+    Z = Zero(Upper(2), Lower(3))
+
+    op1 = MD.BinaryOperation{-}(Z, X)
+    op2 = MD.BinaryOperation{-}(X, Z)
+    @test evaluate(op1) == -X
+    @test evaluate(op2) == X
+end
+
+@testset "evaluate BinaryOperation vector * KrD" begin
     x = Tensor("x", Upper(2))
     d1 = KrD(Lower(2), Upper(3))
     d2 = KrD(Lower(2), Upper(2))
@@ -48,7 +80,7 @@ end
     @test evaluate(MD.BinaryOperation{*}(x, d2)) == Tensor("x", Upper(2))
 end
 
-@testset "evaluate BinaryOperation matrix-KrD" begin
+@testset "evaluate BinaryOperation matrix * KrD" begin
     A = Tensor("A", Upper(2), Lower(4))
     d1 = KrD(Lower(2), Upper(3))
     d2 = KrD(Lower(2), Lower(3))
@@ -62,7 +94,15 @@ end
     @test evaluate(MD.BinaryOperation{*}(A, d3)) == Tensor("A", Upper(2), Lower(1))
 end
 
-@testset "evaluate BinaryOperation KrD-KrD" begin
+@testset "evaluate BinaryOperation matrix * Zero" begin
+    A = Tensor("A", Upper(2), Lower(4))
+    Z = Zero(Upper(4), Lower(3), Lower(5))
+
+    @test evaluate(MD.BinaryOperation{*}(Z, A)) == Zero(Lower(3), Lower(5), Upper(2))
+    @test evaluate(MD.BinaryOperation{*}(A, Z)) == Zero(Upper(2), Lower(3), Lower(5))
+end
+
+@testset "evaluate BinaryOperation KrD * KrD" begin
     d1 = KrD(Upper(1), Lower(2))
     d2 = KrD(Upper(2), Lower(3))
 
@@ -77,6 +117,30 @@ end
 
     @test evaluate(MD.BinaryOperation{*}(A, x)) == MD.BinaryOperation{*}(A, x)
     @test evaluate(MD.BinaryOperation{*}(A, y)) == MD.BinaryOperation{*}(A, y)
+end
+
+@testset "evaluate subtraction with * and +" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(3))
+
+    op1 = A * x - (x + y)
+    op2 = (x + y) - A * x
+
+    @test evaluate(op1) == op1
+    @test evaluate(op2) == - (A * x) + (x + y)
+end
+
+@testset "evaluate subtraction with * and + and simplify" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(2))
+    y = Tensor("y", Upper(3))
+
+    op1 = (x + y) - (x + y)
+    op2 = 2 * x - 2 * x
+
+    @test equivalent(evaluate(op1), Zero(Upper(2)))
+    @test equivalent(evaluate(op2), Zero(Upper(2)))
 end
 
 @testset "evaluate unary operations" begin
@@ -170,15 +234,17 @@ end
     @test D.arg2 == MD.BinaryOperation{*}(KrD(Upper(2), Lower(3)), y)
 end
 
-@testset "diff BinaryOperation{+}" begin
+@testset "diff BinaryOperation{+-}" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(2))
 
-    op = MD.BinaryOperation{+}(x, y)
+    for op ∈ (+, -)
+        v = MD.BinaryOperation{op}(x, y)
 
-    D = MD.diff(op, Tensor("x", Upper(3)))
+        D = MD.diff(v, Tensor("x", Upper(3)))
 
-    @test D == MD.BinaryOperation{+}(KrD(Upper(2), Lower(3)), Zero(Upper(2), Lower(3)))
+        @test D == MD.BinaryOperation{op}(KrD(Upper(2), Lower(3)), Zero(Upper(2), Lower(3)))
+    end
 end
 
 @testset "diff trace" begin

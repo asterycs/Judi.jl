@@ -203,7 +203,7 @@ end
     @test MD.eliminated_indices(IdxUnion[], IdxUnion[]) == IdxUnion[]
 end
 
-@testset "get_free_indices with Tensor-Tensor and one matching pair" begin
+@testset "get_free_indices with Tensor * Tensor and one matching pair" begin
     xt = Tensor("x", Lower(1)) # row vector
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -214,20 +214,24 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices with Tensor + Tensor" begin
+@testset "get_free_indices with Tensor {+-} Tensor" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Lower(2), Upper(1))
 
-    op1 = MD.BinaryOperation{+}(A, A)
-    op2 = MD.BinaryOperation{+}(A, B)
-    op3 = MD.BinaryOperation{+}(B, A)
+    ops = (MD.BinaryOperation{+}, MD.BinaryOperation{-})
 
-    @test MD.get_free_indices(op1) == [Upper(1); Lower(2)]
-    @test MD.get_free_indices(op2) == [Upper(1); Lower(2)]
-    @test MD.get_free_indices(op3) == [Lower(2); Upper(1)]
+    for op ∈ ops
+        op1 = op(A, A)
+        op2 = op(A, B)
+        op3 = op(B, A)
+
+        @test MD.get_free_indices(op1) == [Upper(1); Lower(2)]
+        @test MD.get_free_indices(op2) == [Upper(1); Lower(2)]
+        @test MD.get_free_indices(op3) == [Lower(2); Upper(1)]
+    end
 end
 
-@testset "get_free_indices with Tensor-KrD and one matching pair" begin
+@testset "get_free_indices with Tensor * KrD and one matching pair" begin
     x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
 
@@ -238,7 +242,7 @@ end
     @test MD.get_free_indices(op2) == [Lower(2)]
 end
 
-@testset "get_free_indices with scalar Tensor-KrD" begin
+@testset "get_free_indices with scalar Tensor * KrD" begin
     x = Tensor("x")
     δ = KrD(Lower(1), Lower(2))
 
@@ -249,7 +253,7 @@ end
     @test MD.get_free_indices(op2) == [Lower(1); Lower(2)]
 end
 
-@testset "get_free_indices with Tensor-Tensor and no matching pairs" begin
+@testset "get_free_indices with Tensor * Tensor and no matching pairs" begin
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -260,7 +264,7 @@ end
     @test MD.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
 end
 
-@testset "is_contraction_unambigous vector-vector with matching pair" begin
+@testset "is_contraction_unambigous vector * vector with matching pair" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(1))
 
@@ -268,7 +272,7 @@ end
     @test MD.is_contraction_unambigous(y, x)
 end
 
-@testset "is_contraction_unambigous vector-vector with non-matching pair" begin
+@testset "is_contraction_unambigous vector * vector with non-matching pair" begin
     x = Tensor("x", Lower(1))
     y = Tensor("y", Lower(1))
 
@@ -276,7 +280,7 @@ end
     @test !MD.is_contraction_unambigous(y, x)
 end
 
-@testset "is_contraction_unambigous matrix-vector with matching pair" begin
+@testset "is_contraction_unambigous matrix * vector with matching pair" begin
     x = Tensor("x", Upper(2))
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -284,7 +288,7 @@ end
     @test MD.is_contraction_unambigous(x, A)
 end
 
-@testset "is_contraction_unambigous matrix-vector with non-matching pair" begin
+@testset "is_contraction_unambigous matrix * vector with non-matching pair" begin
     x = Tensor("x", Lower(3))
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -486,6 +490,18 @@ end
     end
 end
 
+@testset "negate any operation" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
+
+    ops = (A, x, A * x, A + A, sin(x), cos(x), tr(A))
+
+    for op ∈ ops
+        @test typeof(-op) == MD.Negate
+        @test (-op).arg == op
+    end
+end
+
 @testset "transpose matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -504,12 +520,14 @@ end
     )
 end
 
-@testset "transpose BinaryOperation{+}" begin
+@testset "transpose BinaryOperation{+-}" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(2))
 
-    op_t = evaluate((x + y)')
-    @test equivalent(evaluate(op_t), Tensor("x", Lower(2)) + Tensor("y", Lower(2)))
+    for op ∈ (+, -)
+        op_t = evaluate((op(x, y))')
+        @test equivalent(evaluate(op_t), op(Tensor("x", Lower(2)), Tensor("y", Lower(2))))
+    end
 end
 
 @testset "trace with matrix input works" begin
@@ -663,11 +681,15 @@ end
 
     mul = MD.BinaryOperation{*}(a, b)
     add = MD.BinaryOperation{+}(a, b)
+    sub = MD.BinaryOperation{-}(a, b)
 
     @test to_string(mul) == "ab"
     @test to_string(add) == "a + b"
+    @test to_string(sub) == "a - b"
     @test to_string(MD.BinaryOperation{+}(mul, b)) == "ab + b"
     @test to_string(MD.BinaryOperation{+}(mul, mul)) == "ab + ab"
+    @test to_string(MD.BinaryOperation{-}(mul, mul)) == "ab - ab"
     @test to_string(MD.BinaryOperation{*}(mul, mul)) == "abab"
     @test to_string(MD.BinaryOperation{*}(add, add)) == "(a + b)(a + b)"
+    @test to_string(MD.BinaryOperation{*}(sub, add)) == "(a - b)(a + b)"
 end

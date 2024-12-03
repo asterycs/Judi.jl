@@ -145,8 +145,8 @@ function to_std_string(arg::Real)
     return to_string(arg)
 end
 
-function to_std_string(arg::UnaryOperation)
-    @assert false, "Not implemented"
+function to_std_string(arg::Negate)
+    return "-" * to_std_string(arg.arg)
 end
 
 function parenthesize_std(arg)

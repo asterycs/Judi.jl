@@ -30,23 +30,31 @@ function diff(arg::Adjoint, wrt::Tensor)
     return diff(arg.expr, wrt)
 end
 
+function diff(arg::Negate, wrt::Tensor)
+    return Negate(diff(arg.arg, wrt))
+end
+
 function diff(arg::Sin, wrt::Tensor)
     return BinaryOperation{*}(Cos(arg.arg), diff(arg.arg, wrt))
 end
 
 function diff(arg::BinaryOperation{*}, wrt::Tensor)
-    BinaryOperation{+}(
+    return BinaryOperation{+}(
         BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)),
         BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2),
     )
 end
 
-function diff(arg::BinaryOperation{+}, wrt::Tensor)
-    BinaryOperation{+}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
+function diff(arg::BinaryOperation{Op}, wrt::Tensor) where {Op}
+    return BinaryOperation{Op}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
+end
+
+function evaluate(arg::Negate)
+    return Negate(evaluate(arg.arg))
 end
 
 function evaluate(arg::Adjoint)
-    return evaluate(arg.expr)
+    return evaluate(arg.expr) # The decorator is only needed when creating contractions
 end
 
 function evaluate(arg::Union{Tensor,KrD,Zero,Real})
@@ -331,10 +339,10 @@ function evaluate(::typeof(+), arg1::Real, arg2::Real)
 end
 
 function evaluate(::typeof(+), arg1, arg2)
-    arg1_index_types = typeof.(get_free_indices(arg1))
-    arg2_index_types = typeof.(get_free_indices(arg2))
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
 
-    @assert is_permutation(arg1_index_types, arg2_index_types)
+    @assert is_permutation(typeof.(arg1_indices), typeof.(arg2_indices))
 
     if arg1 == arg2
         return BinaryOperation{*}(2, arg1)
@@ -363,10 +371,66 @@ function evaluate(::typeof(+), arg1::BinaryOperation{*}, arg2::NonTrivialValue)
     return BinaryOperation{+}(evaluate(arg1), evaluate(arg2))
 end
 
+function evaluate(::typeof(-), arg1::Zero, arg2::Zero)
+    @assert is_permutation(arg1, arg2)
+
+    arg1
+end
+
+function evaluate(::typeof(-), arg1::Zero, arg2)
+    @assert is_permutation(arg1, arg2)
+
+    return Negate(evaluate(arg2))
+end
+
+function evaluate(::typeof(-), arg1, arg2::Zero)
+    @assert is_permutation(arg1, arg2)
+
+    return evaluate(arg1)
+end
+
+function evaluate(::typeof(-), arg1::Real, arg2::Real)
+    return arg1 - arg2
+end
+
+function evaluate(::typeof(-), arg1, arg2)
+    arg1_indices = get_free_indices(arg1)
+    arg2_indices = get_free_indices(arg2)
+
+    @assert is_permutation(typeof.(arg1_indices), typeof.(arg2_indices))
+
+    if arg1 == arg2
+        return Zero(arg1_indices...)
+    end
+
+    return BinaryOperation{-}(arg1, arg2)
+end
+
+function evaluate(::typeof(-), arg1::NonTrivialNonMult, arg2::BinaryOperation{*})
+    return evaluate(+, evaluate(Negate(arg2)), evaluate(arg1))
+end
+
+function evaluate(::typeof(-), arg1::BinaryOperation{*}, arg2::NonTrivialValue)
+    if evaluate(arg1) == evaluate(arg2)
+        arg1_indices = get_free_indices(arg1)
+        return Zero(arg1_indices...)
+    end
+
+    if evaluate(arg1.arg1) isa Real && evaluate(arg1.arg2) == evaluate(arg2)
+        return BinaryOperation{*}(evaluate(arg1.arg1) - 1, evaluate(arg2))
+    end
+
+    if evaluate(arg1.arg2) isa Real && evaluate(arg1.arg1) == evaluate(arg2)
+        return BinaryOperation{*}(evaluate(arg1.arg2) - 1, evaluate(arg2))
+    end
+
+    return BinaryOperation{-}(evaluate(arg1), evaluate(arg2))
+end
+
 function evaluate(op::BinaryOperation{*})
     evaluate(*, evaluate(op.arg1), evaluate(op.arg2))
 end
 
-function evaluate(op::BinaryOperation{+})
-    evaluate(+, evaluate(op.arg1), evaluate(op.arg2))
+function evaluate(op::BinaryOperation{Op}) where {Op}
+    evaluate(Op, evaluate(op.arg1), evaluate(op.arg2))
 end
