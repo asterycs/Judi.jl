@@ -402,27 +402,21 @@ end
 
 # If any other except arg1.indices[end] and arg2.indices[1] match
 # then the input does not correspond to valid standard notation.
+# However, arg1.indices[end] and arg2.indices[1] letters do not
+# have to match since they can be updated.
 function is_valid_matrix_multiplication(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    if length(arg1_indices) == 1
-        arg1_indices = [arg1_indices; arg1_indices]
-    end
-
-    if length(arg2_indices) == 1
-        arg2_indices = [arg2_indices; arg2_indices]
-    end
-
-    for i ∈ arg1_indices[1:end-1]
-        for j ∈ arg2_indices[2:end]
-            if i.letter == j.letter
+    for (i,l) ∈ enumerate(arg1_indices)
+        for (j,r) ∈ enumerate(arg2_indices)
+            if l.letter == r.letter && (i != length(arg1_indices) || j != 1)
                 return false
             end
         end
     end
 
-    if flip(arg1_indices[end]) != arg2_indices[1]
+    if typeof(flip(arg1_indices[end])) != typeof(arg2_indices[1])
         return false
     end
 
@@ -494,6 +488,10 @@ function *(arg1::Value, arg2::TensorValue)
 
     if length(arg2_free_indices) > 2
         throw(DomainError(arg2, "Multiplication involving tensor \"$arg2\" is ambiguous"))
+    end
+
+    if !is_valid_matrix_multiplication(arg1, arg2)
+        throw(DomainError((arg1, arg2), "Invalid matrix multiplication"))
     end
 
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper

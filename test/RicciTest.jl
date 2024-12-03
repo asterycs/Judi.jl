@@ -315,6 +315,7 @@ end
 
     @test MD.is_valid_matrix_multiplication(A, x)
     @test MD.is_valid_matrix_multiplication(y, A)
+    @test MD.is_valid_matrix_multiplication(x, z)
 end
 
 @testset "multiplication with matching indices" begin
@@ -331,11 +332,14 @@ end
 @testset "multiplication with ambigous input fails" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
+    z = Tensor("z", Upper(1))
     A = Tensor("A", Upper(1), Lower(2), Lower(3))
+    B = Tensor("B", Upper(1), Lower(2))
 
     @test_throws DomainError A * x
     @test_throws DomainError y * A
     @test_throws DomainError A * A
+    @test_throws DomainError B * z
 end
 
 @testset "multiplication with scalars" begin
@@ -599,6 +603,35 @@ end
     A = Tensor("A", Upper(1), Lower(2))
 
     @test_throws DomainError x * A
+end
+
+@testset "multiplication with adjoint matrix-matrix has correct indices" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    C = Tensor("C", Upper(3), Lower(4))
+
+    ops = (A' * C, A' * C')
+
+    # TODO: Check also efter evaluate
+    for op ∈ ops
+        @assert typeof(op) == MD.BinaryOperation{*}
+        op_indices = MD.get_free_indices(op)
+        @test length(op_indices) == 2
+
+        @test typeof(MD.get_free_indices(op.arg1)[end]) == Lower
+        @test flip(MD.get_free_indices(op.arg1)[end]) == MD.get_free_indices(op.arg2)[1]
+        @test typeof(MD.get_free_indices(op.arg2)[end]) == Lower
+    end
+end
+
+@testset "multiplication with ambiguous indices throws" begin
+    A = Tensor("A", Upper(2), Lower(1))
+    At = Tensor("A", Upper(1), Lower(2)) # manual transpose since adjoint updates the indices
+    B = Tensor("B", Upper(2), Lower(3))
+    Bt = Tensor("B", Upper(3), Lower(2))
+
+    @test_throws DomainError A * B
+    @test_throws DomainError At * Bt
+    @test_throws DomainError A * Bt
 end
 
 @testset "vector inner product with mismatching indices" begin
