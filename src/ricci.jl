@@ -5,13 +5,14 @@ import Base.-
 import Base.adjoint
 import Base.broadcast
 import Base.hash
+import Base.sin
+import Base.cos
 import Base.show
 
 export Upper, Lower
 export Tensor, KrD, Zero
 
 export tr
-export Sin, Cos
 
 export equivalent
 
@@ -192,8 +193,16 @@ struct Sin <: UnaryOperation
     arg::TensorValue
 end
 
+function sin(arg::TensorValue)
+    return Sin(arg)
+end
+
 struct Cos <: UnaryOperation
     arg::TensorValue
+end
+
+function cos(arg::TensorValue)
+    return Cos(arg)
 end
 
 NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
@@ -271,6 +280,10 @@ function get_free_indices(arg::Union{Tensor,KrD,Zero})
     @assert length(unique(arg.indices)) == length(arg.indices)
 
     return arg.indices
+end
+
+function get_free_indices(arg::Sin)
+    return get_free_indices(arg.arg)
 end
 
 function get_free_indices(arg::Cos)
@@ -544,8 +557,8 @@ function get_free_indices(arg::Adjoint)
     return reverse(LowerOrUpperIndex[i for i ∈ free_indices])
 end
 
-function adjoint(arg::UnaryOperation)
-    return Adjoint(arg)
+function adjoint(arg::T) where T <: UnaryOperation
+    return T(arg.arg')
 end
 
 function adjoint(arg::BinaryOperation{*})

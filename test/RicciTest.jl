@@ -66,9 +66,9 @@ end
     a = KrD(Upper(1), Lower(2))
     b = Tensor("b", Upper(2))
 
-    op = Sin(a * b)
+    op = sin(a * b)
 
-    @test typeof(op) == Sin
+    @test typeof(op) == MD.Sin
     @test typeof(op.arg) == MD.BinaryOperation{*}
 end
 
@@ -76,9 +76,9 @@ end
     a = KrD(Upper(1), Lower(2))
     b = Tensor("b", Upper(2))
 
-    op = Cos(a * b)
+    op = cos(a * b)
 
-    @test typeof(op) == Cos
+    @test typeof(op) == MD.Cos
     @test typeof(op.arg) == MD.BinaryOperation{*}
 end
 
@@ -86,11 +86,11 @@ end
     a = KrD(Upper(1), Lower(2))
     b = Tensor("b", Upper(2))
 
-    left = Sin(a * b)
+    left = sin(a * b)
 
-    @test left == Sin(a * b)
-    @test left != Cos(a * b)
-    @test left != -Sin(a * b)
+    @test left == MD.Sin(a * b)
+    @test left != MD.Cos(a * b)
+    @test left != -MD.Sin(a * b)
 end
 
 @testset "is_permutation true positive" begin
@@ -478,13 +478,14 @@ end
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(1))
 
-    ops = (Sin, Cos)
+    ops = (sin, cos)
+    types = (MD.Sin, MD.Cos)
 
-    for op ∈ ops
+    for (op, type) ∈ zip(ops, types)
         op1 = evaluate(op(y * x)')
         op2 = evaluate(op(x)')
 
-        @test typeof(op1) == op
+        @test typeof(op1) == type
         @test evaluate(op1.arg) == y * x
         @test equivalent(evaluate(op2).arg, Tensor("x", Lower(1)))
     end

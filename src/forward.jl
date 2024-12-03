@@ -38,6 +38,10 @@ function diff(arg::Sin, wrt::Tensor)
     return BinaryOperation{*}(Cos(arg.arg), diff(arg.arg, wrt))
 end
 
+function diff(arg::Cos, wrt::Tensor)
+    return BinaryOperation{*}(Negate(Sin(arg.arg)), diff(arg.arg, wrt))
+end
+
 function diff(arg::BinaryOperation{*}, wrt::Tensor)
     return BinaryOperation{+}(
         BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)),
@@ -292,6 +296,22 @@ function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{+})
         evaluate(*, arg1, evaluate(arg2.arg1)),
         evaluate(*, arg1, evaluate(arg2.arg2)),
     )
+end
+
+function evaluate(::typeof(*), arg1::T, arg2::KrD) where T <: UnaryOperation
+    return T(evaluate(*, arg1.arg, arg2))
+end
+
+function evaluate(::typeof(*), arg1::KrD, arg2::T) where T <: UnaryOperation
+    return T(evaluate(*, arg1, arg2.arg))
+end
+
+function evaluate(::typeof(*), arg1::T, arg2::Zero) where T <: UnaryOperation
+    return evaluate(*, arg1.arg, arg2)
+end
+
+function evaluate(::typeof(*), arg1::Zero, arg2::T) where T <: UnaryOperation
+    return evaluate(*, arg1, arg2.arg)
 end
 
 function evaluate(::typeof(*), arg1, arg2)

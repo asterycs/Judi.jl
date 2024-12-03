@@ -146,10 +146,11 @@ end
 @testset "evaluate unary operations" begin
     A = Tensor("A", Upper(1), Lower(2))
 
-    ops = (Sin, Cos)
+    ops = (sin, cos)
+    types = (MD.Sin, MD.Cos)
 
-    for op ∈ ops
-        @test typeof(op(A)) == op
+    for (op, type) ∈ zip(ops, types)
+        @test typeof(op(A)) == type
         @test op(A).arg == A
     end
 end
@@ -260,11 +261,21 @@ end
 @testset "diff sin" begin
     x = Tensor("x", Upper(2))
 
-    op = Sin(x)
+    op = sin(x)
 
     D = MD.diff(op, Tensor("x", Upper(3)))
 
-    @test equivalent(evaluate(D), MD.BinaryOperation{*}(Cos(x), KrD(Upper(2), Lower(3))))
+    @test equivalent(D, MD.BinaryOperation{*}(MD.Cos(x), KrD(Upper(2), Lower(3))))
+end
+
+@testset "diff cos" begin
+    x = Tensor("x", Upper(2))
+
+    op = cos(x)
+
+    D = MD.diff(op, Tensor("x", Upper(3)))
+
+    @test equivalent(D, MD.BinaryOperation{*}(MD.Negate(MD.Sin(x)), KrD(Upper(2), Lower(3))))
 end
 
 @testset "Differentiate Ax" begin
