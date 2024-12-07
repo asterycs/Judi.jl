@@ -93,11 +93,7 @@ end
 Value = Union{TensorValue,Real}
 IndexSet = Vector{LowerOrUpperIndex}
 
-function get_indices(arg::Real)
-    return LowerOrUpperIndex[]
-end
-
-function get_free_indices(arg::Real)
+function _get_free_indices(arg::Real)
     return LowerOrUpperIndex[]
 end
 
@@ -324,66 +320,39 @@ function is_permutation(arg1::TensorValue, arg2::TensorValue)
     return is_permutation(unique(arg1_indices), unique(arg2_indices))
 end
 
-function get_indices(arg::Union{Tensor,KrD,Zero,Diag})
+function _get_free_indices(arg::Union{Tensor,KrD,Zero,Diag})
     @assert length(unique(arg.indices)) == length(arg.indices)
 
     return arg.indices
 end
 
-function get_indices(arg::Sin)
-    return get_indices(arg.arg)
-end
-
-function get_indices(arg::Cos)
-    return get_indices(arg.arg)
-end
-
-function get_indices(arg::Negate)
-    return get_indices(arg.arg)
-end
-
-function get_indices(arg::BinaryOperation{*})
-    return eliminate_indices([get_indices(arg.arg1); get_indices(arg.arg2)])
-end
-
-function get_indices(arg::BinaryOperation{Op}) where {Op}
-    arg1_ids = get_indices(arg.arg1)
-    arg2_ids = get_indices(arg.arg2)
-
-    @assert is_permutation(arg1_ids, arg2_ids)
-
-    return arg1_ids
-end
-
-function get_free_indices(arg::Union{Tensor,KrD,Zero,Diag})
-    @assert length(unique(arg.indices)) == length(arg.indices)
-
-    return arg.indices
-end
-
-function get_free_indices(arg::Sin)
+function _get_free_indices(arg::Sin)
     return get_free_indices(arg.arg)
 end
 
-function get_free_indices(arg::Cos)
+function _get_free_indices(arg::Cos)
     return get_free_indices(arg.arg)
 end
 
-function get_free_indices(arg::Negate)
+function _get_free_indices(arg::Negate)
     return get_free_indices(arg.arg)
 end
 
-function get_free_indices(arg::BinaryOperation{*})
-    return eliminate_indices([get_indices(arg.arg1); get_indices(arg.arg2)])
+function _get_free_indices(arg::BinaryOperation{*})
+    return eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
 end
 
-function get_free_indices(arg::BinaryOperation{Op}) where {Op}
+function _get_free_indices(arg::BinaryOperation{Op}) where {Op}
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
 
     @assert is_permutation(arg1_ids, arg2_ids)
 
     return arg1_ids
+end
+
+function get_free_indices(arg)
+    return _get_free_indices(evaluate(arg))
 end
 
 function are_indices_unique(indices::IndexSet)
@@ -683,12 +652,6 @@ end
 
 struct Adjoint <: TensorValue
     expr::TensorValue
-end
-
-function get_indices(arg::Adjoint)
-    free_indices = get_indices(arg.expr)
-
-    return reverse(LowerOrUpperIndex[i for i ∈ free_indices])
 end
 
 function get_free_indices(arg::Adjoint)
