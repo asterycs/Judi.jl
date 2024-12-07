@@ -87,30 +87,6 @@ function evaluate(::typeof(*), arg1::Real, arg2::BinaryOperation{*})
     end
 end
 
-function evaluate(::typeof(*), arg1::Tensor, arg2::BinaryOperation{*})
-    if can_contract(arg1, arg2.arg1)
-        new_arg1 = evaluate(*, arg1, arg2.arg1)
-        return BinaryOperation{*}(new_arg1, arg2.arg2)
-    elseif can_contract(arg1, arg2.arg2)
-        new_arg2 = evaluate(*, arg1, arg2.arg2)
-        return BinaryOperation{*}(arg2.arg1, new_arg2)
-    else
-        return BinaryOperation{*}(arg1, evaluate(arg2))
-    end
-end
-
-function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Tensor)
-    if can_contract(arg1.arg2, arg2)
-        new_arg2 = evaluate(*, arg1.arg2, arg2)
-        return BinaryOperation{*}(evaluate(arg1.arg1), new_arg2)
-    elseif can_contract(arg1.arg1, arg2)
-        new_arg1 = evaluate(*, arg1.arg1, arg2)
-        return BinaryOperation{*}(new_arg1, evaluate(arg1.arg2))
-    else
-        return BinaryOperation{*}(arg1, arg2)
-    end
-end
-
 function is_trace(arg1::TensorValue, arg2::KrD)
     arg1_indices = get_free_indices(arg1)
 
