@@ -568,57 +568,48 @@ function get_letters(indices::IndexSet)
 end
 
 function +(arg1::TensorValue, arg2::TensorValue)
-    arg1_ids = get_free_indices(arg1)
-    arg2_ids = get_free_indices(arg2)
-
-    if length(arg1_ids) != length(arg2_ids)
-        throw(DomainError((arg1, arg2), "Cannot add tensors of different order"))
-    end
-
-    if arg1_ids == arg2_ids
-        return BinaryOperation{+}(arg1, arg2)
-    end
-
-    @assert isempty(intersect(get_letters(arg1_ids), get_letters(arg2_ids)))
-
-    new_ids = [get_next_letter() for _ ∈ 1:length(union(arg1_ids))]
-
-    for (i, index) ∈ enumerate(arg1_ids)
-        arg1 = update_index(arg1, index, same_to(index, new_ids[i]))
-    end
-
-    for (i, index) ∈ enumerate(arg2_ids)
-        arg2 = update_index(arg2, index, same_to(index, new_ids[i]))
-    end
-
-    return BinaryOperation{+}(arg1, arg2)
+    return _addition(+, arg1, arg2)
 end
 
 function -(arg1::TensorValue, arg2::TensorValue)
+    return _addition(-, arg1, arg2)
+end
+
+# TODO: Constrain op
+function _addition(op, arg1::TensorValue, arg2::TensorValue)
     arg1_ids = get_free_indices(arg1)
     arg2_ids = get_free_indices(arg2)
 
     if length(arg1_ids) != length(arg2_ids)
-        throw(DomainError((arg1, arg2), "Cannot subtract tensors of different order"))
+        op_text = if op == +
+            "add"
+        elseif op == -
+            "subtract"
+        end
+
+        throw(DomainError((arg1, arg2), "Cannot $op_text tensors of different order"))
     end
 
     if arg1_ids == arg2_ids
-        return BinaryOperation{-}(arg1, arg2)
+        return BinaryOperation{op}(arg1, arg2)
     end
 
     @assert isempty(intersect(get_letters(arg1_ids), get_letters(arg2_ids)))
 
-    new_ids = [get_next_letter() for _ ∈ 1:length(union(arg1_ids))]
+    new_ids = [get_next_letter() for _ ∈ 1:length(unique(arg1_ids))]
 
-    for (i, index) ∈ enumerate(arg1_ids)
-        arg1 = update_index(arg1, index, same_to(index, new_ids[i]))
+    arg1_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg1_ids), new_ids)))
+    arg2_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg2_ids), new_ids)))
+
+    for index ∈ unique(arg1_ids)
+        arg1 = BinaryOperation{*}(arg1, KrD(flip(index), same_to(index, arg1_index_map[index])))
     end
 
-    for (i, index) ∈ enumerate(arg2_ids)
-        arg2 = update_index(arg2, index, same_to(index, new_ids[i]))
+    for index ∈ union(arg2_ids)
+        arg2 = BinaryOperation{*}(arg2, KrD(flip(index), same_to(index, arg2_index_map[index])))
     end
 
-    return BinaryOperation{-}(arg1, arg2)
+    return BinaryOperation{op}(arg1, arg2)
 end
 
 function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
@@ -684,8 +675,6 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
 
     @assert length(unique(arg1_ids)) == length(unique(arg2_ids))
 
-    # TODO: Must be a map from old index to new index
-    # Should also be needed in + and -
     new_ids = [get_next_letter() for _ ∈ 1:length(unique(arg1_ids))]
 
     arg1_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg1_ids), new_ids)))
@@ -694,11 +683,11 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
     arg1_t = arg.arg1
     arg2_t = arg.arg2
 
-    for (i,index) ∈ enumerate(unique(arg1_ids))
+    for index ∈ unique(arg1_ids)
         arg1_t = BinaryOperation{*}(arg1_t, KrD(flip(index), flip_to(index, arg1_index_map[index])))
     end
 
-    for (i,index) ∈ enumerate(union(arg2_ids))
+    for index ∈ union(arg2_ids)
         arg2_t = BinaryOperation{*}(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
     end
 
