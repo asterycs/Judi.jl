@@ -184,7 +184,21 @@ function to_std_string(arg::BinaryOperation{*})
     end
 
     if !can_contract(arg.arg1, arg.arg2)
-        return to_std_string(arg.arg1) * " ⊗ " * to_std_string(arg.arg2)
+        if length(arg1_ids) == 1 && length(arg2_ids) == 1
+            if typeof(arg1_ids[1]) == Upper && typeof(arg2_ids[1]) == Lower
+                return to_std_string(arg.arg1) * to_std_string(arg.arg2)
+            end
+
+            if typeof(arg1_ids[1]) == Lower && typeof(arg2_ids[1]) == Upper
+                return to_std_string(arg.arg2) * to_std_string(arg.arg1)
+            end
+
+            if arg1_ids[1].letter == arg2_ids[1].letter
+                return to_std_string(arg.arg1) * " ⊙ " * to_std_string(arg.arg2)
+            end
+        end
+
+        throw_not_std()
     end
 
     if length(arg_ids) == 1 # The result is a vector
