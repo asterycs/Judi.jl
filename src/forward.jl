@@ -73,23 +73,6 @@ function evaluate(arg::Cos)
     return Cos(evaluate(arg.arg))
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Zero)
-    return _evaluate_zero_times_bin(arg1, arg2)
-end
-
-function evaluate(::typeof(*), arg1::Zero, arg2::BinaryOperation{*})
-    return _evaluate_zero_times_bin(arg2, arg1)
-end
-
-function _evaluate_zero_times_bin(arg1::BinaryOperation{*}, arg2::Zero)
-    arg1arg1_free, arg1arg2_free =
-        eliminate_indices(get_free_indices(arg1.arg1), get_free_indices(arg1.arg2))
-
-    arg1_free, arg2_free = eliminate_indices([arg1arg1_free; arg1arg2_free], arg2.indices)
-
-    return Zero(arg1_free..., arg2_free...)
-end
-
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Real)
     return evaluate(*, arg2, arg1)
 end
@@ -176,25 +159,25 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
     end
 end
 
-function evaluate(::typeof(*), arg1::Zero, arg2::Tensor)
+function evaluate(::typeof(*), arg1::Zero, arg2::TensorValue)
     arg1_free_indices, arg2_free_indices =
         eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(arg1_free_indices..., arg2_free_indices...)
+    return Zero(union(arg1_free_indices, arg2_free_indices)...)
 end
 
-function evaluate(::typeof(*), arg1::Tensor, arg2::Zero)
+function evaluate(::typeof(*), arg1::TensorValue, arg2::Zero)
     arg1_free_indices, arg2_free_indices =
         eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(arg1_free_indices..., arg2_free_indices...)
+    return Zero(union(arg1_free_indices, arg2_free_indices)...)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
     contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     if isempty(contracting_index)
-        return Zero(arg1.indices..., arg2.indices...)
+        return Zero(union(arg1.indices, arg2.indices)...)
     end
 
     @assert can_contract(arg1, arg2)
@@ -203,14 +186,14 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
     arg1_free_indices, arg2_free_indices =
         eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(arg1_free_indices..., arg2_free_indices...)
+    return Zero(union(arg1_free_indices, arg2_free_indices)...)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
     contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
 
     if isempty(contracting_index)
-        return Zero(arg1.indices..., arg2.indices...)
+        return Zero(union(arg1.indices, arg2.indices)...)
     end
 
     @assert can_contract(arg1, arg2)
@@ -219,7 +202,7 @@ function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
     arg1_free_indices, arg2_free_indices =
         eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
-    return Zero(arg1_free_indices..., arg2_free_indices...)
+    return Zero(union(arg1_free_indices, arg2_free_indices)...)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
@@ -342,13 +325,13 @@ function evaluate(::typeof(+), arg1::Zero, arg2::Zero)
     arg1
 end
 
-function evaluate(::typeof(+), arg1::Zero, arg2)
+function evaluate(::typeof(+), arg1::Zero, arg2::Value)
     @assert is_permutation(arg1, arg2)
 
     return evaluate(arg2)
 end
 
-function evaluate(::typeof(+), arg1, arg2::Zero)
+function evaluate(::typeof(+), arg1::Value, arg2::Zero)
     @assert is_permutation(arg1, arg2)
 
     return evaluate(arg1)
