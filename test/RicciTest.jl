@@ -664,8 +664,8 @@ end
         op_indices = MD.get_free_indices(op)
         @test length(op_indices) == 2
 
-        @test typeof(MD.get_free_indices(op.arg1)[end]) == Lower
-        @test flip(MD.get_free_indices(op.arg1)[end]) == MD.get_free_indices(op.arg2)[1]
+        @test typeof(MD.get_free_indices(op.arg1)[1]) == Lower
+        @test flip(MD.get_free_indices(op.arg1)[1]) == MD.get_free_indices(op.arg2)[1]
         @test typeof(MD.get_free_indices(op.arg2)[end]) == Lower
     end
 end
