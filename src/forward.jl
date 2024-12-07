@@ -384,7 +384,7 @@ function evaluate(::typeof(+), arg1::Real, arg2::Real)
     return arg1 + arg2
 end
 
-function evaluate(::typeof(+), arg1, arg2)
+function evaluate(::typeof(+), arg1::Value, arg2::Value)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
