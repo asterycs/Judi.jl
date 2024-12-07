@@ -345,7 +345,7 @@ function evaluate(::typeof(+), arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    @assert is_permutation(typeof.(arg1_indices), typeof.(arg2_indices))
+    @assert is_permutation(arg1_indices, arg2_indices)
 
     if arg1 == arg2
         return BinaryOperation{*}(2, arg1)
@@ -400,7 +400,7 @@ function evaluate(::typeof(-), arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    @assert is_permutation(typeof.(arg1_indices), typeof.(arg2_indices))
+    @assert is_permutation(arg1_indices, arg2_indices)
 
     if arg1 == arg2
         return Zero(arg1_indices...)

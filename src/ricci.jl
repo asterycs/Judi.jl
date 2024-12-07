@@ -370,7 +370,7 @@ function get_free_indices(arg::BinaryOperation{Op}) where {Op}
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
 
-    @assert is_permutation(typeof.(arg1_ids), typeof.(arg2_ids))
+    @assert is_permutation(arg1_ids, arg2_ids)
 
     return arg1_ids
 end
