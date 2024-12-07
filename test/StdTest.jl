@@ -156,7 +156,7 @@ end
     @test to_std_string(gradient(x' * x, "x")) == "2x"
     @test to_std_string(gradient(tr(x * x'), "x")) == "2x"
     @test to_std_string(gradient((y .* c)' * x, "x")) == "y ⊙ c"
-    @test to_std_string(gradient((x .* c)' * x, "x")) == "2y ⊙ c"
+    @test to_std_string(gradient((x .* c)' * x, "x")) == "2x ⊙ c"
     @test to_std_string(gradient((x + y)' * x, "x")) == "x + y + x"
     @test to_std_string(gradient((x - y)' * x, "x")) == "x - y + x"
 end
