@@ -121,13 +121,17 @@ function equivalent(left::Tensor, right::Tensor)
     return left.id == right.id && all(typeof.(left.indices) .== typeof.(right.indices))
 end
 
+function are_unique(arg::AbstractArray)
+    return length(unique(arg)) == length(arg)
+end
+
 struct KrD <: TensorValue
     indices::IndexSet
 
     function KrD(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
-        if length(unique(indices)) != length(indices) || length(indices) != 2
+        if !are_unique(indices) || length(indices) != 2
             throw(DomainError(indices, "Indices of δ are invalid"))
         end
 
