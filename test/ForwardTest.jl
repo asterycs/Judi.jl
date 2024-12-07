@@ -288,6 +288,22 @@ end
     @test equivalent(D, MD.Negate(KrD(Upper(2), Lower(3))))
 end
 
+@testset "free indices constant after evaluate" begin
+    x = Tensor("x", Upper(2))
+    c = Tensor("c", Upper(3))
+    y = Tensor("y", Upper(4))
+
+    op1 = (y .* c)' * x
+
+    @test isempty(MD.get_free_indices(op1))
+    @test isempty(MD.get_free_indices(evaluate(op1)))
+
+    op2 = tr(x * x')
+
+    @test isempty(MD.get_free_indices(op2))
+    @test isempty(MD.get_free_indices(evaluate(op2)))
+end
+
 @testset "Differentiate Ax" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
