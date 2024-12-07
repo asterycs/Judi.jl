@@ -151,7 +151,6 @@ function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
     end
 end
 
-# TODO: add function contract that returns nothing if contraction was unsuccesful
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
     if can_contract(arg1.arg1, arg2) &&
        can_contract(arg1.arg2, arg2) &&
