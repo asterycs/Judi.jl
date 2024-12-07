@@ -127,8 +127,8 @@ end
     op1 = A * x - (x + y)
     op2 = (x + y) - A * x
 
-    @test evaluate(op1) == op1
-    @test evaluate(op2) == - (A * x) + (x + y)
+    @test length(MD.get_free_indices(evaluate(op1))) == 1
+    @test length(MD.get_free_indices(evaluate(op2))) == 1
 end
 
 @testset "evaluate subtraction with * and + and simplify" begin

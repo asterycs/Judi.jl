@@ -158,7 +158,7 @@ end
     @test to_std_string(gradient((y .* c)' * x, "x")) == "y ⊙ c"
     @test to_std_string(gradient((x .* c)' * x, "x")) == "2y ⊙ c"
     @test to_std_string(gradient((x + y)' * x, "x")) == "x + y + x"
-    @test to_std_string(gradient((x - y)' * x, "x")) == "-x + y - x"
+    @test to_std_string(gradient((x - y)' * x, "x")) == "x - y + x"
 end
 
 @testset "to_std_string of jacobian {A, A'} * x" begin
