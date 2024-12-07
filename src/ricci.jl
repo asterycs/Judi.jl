@@ -386,7 +386,7 @@ function can_contract(arg1::TensorValue, arg2::TensorValue)
         end
     end
 
-    if length(pairs) == 1 && first(values(pairs)) == 1
+    if length(pairs) == 1
         return true
     end
 

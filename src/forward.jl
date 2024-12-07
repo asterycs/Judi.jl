@@ -282,6 +282,12 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
     arg2_indices = get_free_indices(arg2)
     contracting_index = eliminated_indices(get_free_indices(arg1), arg2_indices)
 
+    @assert length(eliminate_indices(get_free_indices(arg1), arg2_indices)) >= 1
+
+    if is_trace(arg2, arg1)
+        return BinaryOperation{*}(arg1, arg2)
+    end
+
     if length(arg2_indices) == 1 && arg2_indices[1] ∈ arg1.indices
         return diag(arg2, arg1.indices...)
     end
@@ -314,10 +320,21 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
 end
 
 function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
-    contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
+    arg1_indices = get_free_indices(arg1)
+    contracting_index = eliminated_indices(arg1_indices, get_free_indices(arg2))
+
+    @assert length(eliminate_indices(arg1_indices, get_free_indices(arg2))) >= 1
 
     if isempty(contracting_index) # Is an outer product
         return BinaryOperation{*}(arg1, arg2)
+    end
+
+    if is_trace(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
+    end
+
+    if length(arg1_indices) == 1 && arg1_indices[1] ∈ arg2.indices
+        return diag(arg1, arg2.indices...)
     end
 
     @assert can_contract(arg1, arg2)
