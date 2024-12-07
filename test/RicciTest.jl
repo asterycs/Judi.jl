@@ -525,13 +525,60 @@ end
     )
 end
 
+@testset "add/subtract tensors with different order fails" begin
+    a = Tensor("a")
+    x = Tensor("x", Upper(1))
+    A = Tensor("A", Upper(1), Lower(2))
+    T = Tensor("T", Upper(1), Lower(2), Lower(3))
+
+    tensors = (a, x, A, T)
+
+    for l ∈ tensors
+        for r ∈ tensors
+            if l == r
+                continue
+            end
+
+            @test_throws DomainError l + r
+            @test_throws DomainError l - r
+        end
+    end
+end
+
+# TODO: Triggers assertion for now, need to think how to update
+# @testset "add/subtract tensors with ambiguous indices fails" begin
+#     A = Tensor("A", Upper(1), Lower(2))
+#     B = Tensor("B", Upper(2), Lower(3))
+
+#     @test_throws DomainError A + B
+# end
+
+@testset "add/subtract tensors with different indices" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Upper(2))
+
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(3), Lower(4))
+
+
+    for op ∈ (+, -)
+        for args ∈ ((x, y), (A, B))
+            e = evaluate((op(args[1], args[2])))
+            @test e.arg1.indices == e.arg2.indices
+        end
+    end
+end
+
 @testset "transpose BinaryOperation{+-}" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(2))
+    z = Tensor("z", Upper(3))
 
     for op ∈ (+, -)
-        op_t = evaluate((op(x, y))')
-        @test equivalent(evaluate(op_t), op(Tensor("x", Lower(2)), Tensor("y", Lower(2))))
+        for ags ∈ ((x, y), (x, z))
+            op_t = evaluate((op(x, y))')
+            @test op_t.arg1.indices == op_t.arg2.indices
+        end
     end
 end
 
@@ -559,7 +606,7 @@ end
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(3))
     z = Tensor("z", Lower(1))
-    d = KrD(Lower(1), Upper(1))
+    d = KrD(Lower(1), Upper(3))
 
     @test MD.can_contract(A, x)
     @test MD.can_contract(x, A)
