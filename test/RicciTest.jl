@@ -675,10 +675,14 @@ end
     At = Tensor("A", Upper(1), Lower(2)) # manual transpose since adjoint updates the indices
     B = Tensor("B", Upper(2), Lower(3))
     Bt = Tensor("B", Upper(3), Lower(2))
+    d = KrD(Upper(2), Lower(2))
+    x = Tensor("x", Upper(2))
 
     @test_throws DomainError A * B
     @test_throws DomainError At * Bt
     @test_throws DomainError A * Bt
+    @test_throws DomainError x * d
+    @test_throws DomainError d * x
 end
 
 @testset "vector inner product with mismatching indices" begin
