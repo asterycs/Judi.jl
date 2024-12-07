@@ -209,6 +209,17 @@ function cos(arg::TensorValue)
     return Cos(arg)
 end
 
+struct Diag <: TensorValue
+    arg::TensorValue
+    indices::IndexSet
+end
+
+function diag(arg::TensorValue, indices::LowerOrUpperIndex...)
+    indices = LowerOrUpperIndex[i for i ∈ indices]
+
+    return Diag(arg, indices)
+end
+
 NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
 # TODO: Rename BinaryOperation{*} and align with Mult below
 NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
@@ -654,6 +665,18 @@ function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUppe
     return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
+function reshape(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
+    indices = get_free_indices(arg)
+
+    if from == to
+        return arg
+    end
+
+    @assert from ∈ indices
+
+    return BinaryOperation{*}(arg, KrD(flip(from), to))
+end
+
 function -(arg::TensorValue)
     return Negate(arg)
 end
@@ -791,6 +814,12 @@ function to_string(arg::Zero)
     scripts = [script(i) for i ∈ arg.indices]
 
     return "0" * join(scripts)
+end
+
+function to_string(arg::Diag)
+    scripts = [script(i) for i ∈ arg.indices]
+
+    return "diag(" * to_string(arg.arg) * ")" * join(scripts)
 end
 
 function to_string(arg::Negate)
