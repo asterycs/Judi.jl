@@ -69,7 +69,7 @@ end
     op = sin(a * b)
 
     @test typeof(op) == yd.Sin
-    @test typeof(op.arg) == yd.Product
+    @test typeof(op.arg) == yd.BinaryOperation{*}
 end
 
 @testset "Cos constructor" begin
@@ -79,7 +79,7 @@ end
     op = cos(a * b)
 
     @test typeof(op) == yd.Cos
-    @test typeof(op.arg) == yd.Product
+    @test typeof(op.arg) == yd.BinaryOperation{*}
 end
 
 @testset "UnaryOperation equality operator" begin
@@ -120,11 +120,11 @@ end
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = yd.Product(a, b)
+    left = yd.BinaryOperation{*}(a, b)
 
-    @test yd.Product(a, b) == yd.Product(a, b)
-    @test left == yd.Product(a, b)
-    @test left == yd.Product(b, a)
+    @test yd.BinaryOperation{*}(a, b) == yd.BinaryOperation{*}(a, b)
+    @test left == yd.BinaryOperation{*}(a, b)
+    @test left == yd.BinaryOperation{*}(b, a)
     @test left != yd.BinaryOperation{+}(a, b)
 end
 
@@ -132,12 +132,13 @@ end
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = yd.Product(a, b)
+    left = yd.BinaryOperation{*}(a, b)
 
-    @test equivalent(yd.Product(a, b), yd.Product(a, b))
-    @test equivalent(left, yd.Product(a, b))
-    @test equivalent(left, yd.Product(b, a))
-    @test !equivalent(left, yd.Product(a, Tensor("x", Upper(1))))
+    @test equivalent(yd.BinaryOperation{*}(a, b), yd.BinaryOperation{*}(a, b))
+    @test equivalent(left, yd.BinaryOperation{*}(a, b))
+    @test equivalent(left, yd.BinaryOperation{*}(b, a))
+    @test !equivalent(left, yd.BinaryOperation{+}(a, b))
+    @test !equivalent(left, yd.BinaryOperation{*}(a, Tensor("x", Upper(1))))
 end
 
 @testset "index hash function" begin
@@ -206,8 +207,8 @@ end
     xt = Tensor("x", Lower(1)) # row vector
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = yd.Product(xt, A)
-    op2 = yd.Product(A, xt)
+    op1 = yd.BinaryOperation{*}(xt, A)
+    op2 = yd.BinaryOperation{*}(A, xt)
 
     @test yd.get_free_indices(op1) == [Lower(2)]
     @test yd.get_free_indices(op2) == [Lower(2)]
@@ -234,8 +235,8 @@ end
     x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = yd.Product(x, δ)
-    op2 = yd.Product(δ, x)
+    op1 = yd.BinaryOperation{*}(x, δ)
+    op2 = yd.BinaryOperation{*}(δ, x)
 
     @test yd.get_free_indices(op1) == [Lower(2)]
     @test yd.get_free_indices(op2) == [Lower(2)]
@@ -245,8 +246,8 @@ end
     x = Tensor("x")
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = yd.Product(x, δ)
-    op2 = yd.Product(δ, x)
+    op1 = yd.BinaryOperation{*}(x, δ)
+    op2 = yd.BinaryOperation{*}(δ, x)
 
     @test yd.get_free_indices(op1) == [Lower(1); Lower(2)]
     @test yd.get_free_indices(op2) == [Lower(1); Lower(2)]
@@ -256,8 +257,8 @@ end
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = yd.Product(x, A)
-    op2 = yd.Product(A, x)
+    op1 = yd.BinaryOperation{*}(x, A)
+    op2 = yd.BinaryOperation{*}(A, x)
 
     @test yd.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
     @test yd.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
@@ -323,9 +324,9 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test A * x == yd.Product(A, x)
-    @test y * A == yd.Product(y, A)
-    @test A * B == yd.Product(A, B)
+    @test A * x == yd.BinaryOperation{*}(A, x)
+    @test y * A == yd.BinaryOperation{*}(y, A)
+    @test A * B == yd.BinaryOperation{*}(A, B)
 end
 
 @testset "multiplication with ambigous input fails" begin
@@ -350,8 +351,8 @@ end
 
     for n ∈ (z, r)
         for t ∈ (x, y, A, z)
-            @test n * t == yd.Product(n, t)
-            @test t * n == yd.Product(t, n)
+            @test n * t == yd.BinaryOperation{*}(n, t)
+            @test t * n == yd.BinaryOperation{*}(t, n)
         end
     end
 end
@@ -362,19 +363,19 @@ end
 
     op1 = A .* A
 
-    @test typeof(op1) == yd.Product
+    @test typeof(op1) == yd.BinaryOperation{*}
     @test equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
     @test equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
 
     op2 = A .* B
 
-    @test typeof(op2) == yd.Product
+    @test typeof(op2) == yd.BinaryOperation{*}
     @test equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
     @test equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
 
     op3 = A' .* B'
 
-    @test typeof(op3) == yd.Product
+    @test typeof(op3) == yd.BinaryOperation{*}
     @test equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
     @test equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
 end
@@ -385,19 +386,19 @@ end
 
     op1 = x .* x
 
-    @test typeof(op1) == yd.Product
+    @test typeof(op1) == yd.BinaryOperation{*}
     @test equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
     @test equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
 
     op2 = x .* y
 
-    @test typeof(op2) == yd.Product
+    @test typeof(op2) == yd.BinaryOperation{*}
     @test equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
     @test equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
 
     op3 = x' .* y'
 
-    @test typeof(op3) == yd.Product
+    @test typeof(op3) == yd.BinaryOperation{*}
     @test equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
     @test equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
 end
@@ -426,10 +427,10 @@ end
     @test yd.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD(Lower(3), Upper(1))
-    @test yd.update_index(x, Upper(3), Upper(1)) == yd.Product(x, expected_shift)
+    @test yd.update_index(x, Upper(3), Upper(1)) == yd.BinaryOperation{*}(x, expected_shift)
 
     expected_shift = KrD(Lower(3), Upper(2))
-    @test yd.update_index(x, Upper(3), Upper(2)) == yd.Product(x, expected_shift)
+    @test yd.update_index(x, Upper(3), Upper(2)) == yd.BinaryOperation{*}(x, expected_shift)
 end
 
 @testset "update_index row vector" begin
@@ -438,10 +439,10 @@ end
     @test yd.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD(Upper(3), Lower(1))
-    @test yd.update_index(x, Lower(3), Lower(1)) == yd.Product(x, expected_shift)
+    @test yd.update_index(x, Lower(3), Lower(1)) == yd.BinaryOperation{*}(x, expected_shift)
 
     expected_shift = KrD(Upper(3), Lower(2))
-    @test yd.update_index(x, Lower(3), Lower(2)) == yd.Product(x, expected_shift)
+    @test yd.update_index(x, Lower(3), Lower(2)) == yd.BinaryOperation{*}(x, expected_shift)
 end
 
 @testset "update_index matrix" begin
@@ -450,7 +451,7 @@ end
     @test yd.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD(Upper(2), Lower(3))
-    @test yd.update_index(A, Lower(2), Lower(3)) == yd.Product(A, expected_shift)
+    @test yd.update_index(A, Lower(2), Lower(3)) == yd.BinaryOperation{*}(A, expected_shift)
 end
 
 @testset "transpose vector" begin
@@ -513,14 +514,14 @@ end
     @test equivalent(At, Tensor("A", Lower(1), Upper(2)))
 end
 
-@testset "transpose Product" begin
+@testset "transpose BinaryOperation{*}" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(2))
 
     op_t = evaluate((A * x)')
     @test equivalent(
         evaluate(op_t),
-        yd.Product(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
+        yd.BinaryOperation{*}(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
     )
 end
 
@@ -623,18 +624,18 @@ end
 
     op1 = A * x
 
-    @test typeof(op1) == yd.Product
+    @test typeof(op1) == yd.BinaryOperation{*}
     @test yd.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == yd.Product
+    @test typeof(op1.arg1) == yd.BinaryOperation{*}
     @test op1.arg2 == x
 
     op2 = x' * A
 
-    @test typeof(op2) == yd.Product
+    @test typeof(op2) == yd.BinaryOperation{*}
     @test yd.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == yd.Product
+    @test typeof(op2.arg1) == yd.BinaryOperation{*}
     @test typeof(op2.arg1.arg1) == yd.Adjoint
-    @test typeof(op2.arg1.arg1.expr) == yd.Product
+    @test typeof(op2.arg1.arg1.expr) == yd.BinaryOperation{*}
     @test op2.arg1.arg1.expr.arg1 == x
     @test typeof(op2.arg1.arg1.expr.arg2) == KrD
     @test op2.arg1.arg1.expr.arg2.indices[1] == yd.flip(x.indices[1])
@@ -659,7 +660,7 @@ end
 
     # TODO: Check also efter evaluate
     for op ∈ ops
-        @assert typeof(op) == yd.Product
+        @assert typeof(op) == yd.BinaryOperation{*}
         op_indices = yd.get_free_indices(op)
         @test length(op_indices) == 2
 
@@ -690,16 +691,16 @@ end
 
     op1 = x' * y
 
-    @test typeof(op1) == yd.Product
+    @test typeof(op1) == yd.BinaryOperation{*}
     @test yd.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == yd.Product
+    @test typeof(op1.arg1) == yd.BinaryOperation{*}
     @test op1.arg2 == y
 
     op2 = y' * x
 
-    @test typeof(op2) == yd.Product
+    @test typeof(op2) == yd.BinaryOperation{*}
     @test yd.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == yd.Product
+    @test typeof(op2.arg1) == yd.BinaryOperation{*}
     @test op2.arg2 == x
 end
 
@@ -710,12 +711,12 @@ end
     op1 = A * z
     op2 = z * A
 
-    @test typeof(op1) == yd.Product
+    @test typeof(op1) == yd.BinaryOperation{*}
     @test !yd.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == A
     @test op1.arg2 == z
 
-    @test typeof(op2) == yd.Product
+    @test typeof(op2) == yd.BinaryOperation{*}
     @test !yd.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == z
     @test op2.arg2 == A
@@ -728,12 +729,12 @@ end
     op1 = z * x
     op2 = x * z
 
-    @test typeof(op1) == yd.Product
+    @test typeof(op1) == yd.BinaryOperation{*}
     @test !yd.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == z
     @test op1.arg2 == x
 
-    @test typeof(op2) == yd.Product
+    @test typeof(op2) == yd.BinaryOperation{*}
     @test !yd.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == x
     @test op2.arg2 == z
@@ -763,7 +764,7 @@ end
     a = Tensor("a")
     b = Tensor("b")
 
-    mul = yd.Product(a, b)
+    mul = yd.BinaryOperation{*}(a, b)
     add = yd.BinaryOperation{+}(a, b)
     sub = yd.BinaryOperation{-}(a, b)
 
@@ -773,7 +774,7 @@ end
     @test to_string(yd.BinaryOperation{+}(mul, b)) == "ab + b"
     @test to_string(yd.BinaryOperation{+}(mul, mul)) == "ab + ab"
     @test to_string(yd.BinaryOperation{-}(mul, mul)) == "ab - ab"
-    @test to_string(yd.Product(mul, mul)) == "abab"
-    @test to_string(yd.Product(add, add)) == "(a + b)(a + b)"
-    @test to_string(yd.Product(sub, add)) == "(a - b)(a + b)"
+    @test to_string(yd.BinaryOperation{*}(mul, mul)) == "abab"
+    @test to_string(yd.BinaryOperation{*}(add, add)) == "(a + b)(a + b)"
+    @test to_string(yd.BinaryOperation{*}(sub, add)) == "(a - b)(a + b)"
 end

@@ -7,7 +7,7 @@ function diff(arg::Tensor, wrt::Tensor)
         D = 1
 
         for (u, l) ∈ zip(arg.indices, wrt.indices)
-            D = Product(D, KrD(u, flip(l)))
+            D = BinaryOperation{*}(D, KrD(u, flip(l)))
         end
 
         return evaluate(D) # evaluate to get rid of the constant factor
@@ -19,7 +19,7 @@ end
 function diff(arg::KrD, wrt::Tensor)
     # This is arguably inconsistent with Tensor but the result will be Zero anyway
     # and this way the double indices are confined to the KrDs.
-    return Product(arg, Zero([flip(i) for i ∈ wrt.indices]...))
+    return BinaryOperation{*}(arg, Zero([flip(i) for i ∈ wrt.indices]...))
 end
 
 function diff(arg::Real, wrt::Tensor)
@@ -35,17 +35,17 @@ function diff(arg::Negate, wrt::Tensor)
 end
 
 function diff(arg::Sin, wrt::Tensor)
-    return Product(Cos(arg.arg), diff(arg.arg, wrt))
+    return BinaryOperation{*}(Cos(arg.arg), diff(arg.arg, wrt))
 end
 
 function diff(arg::Cos, wrt::Tensor)
-    return Product(Negate(Sin(arg.arg)), diff(arg.arg, wrt))
+    return BinaryOperation{*}(Negate(Sin(arg.arg)), diff(arg.arg, wrt))
 end
 
-function diff(arg::Product, wrt::Tensor)
+function diff(arg::BinaryOperation{*}, wrt::Tensor)
     return BinaryOperation{+}(
-        Product(arg.arg1, diff(arg.arg2, wrt)),
-        Product(diff(arg.arg1, wrt), arg.arg2),
+        BinaryOperation{*}(arg.arg1, diff(arg.arg2, wrt)),
+        BinaryOperation{*}(diff(arg.arg1, wrt), arg.arg2),
     )
 end
 
@@ -73,17 +73,17 @@ function evaluate(arg::Cos)
     return Cos(evaluate(arg.arg))
 end
 
-function evaluate(::typeof(*), arg1::Product, arg2::Real)
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Real)
     return evaluate(*, arg2, arg1)
 end
 
-function evaluate(::typeof(*), arg1::Real, arg2::Product)
+function evaluate(::typeof(*), arg1::Real, arg2::BinaryOperation{*})
     if arg2.arg1 isa Real
-        return Product(arg1 * arg2.arg1, arg2.arg2)
+        return BinaryOperation{*}(arg1 * arg2.arg1, arg2.arg2)
     elseif arg2.arg2 isa Real
-        return Product(arg1 * arg2.arg2, arg2.arg1)
+        return BinaryOperation{*}(arg1 * arg2.arg2, arg2.arg1)
     else
-        return Product(arg1, evaluate(arg2))
+        return BinaryOperation{*}(arg1, evaluate(arg2))
     end
 end
 
@@ -94,31 +94,31 @@ function is_elementwise_multiplication(arg1::Value, arg2::Value)
     return arg1_indices == arg2_indices
 end
 
-function evaluate(::typeof(*), arg1::Tensor, arg2::Product)
+function evaluate(::typeof(*), arg1::Tensor, arg2::BinaryOperation{*})
     is_elementwise =  is_elementwise_multiplication(arg2.arg1, arg2.arg2)
 
     if can_contract(arg1, arg2.arg1) && !is_elementwise
         new_arg1 = evaluate(*, arg1, arg2.arg1)
-        return Product(new_arg1, arg2.arg2)
+        return BinaryOperation{*}(new_arg1, arg2.arg2)
     elseif can_contract(arg1, arg2.arg2) && !is_elementwise
         new_arg2 = evaluate(*, arg1, arg2.arg2)
-        return Product(arg2.arg1, new_arg2)
+        return BinaryOperation{*}(arg2.arg1, new_arg2)
     else
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 end
 
-function evaluate(::typeof(*), arg1::Product, arg2::Tensor)
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Tensor)
     is_elementwise =  is_elementwise_multiplication(arg1.arg1, arg1.arg2)
 
     if can_contract(arg1.arg2, arg2) && !is_elementwise
         new_arg2 = evaluate(*, arg1.arg2, arg2)
-        return Product(arg1.arg1, new_arg2)
+        return BinaryOperation{*}(arg1.arg1, new_arg2)
     elseif can_contract(arg1.arg1, arg2) && !is_elementwise
         new_arg1 = evaluate(*, arg1.arg1, arg2)
-        return Product(new_arg1, arg1.arg2)
+        return BinaryOperation{*}(new_arg1, arg1.arg2)
     else
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 end
 
@@ -132,41 +132,41 @@ function is_trace(arg1::TensorValue, arg2::KrD)
     return false
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::Product)
+function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
     if can_contract(arg1, arg2.arg1) &&
        can_contract(arg1, arg2.arg2) &&
        !is_trace(arg1, arg2) # arg2 contains an element-wise multiplication
-        return Product(
+        return BinaryOperation{*}(
             evaluate(*, arg1, arg2.arg1),
             evaluate(*, arg1, arg2.arg2),
         )
     elseif can_contract(arg1, arg2.arg1)
         new_arg1 = evaluate(*, arg1, arg2.arg1)
-        return Product(new_arg1, evaluate(arg2.arg2))
+        return BinaryOperation{*}(new_arg1, evaluate(arg2.arg2))
     elseif can_contract(arg1, arg2.arg2)
         new_arg2 = evaluate(*, arg1, arg2.arg2)
-        return Product(evaluate(arg2.arg1), new_arg2)
+        return BinaryOperation{*}(evaluate(arg2.arg1), new_arg2)
     else
-        return Product(arg1, evaluate(arg2))
+        return BinaryOperation{*}(arg1, evaluate(arg2))
     end
 end
 
-function evaluate(::typeof(*), arg1::Product, arg2::KrD)
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
     if can_contract(arg1.arg1, arg2) &&
        can_contract(arg1.arg2, arg2) &&
        !is_trace(arg1, arg2) # arg1 contains an element-wise multiplication
-        return Product(
+        return BinaryOperation{*}(
             evaluate(*, arg1.arg1, arg2),
             evaluate(*, arg1.arg2, arg2),
         )
     elseif can_contract(arg1.arg2, arg2)
         new_arg2 = evaluate(*, arg1.arg2, arg2)
-        return Product(evaluate(arg1.arg1), new_arg2)
+        return BinaryOperation{*}(evaluate(arg1.arg1), new_arg2)
     elseif can_contract(arg1.arg1, arg2)
         new_arg1 = evaluate(*, arg1.arg1, arg2)
-        return Product(new_arg1, evaluate(arg1.arg2))
+        return BinaryOperation{*}(new_arg1, evaluate(arg1.arg2))
     else
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 end
 
@@ -213,7 +213,7 @@ function evaluate(::typeof(*), arg1::Diag, arg2::Tensor)
     @assert length(arg1_inner_indices) == 1
 
     if length(arg2_indices) != 1
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     @assert flip(arg2_indices[1]) ∈ arg1_indices
@@ -228,7 +228,7 @@ function evaluate(::typeof(*), arg1::Diag, arg2::Tensor)
     new_arg1 = evaluate(reshape(arg1.arg, arg1_inner_indices[1], new_index))
     new_arg2 = evaluate(reshape(arg2, arg2_indices[1], new_index))
 
-    return Product(new_arg1, new_arg2)
+    return BinaryOperation{*}(new_arg1, new_arg2)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::TensorValue)
@@ -284,7 +284,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
     @assert length(eliminate_indices(get_free_indices(arg1), arg2_indices)) >= 1
 
     if is_trace(arg2, arg1)
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     if length(arg2_indices) == 1 && arg2_indices[1] ∈ arg1.indices
@@ -292,7 +292,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
     end
 
     if isempty(contracting_index) # Is an outer product
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     @assert can_contract(arg1, arg2)
@@ -325,11 +325,11 @@ function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
     @assert length(eliminate_indices(arg1_indices, get_free_indices(arg2))) >= 1
 
     if isempty(contracting_index) # Is an outer product
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     if is_trace(arg1, arg2)
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     if length(arg1_indices) == 1 && arg1_indices[1] ∈ arg2.indices
@@ -408,7 +408,7 @@ function evaluate(::typeof(*), arg1::Zero, arg2::T) where T <: UnaryOperation
 end
 
 function evaluate(::typeof(*), arg1, arg2)
-    return Product(evaluate(arg1), evaluate(arg2))
+    return BinaryOperation{*}(evaluate(arg1), evaluate(arg2))
 end
 
 function evaluate(::typeof(*), arg1::TensorValue, arg2::Real)
@@ -419,7 +419,7 @@ function evaluate(::typeof(*), arg1::Real, arg2::TensorValue)
     if arg1 == 1
         return arg2
     else
-        Product(arg1, arg2)
+        BinaryOperation{*}(arg1, arg2)
     end
 end
 
@@ -458,28 +458,27 @@ function evaluate(::typeof(+), arg1::Value, arg2::Value)
     @assert is_permutation(arg1_indices, arg2_indices)
 
     if arg1 == arg2
-        return Product(2, arg1)
+        return BinaryOperation{*}(2, arg1)
     end
 
     return BinaryOperation{+}(arg1, arg2)
 end
 
-# TODO: Remove NonTrivialNonProd
-function evaluate(::typeof(+), arg1::NonTrivialNonProd, arg2::Product)
+function evaluate(::typeof(+), arg1::NonTrivialNonMult, arg2::BinaryOperation{*})
     return evaluate(+, evaluate(arg2), evaluate(arg1))
 end
 
-function evaluate(::typeof(+), arg1::Product, arg2::NonTrivialValue)
+function evaluate(::typeof(+), arg1::BinaryOperation{*}, arg2::NonTrivialValue)
     if evaluate(arg1) == evaluate(arg2)
-        return Product(2, evaluate(arg1))
+        return BinaryOperation{*}(2, evaluate(arg1))
     end
 
     if evaluate(arg1.arg1) isa Real && evaluate(arg1.arg2) == evaluate(arg2)
-        return Product(evaluate(arg1.arg1) + 1, evaluate(arg2))
+        return BinaryOperation{*}(evaluate(arg1.arg1) + 1, evaluate(arg2))
     end
 
     if evaluate(arg1.arg2) isa Real && evaluate(arg1.arg1) == evaluate(arg2)
-        return Product(evaluate(arg1.arg2) + 1, evaluate(arg2))
+        return BinaryOperation{*}(evaluate(arg1.arg2) + 1, evaluate(arg2))
     end
 
     return BinaryOperation{+}(evaluate(arg1), evaluate(arg2))
@@ -520,28 +519,28 @@ function evaluate(::typeof(-), arg1, arg2)
     return BinaryOperation{-}(arg1, arg2)
 end
 
-function evaluate(::typeof(-), arg1::NonTrivialNonProd, arg2::Product)
+function evaluate(::typeof(-), arg1::NonTrivialNonMult, arg2::BinaryOperation{*})
     return evaluate(+, evaluate(Negate(arg2)), evaluate(arg1))
 end
 
-function evaluate(::typeof(-), arg1::Product, arg2::NonTrivialValue)
+function evaluate(::typeof(-), arg1::BinaryOperation{*}, arg2::NonTrivialValue)
     if evaluate(arg1) == evaluate(arg2)
         arg1_indices = get_free_indices(arg1)
         return Zero(arg1_indices...)
     end
 
     if evaluate(arg1.arg1) isa Real && evaluate(arg1.arg2) == evaluate(arg2)
-        return Product(evaluate(arg1.arg1) - 1, evaluate(arg2))
+        return BinaryOperation{*}(evaluate(arg1.arg1) - 1, evaluate(arg2))
     end
 
     if evaluate(arg1.arg2) isa Real && evaluate(arg1.arg1) == evaluate(arg2)
-        return Product(evaluate(arg1.arg2) - 1, evaluate(arg2))
+        return BinaryOperation{*}(evaluate(arg1.arg2) - 1, evaluate(arg2))
     end
 
     return BinaryOperation{-}(evaluate(arg1), evaluate(arg2))
 end
 
-function evaluate(op::Product)
+function evaluate(op::BinaryOperation{*})
     evaluate(*, evaluate(op.arg1), evaluate(op.arg2))
 end
 

@@ -99,17 +99,6 @@ function equivalent(left::Zero, right::Zero)
     return all(typeof.(left.indices) .== typeof.(right.indices))
 end
 
-struct Product <: TensorValue
-    arg1::Value
-    arg2::Value
-end
-
-function equivalent(left::Product, right::Product)
-    return (equivalent(left.arg1, right.arg1) && equivalent(left.arg2, right.arg2)) ||
-           (equivalent(left.arg1, right.arg2) && equivalent(left.arg2, right.arg1))
-end
-
-
 struct BinaryOperation{Op} <: TensorValue where {Op}
     arg1::Value
     arg2::Value
@@ -169,8 +158,9 @@ function diag(arg::TensorValue, indices::LowerOrUpperIndex...)
     return Diag(arg, indices)
 end
 
-NonTrivialValue = Union{Tensor,KrD,Product,BinaryOperation{+},Real}
-NonTrivialNonProd = Union{Tensor,KrD,BinaryOperation{+},Real}
+NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
+# TODO: Rename BinaryOperation{*} and align with Mult below
+NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
 
 function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
     CanBeNothing = Union{Nothing,Lower,Upper}
@@ -290,7 +280,7 @@ function _get_free_indices(arg::Negate)
     return get_free_indices(arg.arg)
 end
 
-function _get_free_indices(arg::Product)
+function _get_free_indices(arg::BinaryOperation{*})
     return eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
 end
 
@@ -425,7 +415,7 @@ function tr(arg::TensorValue)
         throw(de)
     end
 
-    return Product(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
+    return BinaryOperation{*}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
 end
 
 function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
@@ -456,7 +446,7 @@ function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
         new_arg1 = update_index(new_arg1, li, ri)
     end
 
-    return Product(new_arg1, arg2)
+    return BinaryOperation{*}(new_arg1, arg2)
 end
 
 function *(arg1::TensorValue, arg2::Real)
@@ -468,7 +458,7 @@ function *(arg1::Value, arg2::TensorValue)
     arg2_free_indices = get_free_indices(arg2)
 
     if isempty(arg1_free_indices) || isempty(arg2_free_indices)
-        return Product(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     if length(arg1_free_indices) > 2
@@ -484,7 +474,7 @@ function *(arg1::Value, arg2::TensorValue)
     end
 
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper
-        return Product(
+        return BinaryOperation{*}(
             update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])),
             arg2,
         )
@@ -494,7 +484,7 @@ function *(arg1::Value, arg2::TensorValue)
        length(arg2_free_indices) == 1 &&
        typeof(arg1_free_indices[end]) == Upper &&
        typeof(arg2_free_indices[1]) == Lower
-        return Product(
+        return BinaryOperation{*}(
             arg1,
             update_index(
                 arg2,
@@ -546,11 +536,11 @@ function _addition(op, arg1::TensorValue, arg2::TensorValue)
     arg2_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg2_ids), new_ids)))
 
     for index ∈ unique(arg1_ids)
-        arg1 = Product(arg1, KrD(flip(index), same_to(index, arg1_index_map[index])))
+        arg1 = BinaryOperation{*}(arg1, KrD(flip(index), same_to(index, arg1_index_map[index])))
     end
 
     for index ∈ union(arg2_ids)
-        arg2 = Product(arg2, KrD(flip(index), same_to(index, arg2_index_map[index])))
+        arg2 = BinaryOperation{*}(arg2, KrD(flip(index), same_to(index, arg2_index_map[index])))
     end
 
     return BinaryOperation{op}(arg1, arg2)
@@ -566,7 +556,7 @@ function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUppe
     @assert from ∈ indices
     @assert typeof(from) != typeof(flip(to)) "update_index shall not transpose"
 
-    return Product(arg, KrD(flip(from), to))
+    return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
 function reshape(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
@@ -578,7 +568,7 @@ function reshape(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperInde
 
     @assert from ∈ indices
 
-    return Product(arg, KrD(flip(from), to))
+    return BinaryOperation{*}(arg, KrD(flip(from), to))
 end
 
 function -(arg::TensorValue)
@@ -601,13 +591,13 @@ function adjoint(arg::T) where T <: UnaryOperation
     return T(arg.arg')
 end
 
-function adjoint(arg::Product)
+function adjoint(arg::BinaryOperation{*})
     free_ids = get_free_indices(arg)
 
     t = arg
 
     for i ∈ union(free_ids)
-        t = Product(t, KrD(flip(i), flip_to(i, get_next_letter())))
+        t = BinaryOperation{*}(t, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
     return Adjoint(t)
@@ -628,11 +618,11 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
     arg2_t = arg.arg2
 
     for index ∈ unique(arg1_ids)
-        arg1_t = Product(arg1_t, KrD(flip(index), flip_to(index, arg1_index_map[index])))
+        arg1_t = BinaryOperation{*}(arg1_t, KrD(flip(index), flip_to(index, arg1_index_map[index])))
     end
 
     for index ∈ union(arg2_ids)
-        arg2_t = Product(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
+        arg2_t = BinaryOperation{*}(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
     end
 
     return Adjoint(Op(arg1_t, arg2_t))
@@ -648,7 +638,7 @@ function adjoint(arg::Union{Tensor,KrD,Zero})
     e = arg
 
     for i ∈ free_indices
-        e = Product(e, KrD(flip(i), flip_to(i, get_next_letter())))
+        e = BinaryOperation{*}(e, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
     return Adjoint(e)
@@ -742,7 +732,7 @@ function parenthesize(arg::BinaryOperation{-})
     return "(" * to_string(arg) * ")"
 end
 
-function to_string(arg::Product)
+function to_string(arg::BinaryOperation{*})
     return parenthesize(arg.arg1) * parenthesize(arg.arg2)
 end
 

@@ -196,7 +196,7 @@ function to_std_string(arg::BinaryOperation{Op}) where {Op}
     return to_std_string(arg.arg1) * " " * string(Op) * " " * to_std_string(arg.arg2)
 end
 
-function to_std_string(arg::Product)
+function to_std_string(arg::BinaryOperation{*})
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
     arg_ids = get_free_indices(arg)

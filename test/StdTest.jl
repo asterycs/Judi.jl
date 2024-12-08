@@ -33,7 +33,7 @@ end
     yt = Tensor("y", Lower(1))
 
     function contract(l, r)
-        return evaluate(yd.Product(l, r))
+        return evaluate(yd.BinaryOperation{*}(l, r))
     end
 
     @test to_std_string(contract(A, x)) == "Ax"
@@ -52,7 +52,7 @@ end
     y = Tensor("y", Upper(1))
 
     function contract(l, r)
-        return evaluate(yd.Product(l, r))
+        return evaluate(yd.BinaryOperation{*}(l, r))
     end
 
     @test to_std_string(contract(A, x)) == "xᵀAᵀ"
@@ -67,7 +67,7 @@ end
     y = Tensor("y", Lower(1))
 
     function contract(l, r)
-        return evaluate(yd.Product(l, r))
+        return evaluate(yd.BinaryOperation{*}(l, r))
     end
 
     @test to_std_string(contract(A, x)) == "Ax"
@@ -83,7 +83,7 @@ end
     D = Tensor("D", Lower(3), Upper(2))
 
     function contract(l, r)
-        return evaluate(yd.Product(l, r))
+        return evaluate(yd.BinaryOperation{*}(l, r))
     end
 
     @test to_std_string(contract(A, B)) == "AB"
