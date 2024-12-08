@@ -391,22 +391,6 @@ function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{-})
     )
 end
 
-function evaluate(::typeof(*), arg1::T, arg2::KrD) where T <: UnaryOperation
-    return T(evaluate(*, arg1.arg, arg2))
-end
-
-function evaluate(::typeof(*), arg1::KrD, arg2::T) where T <: UnaryOperation
-    return T(evaluate(*, arg1, arg2.arg))
-end
-
-function evaluate(::typeof(*), arg1::T, arg2::Zero) where T <: UnaryOperation
-    return evaluate(*, arg1.arg, arg2)
-end
-
-function evaluate(::typeof(*), arg1::Zero, arg2::T) where T <: UnaryOperation
-    return evaluate(*, arg1, arg2.arg)
-end
-
 function evaluate(::typeof(*), arg1, arg2)
     return BinaryOperation{*}(evaluate(arg1), evaluate(arg2))
 end
