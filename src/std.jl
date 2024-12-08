@@ -206,6 +206,10 @@ function to_std_string(arg::BinaryOperation{*})
     end
 
     if !can_contract(arg.arg1, arg.arg2)
+        if arg1_ids == arg2_ids
+            return to_std_string(arg.arg1) * " ⊙ " * to_std_string(arg.arg2)
+        end
+
         if length(arg1_ids) == 1 && length(arg2_ids) == 1
             if typeof(arg1_ids[1]) == Upper && typeof(arg2_ids[1]) == Lower
                 return to_std_string(arg.arg1) * to_std_string(arg.arg2)
@@ -214,16 +218,26 @@ function to_std_string(arg::BinaryOperation{*})
             if typeof(arg1_ids[1]) == Lower && typeof(arg2_ids[1]) == Upper
                 return to_std_string(arg.arg2) * to_std_string(arg.arg1)
             end
+        end
 
-            if arg1_ids[1].letter == arg2_ids[1].letter
-                return to_std_string(arg.arg1) * " ⊙ " * to_std_string(arg.arg2)
+        if length(arg1_ids) > 2 || length(arg2_ids) > 2 # is an outer product
+            throw_not_std()
+        end
+
+        return to_std_string(arg.arg1) * to_std_string(arg.arg2)
+    end
+
+    if isempty(arg_ids) # The result is a scalar
+        if length(arg1_ids) == 1 && length(arg2_ids) == 1
+            if typeof(arg1_ids[1]) == Lower
+                return to_std_string(arg.arg1) * to_std_string(arg.arg2)
+            else # if typeof(arg1_ids[1]) == Upper
+                return to_std_string(arg.arg2) * to_std_string(arg.arg1)
             end
         end
 
         throw_not_std()
-    end
-
-    if length(arg_ids) == 1 # The result is a vector
+    elseif length(arg_ids) == 1 # The result is a vector
         arg1 = arg.arg1
         arg2 = arg.arg2
 
