@@ -363,15 +363,7 @@ function are_indices_unique(indices::IndexSet)
     return length(unique(indices)) == length(indices)
 end
 
-function can_contract(arg1::Real, arg2::TensorValue)
-    return false
-end
-
-function can_contract(arg1::TensorValue, arg2::Real)
-    return false
-end
-
-function can_contract(arg1::TensorValue, arg2::TensorValue)
+function can_contract(arg1::Value, arg2::Value)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
@@ -390,7 +382,7 @@ function can_contract(arg1::TensorValue, arg2::TensorValue)
         end
     end
 
-    if length(pairs) == 1
+    if !isempty(pairs)
         return true
     end
 
