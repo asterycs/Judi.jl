@@ -313,6 +313,48 @@ end
     @test isempty(yd.get_free_indices(evaluate(op2)))
 end
 
+@testset "KrD collapsed correctly on element wise multiplications" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Upper(2))
+    z = Tensor("z", Upper(3))
+
+    e = (y .* z)' * x
+
+    l = yd.BinaryOperation{*}(Tensor("y", Lower(1)), KrD(Lower(1), Lower(9)))
+    r = x
+    expected = yd.BinaryOperation{*}(l, r)
+
+    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))), expected)
+
+    lt = yd.BinaryOperation{*}(Tensor("y", Lower(1)), KrD(Lower(1), Upper(100)))
+    rt = x
+    expected = yd.BinaryOperation{*}(lt, rt)
+    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(evaluate(yd.diff(e, Tensor("z", Upper(9))))'), expected)
+end
+
+@testset "KrD collapsed correctly on element wise multiplications (mirrored)" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Upper(2))
+    z = Tensor("z", Upper(3))
+
+    e = x' * (y .* z)
+
+    l = Tensor("x", Lower(1))
+    r = yd.BinaryOperation{*}(Tensor("y", Upper(1)), KrD(Upper(1), Lower(9)))
+    expected = yd.BinaryOperation{*}(l, r)
+
+    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))), expected)
+
+    lt = Tensor("x", Lower(1))
+    rt = yd.BinaryOperation{*}(Tensor("y", Upper(1)), KrD(Upper(1), Upper(100)))
+    expected = yd.BinaryOperation{*}(lt, rt)
+    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(evaluate(yd.diff(e, Tensor("z", Upper(9))))'), expected)
+end
+
 @testset "Differentiate Ax" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))

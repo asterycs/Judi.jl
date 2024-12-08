@@ -91,7 +91,7 @@ function is_elementwise_multiplication(arg1::Value, arg2::Value)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    return arg1_indices == arg2_indices
+    return !isempty(intersect(arg1_indices, arg2_indices))
 end
 
 function evaluate(::typeof(*), arg1::Tensor, arg2::BinaryOperation{*})
@@ -133,9 +133,7 @@ function is_trace(arg1::TensorValue, arg2::KrD)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
-    if can_contract(arg1, arg2.arg1) &&
-       can_contract(arg1, arg2.arg2) &&
-       !is_trace(arg1, arg2) # arg2 contains an element-wise multiplication
+    if is_elementwise_multiplication(arg2.arg1, arg2.arg2) && can_contract(arg1, arg2.arg1) && can_contract(arg1, arg2.arg2)
         return BinaryOperation{*}(
             evaluate(*, arg1, arg2.arg1),
             evaluate(*, arg1, arg2.arg2),
@@ -152,9 +150,7 @@ function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
-    if can_contract(arg1.arg1, arg2) &&
-       can_contract(arg1.arg2, arg2) &&
-       !is_trace(arg1, arg2) # arg1 contains an element-wise multiplication
+    if is_elementwise_multiplication(arg1.arg1, arg1.arg2) && can_contract(arg1.arg1, arg2) && can_contract(arg1.arg2, arg2)
         return BinaryOperation{*}(
             evaluate(*, arg1.arg1, arg2),
             evaluate(*, arg1.arg2, arg2),
