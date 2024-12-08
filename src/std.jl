@@ -145,8 +145,30 @@ function to_std_string(arg::Real)
     return to_string(arg)
 end
 
+function to_std_string(arg::Zero)
+    d = length(arg.indices)
+
+    if d == 0
+        return "0"
+    elseif d == 1
+        return "vec(0)"
+    elseif d == 2
+        return "mat(0)"
+    else
+        throw_not_std()
+    end
+end
+
 function to_std_string(arg::Negate)
     return "-" * to_std_string(arg.arg)
+end
+
+function to_std_string(arg::Sin)
+    return "sin(" * to_std_string(arg.arg) * ")"
+end
+
+function to_std_string(arg::Cos)
+    return "cos(" * to_std_string(arg.arg) * ")"
 end
 
 function parenthesize_std(arg)
