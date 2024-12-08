@@ -1,7 +1,7 @@
-using MatrixDiff
+using Yodi
 using Test
 
-MD = MatrixDiff
+yd = Yodi
 
 @testset "Tensor constructor throws on invalid input" begin
     @test_throws DomainError Tensor("A", Lower(2), Lower(2))
@@ -68,8 +68,8 @@ end
 
     op = sin(a * b)
 
-    @test typeof(op) == MD.Sin
-    @test typeof(op.arg) == MD.Product
+    @test typeof(op) == yd.Sin
+    @test typeof(op.arg) == yd.Product
 end
 
 @testset "Cos constructor" begin
@@ -78,8 +78,8 @@ end
 
     op = cos(a * b)
 
-    @test typeof(op) == MD.Cos
-    @test typeof(op.arg) == MD.Product
+    @test typeof(op) == yd.Cos
+    @test typeof(op.arg) == yd.Product
 end
 
 @testset "UnaryOperation equality operator" begin
@@ -88,19 +88,19 @@ end
 
     left = sin(a * b)
 
-    @test left == MD.Sin(a * b)
-    @test left != MD.Cos(a * b)
-    @test left != -MD.Sin(a * b)
+    @test left == yd.Sin(a * b)
+    @test left != yd.Cos(a * b)
+    @test left != -yd.Sin(a * b)
 end
 
 @testset "is_permutation true positive" begin
     l = [Lower(9); Upper(2); Lower(2); Lower(2)]
     r = collect(reverse(l))
 
-    @test MD.is_permutation(l, l)
-    @test MD.is_permutation(l, r)
-    @test MD.is_permutation(r, l)
-    @test MD.is_permutation(r, r)
+    @test yd.is_permutation(l, l)
+    @test yd.is_permutation(l, r)
+    @test yd.is_permutation(r, l)
+    @test yd.is_permutation(r, r)
 end
 
 @testset "is_permutation true negative" begin
@@ -110,34 +110,34 @@ end
     r3 = []
     r4 = [Lower(9); Upper(2); Upper(2); Lower(2)]
 
-    @test !MD.is_permutation(l, r1)
-    @test !MD.is_permutation(l, r2)
-    @test !MD.is_permutation(l, r3)
-    @test !MD.is_permutation(l, r4)
+    @test !yd.is_permutation(l, r1)
+    @test !yd.is_permutation(l, r2)
+    @test !yd.is_permutation(l, r3)
+    @test !yd.is_permutation(l, r4)
 end
 
 @testset "BinaryOperation equality operator" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = MD.Product(a, b)
+    left = yd.Product(a, b)
 
-    @test MD.Product(a, b) == MD.Product(a, b)
-    @test left == MD.Product(a, b)
-    @test left == MD.Product(b, a)
-    @test left != MD.BinaryOperation{+}(a, b)
+    @test yd.Product(a, b) == yd.Product(a, b)
+    @test left == yd.Product(a, b)
+    @test left == yd.Product(b, a)
+    @test left != yd.BinaryOperation{+}(a, b)
 end
 
 @testset "BinaryOperation equivalent" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = MD.Product(a, b)
+    left = yd.Product(a, b)
 
-    @test equivalent(MD.Product(a, b), MD.Product(a, b))
-    @test equivalent(left, MD.Product(a, b))
-    @test equivalent(left, MD.Product(b, a))
-    @test !equivalent(left, MD.Product(a, Tensor("x", Upper(1))))
+    @test equivalent(yd.Product(a, b), yd.Product(a, b))
+    @test equivalent(left, yd.Product(a, b))
+    @test equivalent(left, yd.Product(b, a))
+    @test !equivalent(left, yd.Product(a, Tensor("x", Upper(1))))
 end
 
 @testset "index hash function" begin
@@ -148,12 +148,12 @@ end
 end
 
 @testset "flip" begin
-    @test MD.flip(Lower(3)) == Upper(3)
-    @test MD.flip(Upper(3)) == Lower(3)
+    @test yd.flip(Lower(3)) == Upper(3)
+    @test yd.flip(Upper(3)) == Lower(3)
 end
 
 @testset "eliminate_indices removes correct indices" begin
-    IdxUnion = MD.LowerOrUpperIndex
+    IdxUnion = yd.LowerOrUpperIndex
 
     indicesl = IdxUnion[
         Lower(9)
@@ -171,14 +171,14 @@ end
         Lower(9)
     ]
 
-    l, r = MD.eliminate_indices(indicesl, indicesr)
+    l, r = yd.eliminate_indices(indicesl, indicesr)
 
     @test [l; r] == [Lower(2); Lower(1); Lower(2); Upper(3)]
-    @test MD.eliminate_indices(IdxUnion[], IdxUnion[]) == (IdxUnion[], IdxUnion[])
+    @test yd.eliminate_indices(IdxUnion[], IdxUnion[]) == (IdxUnion[], IdxUnion[])
 end
 
 @testset "eliminated_indices retains correct indices" begin
-    IdxUnion = MD.LowerOrUpperIndex
+    IdxUnion = yd.LowerOrUpperIndex
 
     indicesl = IdxUnion[
         Lower(9)
@@ -196,37 +196,37 @@ end
         Lower(9)
     ]
 
-    eliminated = MD.eliminated_indices(indicesl, indicesr)
+    eliminated = yd.eliminated_indices(indicesl, indicesr)
 
     @test eliminated == IdxUnion[Lower(9); Upper(9); Upper(9); Lower(9); Upper(3); Lower(3)]
-    @test MD.eliminated_indices(IdxUnion[], IdxUnion[]) == IdxUnion[]
+    @test yd.eliminated_indices(IdxUnion[], IdxUnion[]) == IdxUnion[]
 end
 
 @testset "get_free_indices with Tensor * Tensor and one matching pair" begin
     xt = Tensor("x", Lower(1)) # row vector
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = MD.Product(xt, A)
-    op2 = MD.Product(A, xt)
+    op1 = yd.Product(xt, A)
+    op2 = yd.Product(A, xt)
 
-    @test MD.get_free_indices(op1) == [Lower(2)]
-    @test MD.get_free_indices(op2) == [Lower(2)]
+    @test yd.get_free_indices(op1) == [Lower(2)]
+    @test yd.get_free_indices(op2) == [Lower(2)]
 end
 
 @testset "get_free_indices with Tensor {+-} Tensor" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Lower(2), Upper(1))
 
-    ops = (MD.BinaryOperation{+}, MD.BinaryOperation{-})
+    ops = (yd.BinaryOperation{+}, yd.BinaryOperation{-})
 
     for op ∈ ops
         op1 = op(A, A)
         op2 = op(A, B)
         op3 = op(B, A)
 
-        @test MD.get_free_indices(op1) == [Upper(1); Lower(2)]
-        @test MD.get_free_indices(op2) == [Upper(1); Lower(2)]
-        @test MD.get_free_indices(op3) == [Lower(2); Upper(1)]
+        @test yd.get_free_indices(op1) == [Upper(1); Lower(2)]
+        @test yd.get_free_indices(op2) == [Upper(1); Lower(2)]
+        @test yd.get_free_indices(op3) == [Lower(2); Upper(1)]
     end
 end
 
@@ -234,65 +234,65 @@ end
     x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = MD.Product(x, δ)
-    op2 = MD.Product(δ, x)
+    op1 = yd.Product(x, δ)
+    op2 = yd.Product(δ, x)
 
-    @test MD.get_free_indices(op1) == [Lower(2)]
-    @test MD.get_free_indices(op2) == [Lower(2)]
+    @test yd.get_free_indices(op1) == [Lower(2)]
+    @test yd.get_free_indices(op2) == [Lower(2)]
 end
 
 @testset "get_free_indices with scalar Tensor * KrD" begin
     x = Tensor("x")
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = MD.Product(x, δ)
-    op2 = MD.Product(δ, x)
+    op1 = yd.Product(x, δ)
+    op2 = yd.Product(δ, x)
 
-    @test MD.get_free_indices(op1) == [Lower(1); Lower(2)]
-    @test MD.get_free_indices(op2) == [Lower(1); Lower(2)]
+    @test yd.get_free_indices(op1) == [Lower(1); Lower(2)]
+    @test yd.get_free_indices(op2) == [Lower(1); Lower(2)]
 end
 
 @testset "get_free_indices with Tensor * Tensor and no matching pairs" begin
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = MD.Product(x, A)
-    op2 = MD.Product(A, x)
+    op1 = yd.Product(x, A)
+    op2 = yd.Product(A, x)
 
-    @test MD.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
-    @test MD.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
+    @test yd.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
+    @test yd.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
 end
 
 @testset "is_contraction_unambigous vector * vector with matching pair" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(1))
 
-    @test MD.is_contraction_unambigous(x, y)
-    @test MD.is_contraction_unambigous(y, x)
+    @test yd.is_contraction_unambigous(x, y)
+    @test yd.is_contraction_unambigous(y, x)
 end
 
 @testset "is_contraction_unambigous vector * vector with non-matching pair" begin
     x = Tensor("x", Lower(1))
     y = Tensor("y", Lower(1))
 
-    @test !MD.is_contraction_unambigous(x, y)
-    @test !MD.is_contraction_unambigous(y, x)
+    @test !yd.is_contraction_unambigous(x, y)
+    @test !yd.is_contraction_unambigous(y, x)
 end
 
 @testset "is_contraction_unambigous matrix * vector with matching pair" begin
     x = Tensor("x", Upper(2))
     A = Tensor("A", Upper(1), Lower(2))
 
-    @test MD.is_contraction_unambigous(A, x)
-    @test MD.is_contraction_unambigous(x, A)
+    @test yd.is_contraction_unambigous(A, x)
+    @test yd.is_contraction_unambigous(x, A)
 end
 
 @testset "is_contraction_unambigous matrix * vector with non-matching pair" begin
     x = Tensor("x", Lower(3))
     A = Tensor("A", Upper(1), Lower(2))
 
-    @test MD.is_contraction_unambigous(A, x)
-    @test MD.is_contraction_unambigous(x, A)
+    @test yd.is_contraction_unambigous(A, x)
+    @test yd.is_contraction_unambigous(x, A)
 end
 
 @testset "is_valid_matrix_multiplication fails with invalid input" begin
@@ -300,10 +300,10 @@ end
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(2))
 
-    @test !MD.is_valid_matrix_multiplication(A, x)
-    @test !MD.is_valid_matrix_multiplication(x, A)
-    @test !MD.is_valid_matrix_multiplication(A, y)
-    @test !MD.is_valid_matrix_multiplication(y, A)
+    @test !yd.is_valid_matrix_multiplication(A, x)
+    @test !yd.is_valid_matrix_multiplication(x, A)
+    @test !yd.is_valid_matrix_multiplication(A, y)
+    @test !yd.is_valid_matrix_multiplication(y, A)
 end
 
 @testset "is_valid_matrix_multiplication succeeds with valid input" begin
@@ -312,9 +312,9 @@ end
     y = Tensor("y", Lower(1))
     z = Tensor("z", Lower(2))
 
-    @test MD.is_valid_matrix_multiplication(A, x)
-    @test MD.is_valid_matrix_multiplication(y, A)
-    @test MD.is_valid_matrix_multiplication(x, z)
+    @test yd.is_valid_matrix_multiplication(A, x)
+    @test yd.is_valid_matrix_multiplication(y, A)
+    @test yd.is_valid_matrix_multiplication(x, z)
 end
 
 @testset "multiplication with matching indices" begin
@@ -323,9 +323,9 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test A * x == MD.Product(A, x)
-    @test y * A == MD.Product(y, A)
-    @test A * B == MD.Product(A, B)
+    @test A * x == yd.Product(A, x)
+    @test y * A == yd.Product(y, A)
+    @test A * B == yd.Product(A, B)
 end
 
 @testset "multiplication with ambigous input fails" begin
@@ -350,8 +350,8 @@ end
 
     for n ∈ (z, r)
         for t ∈ (x, y, A, z)
-            @test n * t == MD.Product(n, t)
-            @test t * n == MD.Product(t, n)
+            @test n * t == yd.Product(n, t)
+            @test t * n == yd.Product(t, n)
         end
     end
 end
@@ -362,19 +362,19 @@ end
 
     op1 = A .* A
 
-    @test typeof(op1) == MD.Product
+    @test typeof(op1) == yd.Product
     @test equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
     @test equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
 
     op2 = A .* B
 
-    @test typeof(op2) == MD.Product
+    @test typeof(op2) == yd.Product
     @test equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
     @test equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
 
     op3 = A' .* B'
 
-    @test typeof(op3) == MD.Product
+    @test typeof(op3) == yd.Product
     @test equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
     @test equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
 end
@@ -385,19 +385,19 @@ end
 
     op1 = x .* x
 
-    @test typeof(op1) == MD.Product
+    @test typeof(op1) == yd.Product
     @test equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
     @test equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
 
     op2 = x .* y
 
-    @test typeof(op2) == MD.Product
+    @test typeof(op2) == yd.Product
     @test equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
     @test equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
 
     op3 = x' .* y'
 
-    @test typeof(op3) == MD.Product
+    @test typeof(op3) == yd.Product
     @test equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
     @test equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
 end
@@ -423,34 +423,34 @@ end
 @testset "update_index column vector" begin
     x = Tensor("x", Upper(3))
 
-    @test MD.update_index(x, Upper(3), Upper(3)) == x
+    @test yd.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD(Lower(3), Upper(1))
-    @test MD.update_index(x, Upper(3), Upper(1)) == MD.Product(x, expected_shift)
+    @test yd.update_index(x, Upper(3), Upper(1)) == yd.Product(x, expected_shift)
 
     expected_shift = KrD(Lower(3), Upper(2))
-    @test MD.update_index(x, Upper(3), Upper(2)) == MD.Product(x, expected_shift)
+    @test yd.update_index(x, Upper(3), Upper(2)) == yd.Product(x, expected_shift)
 end
 
 @testset "update_index row vector" begin
     x = Tensor("x", Lower(3))
 
-    @test MD.update_index(x, Lower(3), Lower(3)) == x
+    @test yd.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD(Upper(3), Lower(1))
-    @test MD.update_index(x, Lower(3), Lower(1)) == MD.Product(x, expected_shift)
+    @test yd.update_index(x, Lower(3), Lower(1)) == yd.Product(x, expected_shift)
 
     expected_shift = KrD(Upper(3), Lower(2))
-    @test MD.update_index(x, Lower(3), Lower(2)) == MD.Product(x, expected_shift)
+    @test yd.update_index(x, Lower(3), Lower(2)) == yd.Product(x, expected_shift)
 end
 
 @testset "update_index matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
 
-    @test MD.update_index(A, Lower(2), Lower(2)) == A
+    @test yd.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD(Upper(2), Lower(3))
-    @test MD.update_index(A, Lower(2), Lower(3)) == MD.Product(A, expected_shift)
+    @test yd.update_index(A, Lower(2), Lower(3)) == yd.Product(A, expected_shift)
 end
 
 @testset "transpose vector" begin
@@ -471,8 +471,8 @@ end
     x = Tensor("x", Upper(2))
 
     xt = x'
-    x_indices = MD.get_free_indices(xt)
-    updated_transpose = evaluate(MD.update_index(xt, x_indices[1], Lower(1)))
+    x_indices = yd.get_free_indices(xt)
+    updated_transpose = evaluate(yd.update_index(xt, x_indices[1], Lower(1)))
 
     @test equivalent(updated_transpose, Tensor("x", Lower(1)))
 end
@@ -482,7 +482,7 @@ end
     y = Tensor("y", Lower(1))
 
     ops = (sin, cos)
-    types = (MD.Sin, MD.Cos)
+    types = (yd.Sin, yd.Cos)
 
     for (op, type) ∈ zip(ops, types)
         op1 = evaluate(op(y * x)')
@@ -501,7 +501,7 @@ end
     ops = (A, x, A * x, A + A, sin(x), cos(x), tr(A))
 
     for op ∈ ops
-        @test typeof(-op) == MD.Negate
+        @test typeof(-op) == yd.Negate
         @test (-op).arg == op
     end
 end
@@ -520,7 +520,7 @@ end
     op_t = evaluate((A * x)')
     @test equivalent(
         evaluate(op_t),
-        MD.Product(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
+        yd.Product(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
     )
 end
 
@@ -585,8 +585,8 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test isempty(MD.get_free_indices(tr(A)))
-    @test isempty(MD.get_free_indices(tr(A * B)))
+    @test isempty(yd.get_free_indices(tr(A)))
+    @test isempty(yd.get_free_indices(tr(A * B)))
 end
 
 @testset "trace with non-matrix input fails" begin
@@ -607,14 +607,14 @@ end
     z = Tensor("z", Lower(1))
     d = KrD(Lower(1), Upper(3))
 
-    @test MD.can_contract(A, x)
-    @test MD.can_contract(x, A)
-    @test !MD.can_contract(A, y)
-    @test !MD.can_contract(y, A)
-    @test MD.can_contract(A, d)
-    @test MD.can_contract(d, A)
-    @test MD.can_contract(A, z)
-    @test MD.can_contract(z, A)
+    @test yd.can_contract(A, x)
+    @test yd.can_contract(x, A)
+    @test !yd.can_contract(A, y)
+    @test !yd.can_contract(y, A)
+    @test yd.can_contract(A, d)
+    @test yd.can_contract(d, A)
+    @test yd.can_contract(A, z)
+    @test yd.can_contract(z, A)
 end
 
 @testset "multiplication with non-matching indices matrix-vector" begin
@@ -623,24 +623,24 @@ end
 
     op1 = A * x
 
-    @test typeof(op1) == MD.Product
-    @test MD.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == MD.Product
+    @test typeof(op1) == yd.Product
+    @test yd.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1.arg1) == yd.Product
     @test op1.arg2 == x
 
     op2 = x' * A
 
-    @test typeof(op2) == MD.Product
-    @test MD.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == MD.Product
-    @test typeof(op2.arg1.arg1) == MD.Adjoint
-    @test typeof(op2.arg1.arg1.expr) == MD.Product
+    @test typeof(op2) == yd.Product
+    @test yd.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2.arg1) == yd.Product
+    @test typeof(op2.arg1.arg1) == yd.Adjoint
+    @test typeof(op2.arg1.arg1.expr) == yd.Product
     @test op2.arg1.arg1.expr.arg1 == x
     @test typeof(op2.arg1.arg1.expr.arg2) == KrD
-    @test op2.arg1.arg1.expr.arg2.indices[1] == MD.flip(x.indices[1])
+    @test op2.arg1.arg1.expr.arg2.indices[1] == yd.flip(x.indices[1])
     @test typeof(op2.arg1.arg2) == KrD
-    @test MD.flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.expr.arg2.indices[2]
-    @test MD.flip(op2.arg1.arg2.indices[2]) == A.indices[1]
+    @test yd.flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.expr.arg2.indices[2]
+    @test yd.flip(op2.arg1.arg2.indices[2]) == A.indices[1]
     @test op2.arg2 == A
 end
 
@@ -659,13 +659,13 @@ end
 
     # TODO: Check also efter evaluate
     for op ∈ ops
-        @assert typeof(op) == MD.Product
-        op_indices = MD.get_free_indices(op)
+        @assert typeof(op) == yd.Product
+        op_indices = yd.get_free_indices(op)
         @test length(op_indices) == 2
 
-        @test typeof(MD.get_free_indices(op.arg1)[1]) == Lower
-        @test MD.flip(MD.get_free_indices(op.arg1)[1]) == MD.get_free_indices(op.arg2)[1]
-        @test typeof(MD.get_free_indices(op.arg2)[end]) == Lower
+        @test typeof(yd.get_free_indices(op.arg1)[1]) == Lower
+        @test yd.flip(yd.get_free_indices(op.arg1)[1]) == yd.get_free_indices(op.arg2)[1]
+        @test typeof(yd.get_free_indices(op.arg2)[end]) == Lower
     end
 end
 
@@ -690,16 +690,16 @@ end
 
     op1 = x' * y
 
-    @test typeof(op1) == MD.Product
-    @test MD.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == MD.Product
+    @test typeof(op1) == yd.Product
+    @test yd.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1.arg1) == yd.Product
     @test op1.arg2 == y
 
     op2 = y' * x
 
-    @test typeof(op2) == MD.Product
-    @test MD.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == MD.Product
+    @test typeof(op2) == yd.Product
+    @test yd.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2.arg1) == yd.Product
     @test op2.arg2 == x
 end
 
@@ -710,13 +710,13 @@ end
     op1 = A * z
     op2 = z * A
 
-    @test typeof(op1) == MD.Product
-    @test !MD.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1) == yd.Product
+    @test !yd.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == A
     @test op1.arg2 == z
 
-    @test typeof(op2) == MD.Product
-    @test !MD.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2) == yd.Product
+    @test !yd.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == z
     @test op2.arg2 == A
 end
@@ -728,13 +728,13 @@ end
     op1 = z * x
     op2 = x * z
 
-    @test typeof(op1) == MD.Product
-    @test !MD.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1) == yd.Product
+    @test !yd.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == z
     @test op1.arg2 == x
 
-    @test typeof(op2) == MD.Product
-    @test !MD.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2) == yd.Product
+    @test !yd.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == x
     @test op2.arg2 == z
 end
@@ -763,17 +763,17 @@ end
     a = Tensor("a")
     b = Tensor("b")
 
-    mul = MD.Product(a, b)
-    add = MD.BinaryOperation{+}(a, b)
-    sub = MD.BinaryOperation{-}(a, b)
+    mul = yd.Product(a, b)
+    add = yd.BinaryOperation{+}(a, b)
+    sub = yd.BinaryOperation{-}(a, b)
 
     @test to_string(mul) == "ab"
     @test to_string(add) == "a + b"
     @test to_string(sub) == "a - b"
-    @test to_string(MD.BinaryOperation{+}(mul, b)) == "ab + b"
-    @test to_string(MD.BinaryOperation{+}(mul, mul)) == "ab + ab"
-    @test to_string(MD.BinaryOperation{-}(mul, mul)) == "ab - ab"
-    @test to_string(MD.Product(mul, mul)) == "abab"
-    @test to_string(MD.Product(add, add)) == "(a + b)(a + b)"
-    @test to_string(MD.Product(sub, add)) == "(a - b)(a + b)"
+    @test to_string(yd.BinaryOperation{+}(mul, b)) == "ab + b"
+    @test to_string(yd.BinaryOperation{+}(mul, mul)) == "ab + ab"
+    @test to_string(yd.BinaryOperation{-}(mul, mul)) == "ab - ab"
+    @test to_string(yd.Product(mul, mul)) == "abab"
+    @test to_string(yd.Product(add, add)) == "(a + b)(a + b)"
+    @test to_string(yd.Product(sub, add)) == "(a - b)(a + b)"
 end

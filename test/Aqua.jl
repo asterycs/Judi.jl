@@ -1,4 +1,4 @@
-using MatrixDiff
+using Yodi
 using Aqua
 
-Aqua.test_all(MatrixDiff)
+Aqua.test_all(Yodi)

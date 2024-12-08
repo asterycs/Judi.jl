@@ -1,4 +1,4 @@
-module MatrixDiff
+module Yodi
 
 include("index.jl")
 include("ricci.jl")
