@@ -149,8 +149,8 @@ end
 end
 
 @testset "flip" begin
-    @test flip(Lower(3)) == Upper(3)
-    @test flip(Upper(3)) == Lower(3)
+    @test MD.flip(Lower(3)) == Upper(3)
+    @test MD.flip(Upper(3)) == Lower(3)
 end
 
 @testset "eliminate_indices removes correct indices" begin
@@ -638,10 +638,10 @@ end
     @test typeof(op2.arg1.arg1.expr) == MD.BinaryOperation{*}
     @test op2.arg1.arg1.expr.arg1 == x
     @test typeof(op2.arg1.arg1.expr.arg2) == KrD
-    @test op2.arg1.arg1.expr.arg2.indices[1] == flip(x.indices[1])
+    @test op2.arg1.arg1.expr.arg2.indices[1] == MD.flip(x.indices[1])
     @test typeof(op2.arg1.arg2) == KrD
-    @test flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.expr.arg2.indices[2]
-    @test flip(op2.arg1.arg2.indices[2]) == A.indices[1]
+    @test MD.flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.expr.arg2.indices[2]
+    @test MD.flip(op2.arg1.arg2.indices[2]) == A.indices[1]
     @test op2.arg2 == A
 end
 
@@ -665,7 +665,7 @@ end
         @test length(op_indices) == 2
 
         @test typeof(MD.get_free_indices(op.arg1)[1]) == Lower
-        @test flip(MD.get_free_indices(op.arg1)[1]) == MD.get_free_indices(op.arg2)[1]
+        @test MD.flip(MD.get_free_indices(op.arg1)[1]) == MD.get_free_indices(op.arg2)[1]
         @test typeof(MD.get_free_indices(op.arg2)[end]) == Lower
     end
 end
