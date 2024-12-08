@@ -21,10 +21,10 @@ end
     d1 = KrD(Lower(1), Upper(3))
     d2 = KrD(Upper(2), Lower(3))
 
-    @test evaluate(MD.BinaryOperation{*}(A, d1)) == Tensor("A", Upper(3), Lower(2))
-    @test evaluate(MD.BinaryOperation{*}(x, d1)) == Tensor("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(z, d1)) == MD.BinaryOperation{*}(d1, z)
-    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Tensor("A", Upper(1), Lower(3))
+    @test evaluate(MD.Product(A, d1)) == Tensor("A", Upper(3), Lower(2))
+    @test evaluate(MD.Product(x, d1)) == Tensor("x", Upper(3))
+    @test evaluate(MD.Product(z, d1)) == MD.Product(d1, z)
+    @test evaluate(MD.Product(A, d2)) == Tensor("A", Upper(1), Lower(3))
 end
 
 @testset "evaluate transpose simple" begin
@@ -74,10 +74,10 @@ end
     d1 = KrD(Lower(2), Upper(3))
     d2 = KrD(Upper(3), Lower(2))
 
-    @test evaluate(MD.BinaryOperation{*}(d1, x)) == Tensor("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(x, d1)) == Tensor("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(d2, x)) == Tensor("x", Upper(3))
-    @test evaluate(MD.BinaryOperation{*}(x, d2)) == Tensor("x", Upper(3))
+    @test evaluate(MD.Product(d1, x)) == Tensor("x", Upper(3))
+    @test evaluate(MD.Product(x, d1)) == Tensor("x", Upper(3))
+    @test evaluate(MD.Product(d2, x)) == Tensor("x", Upper(3))
+    @test evaluate(MD.Product(x, d2)) == Tensor("x", Upper(3))
 end
 
 # TODO: Triggers an assertion for now
@@ -85,8 +85,8 @@ end
 #     x = Tensor("x", Upper(2))
 #     d = KrD(Upper(2), Lower(2))
 
-#     @test_throws DomainError evaluate(MD.BinaryOperation{*}(d, x))
-#     @test_throws DomainError evaluate(MD.BinaryOperation{*}(x, d))
+#     @test_throws DomainError evaluate(MD.Product(d, x))
+#     @test_throws DomainError evaluate(MD.Product(x, d))
 # end
 
 @testset "evaluate BinaryOperation matrix * KrD" begin
@@ -95,28 +95,28 @@ end
     d2 = KrD(Lower(2), Lower(3))
     d3 = KrD(Upper(4), Lower(1))
 
-    @test evaluate(MD.BinaryOperation{*}(d1, A)) == Tensor("A", Upper(3), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(A, d1)) == Tensor("A", Upper(3), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(d2, A)) == Tensor("A", Lower(3), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(A, d2)) == Tensor("A", Lower(3), Lower(4))
-    @test evaluate(MD.BinaryOperation{*}(d3, A)) == Tensor("A", Upper(2), Lower(1))
-    @test evaluate(MD.BinaryOperation{*}(A, d3)) == Tensor("A", Upper(2), Lower(1))
+    @test evaluate(MD.Product(d1, A)) == Tensor("A", Upper(3), Lower(4))
+    @test evaluate(MD.Product(A, d1)) == Tensor("A", Upper(3), Lower(4))
+    @test evaluate(MD.Product(d2, A)) == Tensor("A", Lower(3), Lower(4))
+    @test evaluate(MD.Product(A, d2)) == Tensor("A", Lower(3), Lower(4))
+    @test evaluate(MD.Product(d3, A)) == Tensor("A", Upper(2), Lower(1))
+    @test evaluate(MD.Product(A, d3)) == Tensor("A", Upper(2), Lower(1))
 end
 
 @testset "evaluate BinaryOperation matrix * Zero" begin
     A = Tensor("A", Upper(2), Lower(4))
     Z = Zero(Upper(4), Lower(3), Lower(5))
 
-    @test evaluate(MD.BinaryOperation{*}(Z, A)) == Zero(Lower(3), Lower(5), Upper(2))
-    @test evaluate(MD.BinaryOperation{*}(A, Z)) == Zero(Upper(2), Lower(3), Lower(5))
+    @test evaluate(MD.Product(Z, A)) == Zero(Lower(3), Lower(5), Upper(2))
+    @test evaluate(MD.Product(A, Z)) == Zero(Upper(2), Lower(3), Lower(5))
 end
 
 @testset "evaluate BinaryOperation KrD * KrD" begin
     d1 = KrD(Upper(1), Lower(2))
     d2 = KrD(Upper(2), Lower(3))
 
-    @test evaluate(MD.BinaryOperation{*}(d1, d2)) == KrD(Upper(1), Lower(3))
-    @test evaluate(MD.BinaryOperation{*}(d2, d1)) == KrD(Upper(1), Lower(3))
+    @test evaluate(MD.Product(d1, d2)) == KrD(Upper(1), Lower(3))
+    @test evaluate(MD.Product(d2, d1)) == KrD(Upper(1), Lower(3))
 end
 
 @testset "evaluate BinaryOperation with outer product" begin
@@ -124,8 +124,8 @@ end
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(3))
 
-    @test evaluate(MD.BinaryOperation{*}(A, x)) == MD.BinaryOperation{*}(A, x)
-    @test evaluate(MD.BinaryOperation{*}(A, y)) == MD.BinaryOperation{*}(A, y)
+    @test evaluate(MD.Product(A, x)) == MD.Product(A, x)
+    @test evaluate(MD.Product(A, y)) == MD.Product(A, y)
 end
 
 @testset "evaluate subtraction with * and +" begin
@@ -169,7 +169,7 @@ end
     B = Tensor("B", Upper(2), Lower(3))
 
     # @test evaluate(tr(A)) == Tensor("A", Upper(1), Lower(1)) # TODO: Triggers assertion
-    @test evaluate(tr(A * B)) == MD.BinaryOperation{*}(A, Tensor("B", Upper(2), Lower(1)))
+    @test evaluate(tr(A * B)) == MD.Product(A, Tensor("B", Upper(2), Lower(1)))
 end
 
 @testset "evaluate outer product - contraction" begin
@@ -177,23 +177,23 @@ end
     d = KrD(Upper(3), Lower(4))
     x = Tensor("x", Lower(3))
 
-    @test evaluate(*, MD.BinaryOperation{*}(A, d), x) ==
-          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
-    @test evaluate(*, MD.BinaryOperation{*}(d, A), x) ==
-          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
-    @test evaluate(*, x, MD.BinaryOperation{*}(A, d)) ==
-          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
-    @test evaluate(*, x, MD.BinaryOperation{*}(d, A)) ==
-          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
+    @test evaluate(*, MD.Product(A, d), x) ==
+          MD.Product(A, Tensor("x", Lower(4)))
+    @test evaluate(*, MD.Product(d, A), x) ==
+          MD.Product(A, Tensor("x", Lower(4)))
+    @test evaluate(*, x, MD.Product(A, d)) ==
+          MD.Product(Tensor("x", Lower(4)), A)
+    @test evaluate(*, x, MD.Product(d, A)) ==
+          MD.Product(Tensor("x", Lower(4)), A)
 
-    @test evaluate(*, MD.BinaryOperation{*}(d, A), x) ==
-          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
-    @test evaluate(*, MD.BinaryOperation{*}(A, d), x) ==
-          MD.BinaryOperation{*}(Tensor("x", Lower(4)), A)
-    @test evaluate(*, x, MD.BinaryOperation{*}(d, A)) ==
-          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
-    @test evaluate(*, x, MD.BinaryOperation{*}(A, d)) ==
-          MD.BinaryOperation{*}(A, Tensor("x", Lower(4)))
+    @test evaluate(*, MD.Product(d, A), x) ==
+          MD.Product(Tensor("x", Lower(4)), A)
+    @test evaluate(*, MD.Product(A, d), x) ==
+          MD.Product(Tensor("x", Lower(4)), A)
+    @test evaluate(*, x, MD.Product(d, A)) ==
+          MD.Product(A, Tensor("x", Lower(4)))
+    @test evaluate(*, x, MD.Product(A, d)) ==
+          MD.Product(A, Tensor("x", Lower(4)))
 end
 
 @testset "is_trace output is correct" begin
@@ -217,7 +217,7 @@ end
     @test MD.diff(x, Tensor("x", Upper(1))) == KrD(Upper(2), Lower(1))
     @test MD.diff(y, Tensor("y", Upper(4))) == KrD(Upper(3), Lower(4))
     @test MD.diff(A, Tensor("A", Upper(6), Lower(7))) ==
-          MD.BinaryOperation{*}(KrD(Upper(4), Lower(6)), KrD(Lower(5), Upper(7)))
+          MD.Product(KrD(Upper(4), Lower(6)), KrD(Lower(5), Upper(7)))
 end
 
 @testset "diff KrD" begin
@@ -226,22 +226,22 @@ end
     A = Tensor("A", Upper(5), Lower(6))
     d = KrD(Upper(1), Lower(2))
 
-    @test MD.diff(d, x) == MD.BinaryOperation{*}(d, Zero(Lower(3)))
-    @test MD.diff(d, y) == MD.BinaryOperation{*}(d, Zero(Upper(4)))
-    @test MD.diff(d, A) == MD.BinaryOperation{*}(d, Zero(Lower(5), Upper(6)))
+    @test MD.diff(d, x) == MD.Product(d, Zero(Lower(3)))
+    @test MD.diff(d, y) == MD.Product(d, Zero(Upper(4)))
+    @test MD.diff(d, A) == MD.Product(d, Zero(Lower(5), Upper(6)))
 end
 
-@testset "diff BinaryOperation{*}" begin
+@testset "diff Product" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(2))
 
-    op = MD.BinaryOperation{*}(x, y)
+    op = MD.Product(x, y)
 
     D = MD.diff(op, Tensor("x", Upper(3)))
 
     @test typeof(D) == MD.BinaryOperation{+}
-    @test D.arg1 == MD.BinaryOperation{*}(x, Zero(Lower(2), Lower(3)))
-    @test D.arg2 == MD.BinaryOperation{*}(KrD(Upper(2), Lower(3)), y)
+    @test D.arg1 == MD.Product(x, Zero(Lower(2), Lower(3)))
+    @test D.arg2 == MD.Product(KrD(Upper(2), Lower(3)), y)
 end
 
 @testset "diff BinaryOperation{+-}" begin
@@ -274,7 +274,7 @@ end
 
     D = MD.diff(op, Tensor("x", Upper(3)))
 
-    @test equivalent(D, MD.BinaryOperation{*}(MD.Cos(x), KrD(Upper(2), Lower(3))))
+    @test equivalent(D, MD.Product(MD.Cos(x), KrD(Upper(2), Lower(3))))
 end
 
 @testset "diff cos" begin
@@ -284,7 +284,7 @@ end
 
     D = MD.diff(op, Tensor("x", Upper(3)))
 
-    @test equivalent(D, MD.BinaryOperation{*}(MD.Negate(MD.Sin(x)), KrD(Upper(2), Lower(3))))
+    @test equivalent(D, MD.Product(MD.Negate(MD.Sin(x)), KrD(Upper(2), Lower(3))))
 end
 
 @testset "diff negated vector" begin
@@ -342,7 +342,7 @@ end
     @test equivalent(D.arg1, evaluate(x' * A))
     @test equivalent(
         D.arg2,
-        evaluate(MD.BinaryOperation{*}(Tensor("A", Lower(1), Lower(3)), x)),
+        evaluate(MD.Product(Tensor("A", Lower(1), Lower(3)), x)),
     )
 end
 
