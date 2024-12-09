@@ -449,11 +449,28 @@ function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
     return BinaryOperation{*}(new_arg1, arg2)
 end
 
+function reset_indices(arg::Value)
+    indices = unique(get_free_indices(arg))
+
+    letters = Set([i.letter for i ∈ indices])
+
+    new_letters = Dict((letter => get_next_letter() for letter ∈ letters))
+
+    for index ∈ indices
+        arg = BinaryOperation{*}(arg, KrD(flip(index), same_to(index, new_letters[index.letter])))
+    end
+
+    return arg
+end
+
 function *(arg1::TensorValue, arg2::Real)
     return arg2 * arg1
 end
 
 function *(arg1::Value, arg2::TensorValue)
+    # TODO: Maybe just don't equip tensors with indices at creation?
+    arg1,arg2 = reset_indices.((arg1,arg2))
+
     arg1_free_indices = get_free_indices(arg1)
     arg2_free_indices = get_free_indices(arg2)
 
@@ -511,6 +528,9 @@ end
 
 # TODO: Constrain op
 function _addition(op, arg1::TensorValue, arg2::TensorValue)
+    # TODO: Maybe just don't equip tensors with indices at creation?
+    arg1,arg2 = reset_indices.((arg1,arg2))
+
     arg1_ids = get_free_indices(arg1)
     arg2_ids = get_free_indices(arg2)
 
