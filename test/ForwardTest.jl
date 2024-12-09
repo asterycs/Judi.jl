@@ -169,7 +169,7 @@ end
     B = Tensor("B", Upper(2), Lower(3))
 
     # @test evaluate(tr(A)) == Tensor("A", Upper(1), Lower(1)) # TODO: Triggers assertion
-    @test evaluate(tr(A * B)) == yd.BinaryOperation{*}(A, Tensor("B", Upper(2), Lower(1)))
+    @test equivalent(evaluate(tr(A * B)), yd.BinaryOperation{*}(A, Tensor("B", Upper(2), Lower(1))))
 end
 
 @testset "evaluate outer product - contraction" begin
@@ -359,27 +359,21 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    e = A * x
-
-    @test equivalent(derivative(e, "x"), A)
+    @test equivalent(derivative(A * x, "x"), A)
 end
 
 @testset "Differentiate xᵀA " begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    e = x' * A
-
-    @test equivalent(derivative(e, "x"), Tensor("A", Lower(1), Lower(2)))
+    @test equivalent(derivative(x' * A, "x"), Tensor("A", Lower(1), Lower(2)))
 end
 
 @testset "Differentiate xᵀAx" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    e = x' * A * x
-
-    D = derivative(e, "x")
+    D = derivative(x' * A * x, "x")
 
     @test equivalent(D.arg1, evaluate(x' * A))
     @test equivalent(
@@ -391,8 +385,6 @@ end
 @testset "Differentiate A(x + 2x)" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
-
-    e = x' * A * x
 
     D = derivative(A * (x + 2 * x), "x")
 
