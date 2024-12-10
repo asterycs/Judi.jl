@@ -301,10 +301,8 @@ end
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(2))
 
-    @test !yd.is_valid_matrix_multiplication(A, x)
     @test !yd.is_valid_matrix_multiplication(x, A)
     @test !yd.is_valid_matrix_multiplication(A, y)
-    @test !yd.is_valid_matrix_multiplication(y, A)
 end
 
 @testset "is_valid_matrix_multiplication succeeds with valid input" begin
@@ -339,7 +337,6 @@ end
     @test_throws DomainError A * x
     @test_throws DomainError y * A
     @test_throws DomainError A * A
-    @test_throws DomainError B * z
 end
 
 @testset "multiplication with scalars" begin
@@ -668,21 +665,6 @@ end
         @test yd.flip(yd.get_free_indices(op.arg1)[1]) == yd.get_free_indices(op.arg2)[1]
         @test typeof(yd.get_free_indices(op.arg2)[end]) == Lower
     end
-end
-
-@testset "multiplication with ambiguous indices throws" begin
-    A = Tensor("A", Upper(2), Lower(1))
-    At = Tensor("A", Upper(1), Lower(2)) # manual transpose since adjoint updates the indices
-    B = Tensor("B", Upper(2), Lower(3))
-    Bt = Tensor("B", Upper(3), Lower(2))
-    d = KrD(Upper(2), Lower(2))
-    x = Tensor("x", Upper(2))
-
-    @test_throws DomainError A * B
-    @test_throws DomainError At * Bt
-    @test_throws DomainError A * Bt
-    @test_throws DomainError x * d
-    @test_throws DomainError d * x
 end
 
 @testset "vector inner product with mismatching indices" begin

@@ -411,27 +411,11 @@ function is_contraction_unambigous(arg1, arg2)
     return false
 end
 
-# If any other except arg1.indices[end] and arg2.indices[1] match
-# then the input does not correspond to valid standard notation.
-# However, arg1.indices[end] and arg2.indices[1] letters do not
-# have to match since they can be updated.
 function is_valid_matrix_multiplication(arg1, arg2)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    for (i,l) ∈ enumerate(arg1_indices)
-        for (j,r) ∈ enumerate(arg2_indices)
-            if l.letter == r.letter && (i != length(arg1_indices) || j != 1)
-                return false
-            end
-        end
-    end
-
-    if typeof(flip(arg1_indices[end])) != typeof(arg2_indices[1])
-        return false
-    end
-
-    return true
+    return typeof(flip(arg1_indices[end])) == typeof(arg2_indices[1])
 end
 
 function tr(arg::TensorValue)
