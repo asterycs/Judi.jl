@@ -385,12 +385,14 @@ end
 @testset "Differentiate xx'x" begin
     x = Tensor("x", Upper(1))
 
-    l = x * x'
-    rl = x * x'
-    rr = yd.BinaryOperation{*}(KrD(Upper(100), Lower(101)), x'*x)
-    expected = yd.BinaryOperation{*}(l, yd.BinaryOperation{*}(rl, rr))
+    l = yd.BinaryOperation{*}(Tensor("x", Upper(100)), Tensor("x", Lower(2)))
+    rl = yd.BinaryOperation{*}(Tensor("x", Upper(100)), Tensor("x", Lower(2)))
+    rr = yd.BinaryOperation{*}(KrD(Upper(100), Lower(2)), x'*x)
+    expected = yd.BinaryOperation{+}(l, yd.BinaryOperation{+}(rl, rr))
 
-    @test equivalent(derivative(x * x' * x, "x"), expected)
+    D = evaluate(yd.diff(x * x' * x, Tensor("x", Upper(2))))
+
+    @test equivalent(D, expected)
 end
 
 @testset "Differentiate A(x + 2x)" begin

@@ -500,9 +500,6 @@ function *(arg1::TensorValue, arg2::Real)
 end
 
 function *(arg1::Value, arg2::TensorValue)
-    # TODO: Maybe just don't equip tensors with indices at creation?
-    arg1,arg2 = reset_indices.((arg1,arg2))
-
     arg1_free_indices = get_free_indices(arg1)
     arg2_free_indices = get_free_indices(arg2)
 
@@ -521,6 +518,25 @@ function *(arg1::Value, arg2::TensorValue)
     if !is_valid_matrix_multiplication(arg1, arg2)
         throw(DomainError((arg1, arg2), "Invalid matrix multiplication"))
     end
+
+    intersecting_letters = intersect(get_letters(arg1_free_indices), get_letters(arg2_free_indices))
+
+    if !isempty(intersecting_letters)
+        if length(intersecting_letters) > 1 || arg1_free_indices[end].letter != arg2_free_indices[1].letter
+            # Intersecting letters need updating if:
+            #   - There are multiple intersecting letters
+            #   - The intersecting letters are any other than the contracting indices
+
+            for i ∈ arg1_free_indices
+                if i.letter ∈ intersecting_letters
+                    arg1 = update_index(arg1, i, same_to(i, get_next_letter()))
+                end
+            end
+        end
+
+        arg1_free_indices = get_free_indices(arg1)
+    end
+
 
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper
         return BinaryOperation{*}(
