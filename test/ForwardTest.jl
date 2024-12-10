@@ -408,8 +408,6 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    e = x' * A * x
-
     D = derivative(A * (x + 2 * x), "x")
 
     @test equivalent(D, 3 * A)
