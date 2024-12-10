@@ -355,33 +355,17 @@ function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
     newarg
 end
 
-function evaluate(::typeof(*), arg1::BinaryOperation{+}, arg2::KrD)
+function evaluate(::typeof(*), arg1::BinaryOperation{Op}, arg2::Union{Tensor, KrD}) where {Op}
     return evaluate(
-        +,
+        Op,
         evaluate(*, evaluate(arg1.arg1), arg2),
         evaluate(*, evaluate(arg1.arg2), arg2),
     )
 end
 
-function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{+})
+function evaluate(::typeof(*), arg1::Union{Tensor, KrD}, arg2::BinaryOperation{Op}) where {Op}
     return evaluate(
-        +,
-        evaluate(*, arg1, evaluate(arg2.arg1)),
-        evaluate(*, arg1, evaluate(arg2.arg2)),
-    )
-end
-
-function evaluate(::typeof(*), arg1::BinaryOperation{-}, arg2::KrD)
-    return evaluate(
-        -,
-        evaluate(*, evaluate(arg1.arg1), arg2),
-        evaluate(*, evaluate(arg1.arg2), arg2),
-    )
-end
-
-function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{-})
-    return evaluate(
-        -,
+        Op,
         evaluate(*, arg1, evaluate(arg2.arg1)),
         evaluate(*, arg1, evaluate(arg2.arg2)),
     )
