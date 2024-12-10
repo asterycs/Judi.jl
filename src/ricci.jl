@@ -465,20 +465,6 @@ function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
     return BinaryOperation{*}(new_arg1, arg2)
 end
 
-function reset_indices(arg::Value)
-    indices = unique(get_free_indices(arg))
-
-    letters = Set([i.letter for i ∈ indices])
-
-    new_letters = Dict((letter => get_next_letter() for letter ∈ letters))
-
-    for index ∈ indices
-        arg = BinaryOperation{*}(arg, KrD(flip(index), same_to(index, new_letters[index.letter])))
-    end
-
-    return arg
-end
-
 function *(arg1::TensorValue, arg2::Real)
     return arg2 * arg1
 end
@@ -551,20 +537,16 @@ function get_letters(indices::IndexList)
 end
 
 function +(arg1::TensorValue, arg2::TensorValue)
-    return _addition(+, arg1, arg2)
+    return create_additive_op(+, arg1, arg2)
 end
 
 function -(arg1::TensorValue, arg2::TensorValue)
-    return _addition(-, arg1, arg2)
+    return create_additive_op(-, arg1, arg2)
 end
 
 # TODO: Constrain op
-function _addition(op, arg1::TensorValue, arg2::TensorValue)
-    # TODO: Maybe just don't equip tensors with indices at creation?
-    arg1,arg2 = reset_indices.((arg1,arg2))
-
-    arg1_ids = get_free_indices(arg1)
-    arg2_ids = get_free_indices(arg2)
+function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
+    arg1_ids, arg2_ids = get_free_indices.((arg1, arg2))
 
     if length(arg1_ids) != length(arg2_ids)
         op_text = if op == +
