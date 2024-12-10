@@ -29,6 +29,7 @@ function ==(a::T, b::T) where {T<:TensorValue}
 end
 
 Value = Union{TensorValue,Real}
+# TODO: Rename sets to list
 IndexSet = Vector{LowerOrUpperIndex}
 
 function _get_free_indices(arg::Real)
