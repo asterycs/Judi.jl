@@ -29,8 +29,7 @@ function ==(a::T, b::T) where {T<:TensorValue}
 end
 
 Value = Union{TensorValue,Real}
-# TODO: Rename sets to list
-IndexSet = Vector{LowerOrUpperIndex}
+IndexList = Vector{LowerOrUpperIndex}
 
 function _get_free_indices(arg::Real)
     return LowerOrUpperIndex[]
@@ -42,7 +41,7 @@ end
 
 struct Tensor <: TensorValue
     id::String
-    indices::IndexSet
+    indices::IndexList
 
     function Tensor(id, indices::LowerOrUpperIndex...)
         # Convert type
@@ -56,7 +55,7 @@ struct Tensor <: TensorValue
     end
 end
 
-function can_remap(left::IndexSet, right::IndexSet)
+function can_remap(left::IndexList, right::IndexList)
     lu = unique(left)
     ru = unique(right)
 
@@ -97,7 +96,7 @@ function are_unique(arg::AbstractArray)
 end
 
 struct KrD <: TensorValue
-    indices::IndexSet
+    indices::IndexList
 
     function KrD(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
@@ -115,7 +114,7 @@ function equivalent(left::KrD, right::KrD)
 end
 
 struct Zero <: TensorValue
-    indices::IndexSet
+    indices::IndexList
 
     function Zero(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
@@ -182,7 +181,7 @@ end
 
 struct Diag <: TensorValue
     arg::TensorValue
-    indices::IndexSet
+    indices::IndexList
 end
 
 function diag(arg::TensorValue, indices::LowerOrUpperIndex...)
@@ -195,7 +194,7 @@ NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
 # TODO: Rename BinaryOperation{*} and align with Mult below
 NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
 
-function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
+function _eliminate_indices(arg1::IndexList, arg2::IndexList)
     CanBeNothing = Union{Nothing,Lower,Upper}
     available1 = CanBeNothing[i for i ∈ unique(arg1)]
     available2 = CanBeNothing[i for i ∈ unique(arg2)]
@@ -226,7 +225,7 @@ function _eliminate_indices(arg1::IndexSet, arg2::IndexSet)
     return (filtered1, filtered2), eliminated
 end
 
-function _eliminate_indices(arg::IndexSet)
+function _eliminate_indices(arg::IndexList)
     CanBeNothing = Union{Nothing,Lower,Upper}
     available = CanBeNothing[i for i ∈ unique(arg)]
     eliminated = LowerOrUpperIndex[]
@@ -255,15 +254,15 @@ function _eliminate_indices(arg::IndexSet)
     return filtered, eliminated
 end
 
-function eliminate_indices(arg::IndexSet)
+function eliminate_indices(arg::IndexList)
     return first(_eliminate_indices(arg))
 end
 
-function eliminate_indices(arg1::IndexSet, arg2::IndexSet)
+function eliminate_indices(arg1::IndexList, arg2::IndexList)
     return first(_eliminate_indices(arg1, arg2))
 end
 
-function eliminated_indices(arg1::IndexSet, arg2::IndexSet)
+function eliminated_indices(arg1::IndexList, arg2::IndexList)
     return last(_eliminate_indices(arg1, arg2))
 end
 
@@ -330,7 +329,7 @@ function get_free_indices(arg)
     return _get_free_indices(evaluate(arg))
 end
 
-function are_indices_unique(indices::IndexSet)
+function are_indices_unique(indices::IndexList)
     return length(unique(indices)) == length(indices)
 end
 
@@ -547,7 +546,7 @@ function *(arg1::Value, arg2::TensorValue)
     throw(DomainError((arg1, arg2), "Multiplication with $arg1 and $arg2 is ambiguous"))
 end
 
-function get_letters(indices::IndexSet)
+function get_letters(indices::IndexList)
     return [i.letter for i ∈ indices]
 end
 
