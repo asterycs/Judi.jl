@@ -55,8 +55,40 @@ struct Tensor <: TensorValue
     end
 end
 
+function can_remap(left::IndexSet, right::IndexSet)
+    lu = unique(left)
+    ru = unique(right)
+
+    if length(lu) != length(ru)
+        return false
+    end
+
+    let
+        lu_letters = [i.letter for i ∈ left]
+        ru_letters = [i.letter for i ∈ right]
+
+        if length(unique(lu_letters)) != length(unique(ru_letters))
+            return false
+        end
+    end
+
+    index_map = Dict((l => r) for (l,r) ∈ zip(lu, ru))
+
+    left_remap = [index_map[i] for i ∈ left]
+
+    return left_remap == right
+end
+
+function equivalent(left, right)
+    left_ids,right_ids = get_free_indices.((left, right))
+
+    return can_remap(left_ids, right_ids)
+end
+
 function equivalent(left::Tensor, right::Tensor)
-    return left.id == right.id && all(typeof.(left.indices) .== typeof.(right.indices))
+    left_ids,right_ids = get_free_indices.((left, right))
+
+    return left.id == right.id && can_remap(left_ids, right_ids)
 end
 
 function are_unique(arg::AbstractArray)
@@ -78,7 +110,7 @@ struct KrD <: TensorValue
 end
 
 function equivalent(left::KrD, right::KrD)
-    return all(typeof.(left.indices) .== typeof.(right.indices))
+    return can_remap(left.indices, right.indices)
 end
 
 struct Zero <: TensorValue
@@ -96,7 +128,7 @@ struct Zero <: TensorValue
 end
 
 function equivalent(left::Zero, right::Zero)
-    return all(typeof.(left.indices) .== typeof.(right.indices))
+    return can_remap(get_free_indices(left), get_free_indices(right))
 end
 
 struct BinaryOperation{Op} <: TensorValue where {Op}
