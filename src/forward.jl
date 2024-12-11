@@ -61,7 +61,7 @@ function evaluate(arg::Adjoint)
     return evaluate(arg.expr) # The decorator is only needed when creating contractions
 end
 
-function evaluate(arg::Union{Tensor,KrD,Zero,Real,Diag})
+function evaluate(arg::Union{Tensor,KrD,Zero,Real})
     arg
 end
 
@@ -98,10 +98,35 @@ function evaluate(::typeof(*), arg1::Tensor, arg2::BinaryOperation{*})
     return evaluate(*, arg2, arg1)
 end
 
+function get_tensor(arg1::KrD, arg2::Tensor)
+    return get_tensor(arg2, arg1)
+end
+
+function get_tensor(arg1::Tensor, arg2::KrD)
+    return arg1
+end
+
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Tensor)
     is_elementwise =  is_elementwise_multiplication(arg1.arg1, arg1.arg2)
+    arg1_indices, arg2_indices = get_free_indices.((arg1, arg2))
 
-    if can_contract(arg1.arg2, arg2) && !is_elementwise
+    contracting_indices = eliminated_indices(arg1_indices, arg2_indices)
+
+    # TODO: is_elementwise and is_diag are overlapping
+    if is_elementwise && is_diag(arg1) && !isempty(contracting_indices) && length(arg2_indices) == 1
+        new_index = get_unique_indices(arg1_indices)
+        old_index = get_repeated_indices(arg1_indices)
+
+        @assert length(new_index) == 1
+        @assert length(old_index) == 1
+        new_index = new_index[1]
+        old_index = old_index[1]
+
+        arg1 = evaluate(reshape(get_tensor(arg1.arg1, arg1.arg2), old_index, new_index))
+        arg2 = evaluate(reshape(arg2, flip(old_index), new_index))
+
+        return BinaryOperation{*}(arg1, arg2)
+    elseif can_contract(arg1.arg2, arg2) && !is_elementwise
         new_arg2 = evaluate(*, arg1.arg2, arg2)
         return BinaryOperation{*}(arg1.arg1, new_arg2)
     elseif can_contract(arg1.arg1, arg2) && !is_elementwise
@@ -141,67 +166,6 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
     else
         return BinaryOperation{*}(arg1, arg2)
     end
-end
-
-# TODO
-# function evaluate(::typeof(*), arg1::KrD, arg2::Diag)
-
-function evaluate(::typeof(*), arg1::Diag, arg2::KrD)
-    @assert !is_trace(arg1, arg2) "Not implemented"
-
-    @assert can_contract(arg1, arg2)
-    @assert length(arg2.indices) == 2
-
-    newarg = deepcopy(arg1)
-    empty!(newarg.indices)
-
-    contracted = false
-
-    for i ∈ arg1.indices
-        if flip(i) == arg2.indices[1] && !contracted
-            push!(newarg.indices, arg2.indices[2])
-            contracted = true
-        elseif flip(i) == arg2.indices[2] && !contracted
-            push!(newarg.indices, arg2.indices[1])
-            contracted = true
-        else
-            push!(newarg.indices, i)
-        end
-    end
-
-    return newarg
-end
-
-# TODO
-# function evaluate(::typeof(*), arg1::Tensor, arg2::Diag)
-
-function evaluate(::typeof(*), arg1::Diag, arg2::Tensor)
-    @assert can_contract(arg1, arg2)
-
-    arg1_inner_indices = get_free_indices(arg1.arg)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    @assert length(arg1_indices) == 2
-    @assert length(arg1_inner_indices) == 1
-
-    if length(arg2_indices) != 1
-        return BinaryOperation{*}(arg1, arg2)
-    end
-
-    @assert flip(arg2_indices[1]) ∈ arg1_indices
-
-    new_index = if flip(arg2_indices[1]) == arg1_indices[1]
-            arg1_indices[2]
-        else
-            @assert flip(arg2_indices[1]) == arg1_indices[2]
-            arg1_indices[1]
-        end
-
-    new_arg1 = evaluate(reshape(arg1.arg, arg1_inner_indices[1], new_index))
-    new_arg2 = evaluate(reshape(arg2, arg2_indices[1], new_index))
-
-    return BinaryOperation{*}(new_arg1, new_arg2)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::TensorValue)
@@ -245,8 +209,8 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
         return BinaryOperation{*}(arg1, arg2)
     end
 
-    if length(arg2_indices) == 1 && arg2_indices[1] ∈ arg1.indices
-        return diag(arg2, arg1.indices...)
+    if is_diag(arg2, arg1)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     if isempty(contracting_index) # Is an outer product
@@ -276,6 +240,24 @@ function evaluate(::typeof(*), arg1::KrD, arg2::Tensor)
     newarg
 end
 
+function is_diag(arg1::KrD, arg2::Tensor)
+    return is_diag(arg2, arg1)
+end
+
+function is_diag(arg1::Tensor, arg2::KrD)
+    arg1_indices, arg2_indices = get_free_indices.((arg1, arg2))
+
+    return length(arg1_indices) == 1 && !isempty(intersect(arg1_indices, arg2_indices))
+end
+
+function is_diag(arg::BinaryOperation{*})
+    return is_diag(arg.arg1, arg.arg2)
+end
+
+function is_diag(arg1, arg2)
+    return false
+end
+
 function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
     arg1_indices = get_free_indices(arg1)
     contracting_index = eliminated_indices(arg1_indices, get_free_indices(arg2))
@@ -290,8 +272,8 @@ function evaluate(::typeof(*), arg1::Union{Tensor,KrD}, arg2::KrD)
         return BinaryOperation{*}(arg1, arg2)
     end
 
-    if length(arg1_indices) == 1 && arg1_indices[1] ∈ arg2.indices
-        return diag(arg1, arg2.indices...)
+    if is_diag(arg1, arg2)
+        return BinaryOperation{*}(arg1, arg2)
     end
 
     @assert can_contract(arg1, arg2)

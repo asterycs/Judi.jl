@@ -29,7 +29,6 @@ function ==(a::T, b::T) where {T<:TensorValue}
 end
 
 Value = Union{TensorValue,Real}
-IndexList = Vector{LowerOrUpperIndex}
 
 function _get_free_indices(arg::Real)
     return LowerOrUpperIndex[]
@@ -179,17 +178,6 @@ function cos(arg::TensorValue)
     return Cos(arg)
 end
 
-struct Diag <: TensorValue
-    arg::TensorValue
-    indices::IndexList
-end
-
-function diag(arg::TensorValue, indices::LowerOrUpperIndex...)
-    indices = LowerOrUpperIndex[i for i ∈ indices]
-
-    return Diag(arg, indices)
-end
-
 NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
 # TODO: Rename BinaryOperation{*} and align with Mult below
 NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
@@ -294,7 +282,7 @@ function is_permutation(arg1::TensorValue, arg2::TensorValue)
     return is_permutation(unique(arg1_indices), unique(arg2_indices))
 end
 
-function _get_free_indices(arg::Union{Tensor,KrD,Zero,Diag})
+function _get_free_indices(arg::Union{Tensor,KrD,Zero})
     @assert length(unique(arg.indices)) == length(arg.indices)
 
     return arg.indices
@@ -548,7 +536,7 @@ end
 function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
     arg1_ids, arg2_ids = get_free_indices.((arg1, arg2))
 
-    if length(arg1_ids) != length(arg2_ids)
+    if length(unique(arg1_ids)) != length(unique(arg2_ids))
         op_text = if op == +
             "add"
         elseif op == -
@@ -659,7 +647,7 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
         arg2_t = BinaryOperation{*}(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
     end
 
-    return Adjoint(Op(arg1_t, arg2_t))
+    return Adjoint(BinaryOperation{Op}(arg1_t, arg2_t))
 end
 
 function adjoint(arg::Union{Tensor,KrD,Zero})
@@ -734,12 +722,6 @@ function to_string(arg::Zero)
     scripts = [script(i) for i ∈ arg.indices]
 
     return "0" * join(scripts)
-end
-
-function to_string(arg::Diag)
-    scripts = [script(i) for i ∈ arg.indices]
-
-    return "diag(" * to_string(arg.arg) * ")" * join(scripts)
 end
 
 function to_string(arg::Negate)

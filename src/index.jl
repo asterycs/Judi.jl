@@ -13,6 +13,7 @@ struct Lower
 end
 
 LowerOrUpperIndex = Union{Lower,Upper}
+IndexList = Vector{LowerOrUpperIndex}
 
 function flip(index::Lower)
     return Upper(index.letter)
@@ -48,6 +49,18 @@ function hash(arg::LowerOrUpperIndex)
     h |= arg.letter << 1
 
     h
+end
+
+function get_unique_indices(arg::IndexList)
+    with_counts = [(i => count(==(i), arg)) for i ∈ unique(arg)]
+
+    return [i for (i,c) ∈ with_counts if c == 1]
+end
+
+function get_repeated_indices(arg::IndexList)
+    with_counts = [(i => count(==(i), arg)) for i ∈ unique(arg)]
+
+    return [i for (i,c) ∈ with_counts if c != 1]
 end
 
 # TODO: Find a better solution for this. Perhaps a set with taken indices?

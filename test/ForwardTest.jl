@@ -320,17 +320,13 @@ end
 
     e = (y .* z)' * x
 
-    l = yd.BinaryOperation{*}(Tensor("y", Lower(1)), KrD(Lower(1), Lower(9)))
-    r = x
-    expected = yd.BinaryOperation{*}(l, r)
+    expected = yd.BinaryOperation{*}(Tensor("y", Lower(1)), Tensor("x", Lower(1)))
 
     @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))), expected)
 
-    lt = yd.BinaryOperation{*}(Tensor("y", Lower(1)), KrD(Lower(1), Upper(100)))
-    rt = x
-    expected = yd.BinaryOperation{*}(lt, rt)
+    expected = yd.BinaryOperation{*}(Tensor("y", Upper(1)), Tensor("x", Upper(1)))
     @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
-    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(yd.diff(e', Tensor("z", Upper(9)))), expected)
     @test equivalent(evaluate(evaluate(yd.diff(e, Tensor("z", Upper(9))))'), expected)
 end
 
@@ -341,17 +337,13 @@ end
 
     e = x' * (y .* z)
 
-    l = Tensor("x", Lower(1))
-    r = yd.BinaryOperation{*}(Tensor("y", Upper(1)), KrD(Upper(1), Lower(9)))
-    expected = yd.BinaryOperation{*}(l, r)
+    expected = yd.BinaryOperation{*}(Tensor("y", Lower(1)), Tensor("x", Lower(1)))
 
     @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))), expected)
 
-    lt = Tensor("x", Lower(1))
-    rt = yd.BinaryOperation{*}(Tensor("y", Upper(1)), KrD(Upper(1), Upper(100)))
-    expected = yd.BinaryOperation{*}(lt, rt)
+    expected = yd.BinaryOperation{*}(Tensor("y", Upper(1)), Tensor("x", Upper(1)))
     @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
-    @test equivalent(evaluate(yd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(yd.diff(e', Tensor("z", Upper(9)))), expected)
     @test equivalent(evaluate(evaluate(yd.diff(e, Tensor("z", Upper(9))))'), expected)
 end
 
