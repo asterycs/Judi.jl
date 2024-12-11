@@ -725,7 +725,7 @@ function to_string(arg::Zero)
 end
 
 function to_string(arg::Negate)
-    return "-$(arg.arg)"
+    return "-$(parenthesize(arg.arg))"
 end
 
 function to_string(arg::Sin)
@@ -756,8 +756,12 @@ function to_string(arg::Adjoint)
     return to_string(arg.expr)
 end
 
-function to_string(arg::BinaryOperation{Op}) where {Op}
-    return to_string(arg.arg1) * " " * string(Op) * " " * to_string(arg.arg2)
+function to_string(arg::BinaryOperation{+})
+    return to_string(arg.arg1) * " + " * to_string(arg.arg2)
+end
+
+function to_string(arg::BinaryOperation{-})
+    return to_string(arg.arg1) * " - " * parenthesize(arg.arg2)
 end
 
 function Base.show(io::IO, expr::TensorValue)
