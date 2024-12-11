@@ -95,17 +95,7 @@ function is_elementwise_multiplication(arg1::Value, arg2::Value)
 end
 
 function evaluate(::typeof(*), arg1::Tensor, arg2::BinaryOperation{*})
-    is_elementwise =  is_elementwise_multiplication(arg2.arg1, arg2.arg2)
-
-    if can_contract(arg1, arg2.arg1) && !is_elementwise
-        new_arg1 = evaluate(*, arg1, arg2.arg1)
-        return BinaryOperation{*}(new_arg1, arg2.arg2)
-    elseif can_contract(arg1, arg2.arg2) && !is_elementwise
-        new_arg2 = evaluate(*, arg1, arg2.arg2)
-        return BinaryOperation{*}(arg2.arg1, new_arg2)
-    else
-        return BinaryOperation{*}(arg1, arg2)
-    end
+    return evaluate(*, arg2, arg1)
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Tensor)
@@ -133,20 +123,7 @@ function is_trace(arg1::TensorValue, arg2::KrD)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
-    if is_elementwise_multiplication(arg2.arg1, arg2.arg2) && can_contract(arg1, arg2.arg1) && can_contract(arg1, arg2.arg2)
-        return BinaryOperation{*}(
-            evaluate(*, arg1, arg2.arg1),
-            evaluate(*, arg1, arg2.arg2),
-        )
-    elseif can_contract(arg1, arg2.arg1)
-        new_arg1 = evaluate(*, arg1, arg2.arg1)
-        return BinaryOperation{*}(new_arg1, evaluate(arg2.arg2))
-    elseif can_contract(arg1, arg2.arg2)
-        new_arg2 = evaluate(*, arg1, arg2.arg2)
-        return BinaryOperation{*}(evaluate(arg2.arg1), new_arg2)
-    else
-        return BinaryOperation{*}(arg1, evaluate(arg2))
-    end
+    return evaluate(*, arg2, arg1)
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::KrD)
@@ -228,10 +205,7 @@ function evaluate(::typeof(*), arg1::Diag, arg2::Tensor)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::TensorValue)
-    arg1_free_indices, arg2_free_indices =
-        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
-
-    return Zero(union(arg1_free_indices, arg2_free_indices)...)
+    return evaluate(*, arg2, arg1)
 end
 
 function evaluate(::typeof(*), arg1::TensorValue, arg2::Zero)
@@ -242,19 +216,7 @@ function evaluate(::typeof(*), arg1::TensorValue, arg2::Zero)
 end
 
 function evaluate(::typeof(*), arg1::KrD, arg2::Zero)
-    contracting_index = eliminated_indices(get_free_indices(arg1), get_free_indices(arg2))
-
-    if isempty(contracting_index)
-        return Zero(union(arg1.indices, arg2.indices)...)
-    end
-
-    @assert can_contract(arg1, arg2)
-    @assert length(arg2.indices) == 2
-
-    arg1_free_indices, arg2_free_indices =
-        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
-
-    return Zero(union(arg1_free_indices, arg2_free_indices)...)
+    return evaluate(*, arg2, arg1)
 end
 
 function evaluate(::typeof(*), arg1::Zero, arg2::KrD)
