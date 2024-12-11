@@ -30,7 +30,7 @@ end
 
 Value = Union{TensorValue,Real}
 
-function _get_free_indices(arg::Real)
+function _get_indices(arg::Real)
     return LowerOrUpperIndex[]
 end
 
@@ -282,29 +282,29 @@ function is_permutation(arg1::TensorValue, arg2::TensorValue)
     return is_permutation(unique(arg1_indices), unique(arg2_indices))
 end
 
-function _get_free_indices(arg::Union{Tensor,KrD,Zero})
+function _get_indices(arg::Union{Tensor,KrD,Zero})
     @assert length(unique(arg.indices)) == length(arg.indices)
 
     return arg.indices
 end
 
-function _get_free_indices(arg::Sin)
-    return get_free_indices(arg.arg)
+function _get_indices(arg::Sin)
+    return _get_indices(arg.arg)
 end
 
-function _get_free_indices(arg::Cos)
-    return get_free_indices(arg.arg)
+function _get_indices(arg::Cos)
+    return _get_indices(arg.arg)
 end
 
-function _get_free_indices(arg::Negate)
-    return get_free_indices(arg.arg)
+function _get_indices(arg::Negate)
+    return _get_indices(arg.arg)
 end
 
-function _get_free_indices(arg::BinaryOperation{*})
-    return eliminate_indices([get_free_indices(arg.arg1); get_free_indices(arg.arg2)])
+function _get_indices(arg::BinaryOperation{*})
+    return [_get_indices(arg.arg1); _get_indices(arg.arg2)]
 end
 
-function _get_free_indices(arg::BinaryOperation{Op}) where {Op}
+function _get_indices(arg::BinaryOperation{Op}) where {Op}
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
 
@@ -314,7 +314,7 @@ function _get_free_indices(arg::BinaryOperation{Op}) where {Op}
 end
 
 function get_free_indices(arg)
-    return _get_free_indices(evaluate(arg))
+    return eliminate_indices(_get_indices(evaluate(arg)))
 end
 
 function are_indices_unique(indices::IndexList)

@@ -107,13 +107,11 @@ function get_tensor(arg1::Tensor, arg2::KrD)
 end
 
 function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Tensor)
-    is_elementwise =  is_elementwise_multiplication(arg1.arg1, arg1.arg2)
     arg1_indices, arg2_indices = get_free_indices.((arg1, arg2))
 
     contracting_indices = eliminated_indices(arg1_indices, arg2_indices)
 
-    # TODO: is_elementwise and is_diag are overlapping
-    if is_elementwise && is_diag(arg1) && !isempty(contracting_indices) && length(arg2_indices) == 1
+    if is_diag(arg1) && !isempty(contracting_indices) && length(arg2_indices) == 1
         new_index = get_unique_indices(arg1_indices)
         old_index = get_repeated_indices(arg1_indices)
 
@@ -126,10 +124,10 @@ function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::Tensor)
         arg2 = evaluate(reshape(arg2, flip(old_index), new_index))
 
         return BinaryOperation{*}(arg1, arg2)
-    elseif can_contract(arg1.arg2, arg2) && !is_elementwise
+    elseif can_contract(arg1.arg2, arg2)
         new_arg2 = evaluate(*, arg1.arg2, arg2)
         return BinaryOperation{*}(arg1.arg1, new_arg2)
-    elseif can_contract(arg1.arg1, arg2) && !is_elementwise
+    elseif can_contract(arg1.arg1, arg2)
         new_arg1 = evaluate(*, arg1.arg1, arg2)
         return BinaryOperation{*}(new_arg1, arg1.arg2)
     else
