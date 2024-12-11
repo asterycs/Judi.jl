@@ -107,7 +107,7 @@ end
     A = Tensor("A", Upper(2), Lower(4))
     Z = Zero(Upper(4), Lower(3), Lower(5))
 
-    @test evaluate(yd.BinaryOperation{*}(Z, A)) == Zero(Lower(3), Lower(5), Upper(2))
+    @test evaluate(yd.BinaryOperation{*}(Z, A)) == Zero(Upper(2), Lower(3), Lower(5))
     @test evaluate(yd.BinaryOperation{*}(A, Z)) == Zero(Upper(2), Lower(3), Lower(5))
 end
 
