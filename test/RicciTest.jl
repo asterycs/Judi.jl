@@ -542,13 +542,12 @@ end
     end
 end
 
-# TODO: Triggers assertion for now, need to think how to update
-# @testset "add/subtract tensors with ambiguous indices fails" begin
-#     A = Tensor("A", Upper(1), Lower(2))
-#     B = Tensor("B", Upper(2), Lower(3))
+@testset "add/subtract tensors with ambiguous indices succeeds" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(2), Lower(3))
 
-#     @test_throws DomainError A + B
-# end
+    @test equivalent(evaluate(A + B), yd.BinaryOperation{+}(Tensor("A", Upper(1), Lower(2)), Tensor("B", Upper(1), Lower(2))))
+end
 
 @testset "add/subtract tensors with different indices" begin
     x = Tensor("x", Upper(1))

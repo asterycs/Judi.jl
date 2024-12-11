@@ -550,8 +550,6 @@ function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
         return BinaryOperation{op}(arg1, arg2)
     end
 
-    @assert isempty(intersect(get_letters(arg1_ids), get_letters(arg2_ids)))
-
     new_ids = [get_next_letter() for _ ∈ 1:length(unique(arg1_ids))]
 
     arg1_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg1_ids), new_ids)))
