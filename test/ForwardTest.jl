@@ -351,25 +351,25 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test equivalent(derivative(A * x, "x"), A)
+    @test equivalent(yd.diff(A * x, Tensor("x", Upper(4))), A)
 end
 
 @testset "Differentiate xᵀA " begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test equivalent(derivative(x' * A, "x"), Tensor("A", Lower(1), Lower(2)))
+    @test equivalent(yd.diff(x' * A, Tensor("x", Upper(4))), Tensor("A", Lower(1), Lower(2)))
 end
 
 @testset "Differentiate xᵀAx" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    D = derivative(x' * A * x, "x")
+    D = yd.diff(x' * A * x, Tensor("x", Upper(4)))
 
-    @test equivalent(D.arg1, evaluate(x' * A))
+    @test equivalent(evaluate(D.arg1), evaluate(x' * A))
     @test equivalent(
-        D.arg2,
+        evaluate(D.arg2),
         evaluate(yd.BinaryOperation{*}(Tensor("A", Lower(1), Lower(3)), x)),
     )
 end
@@ -382,25 +382,28 @@ end
     rr = yd.BinaryOperation{*}(KrD(Upper(100), Lower(2)), x'*x)
     expected = yd.BinaryOperation{+}(l, yd.BinaryOperation{+}(rl, rr))
 
-    D = evaluate(yd.diff(x * x' * x, Tensor("x", Upper(2))))
+    D = yd.diff(x * x' * x, Tensor("x", Upper(2)))
 
-    @test equivalent(D, expected)
+    @test equivalent(evaluate(D), expected)
 end
 
 @testset "Differentiate A(x + 2x)" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    D = derivative(A * (x + 2 * x), "x")
+    D = yd.diff(A * (x + 2 * x), Tensor("x", Upper(3)))
 
-    @test equivalent(D, 3 * A)
+    expected = yd.BinaryOperation{*}(3, KrD(Upper(3), Lower(3)))
+    expected = yd.BinaryOperation{*}(expected, Tensor("A", Upper(1), Lower(3)))
+
+    @test equivalent(evaluate(D), expected)
 end
 
 @testset "Differentiate A(2x + x)" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    D = derivative(A * (x + 2 * x), "x")
+    D = yd.diff(A * (x + 2 * x), Tensor("x", Upper(4)))
 
-    @test equivalent(D, 3 * A)
+    @test equivalent(evaluate(D), 3 * A)
 end
