@@ -335,6 +335,14 @@ function evaluate(::typeof(*), arg1::Zero, arg2::Zero)
     return Zero(new_indices...)
 end
 
+function evaluate(::typeof(*), arg1::Zero, arg2::Real)
+    return evaluate(arg1)
+end
+
+function evaluate(::typeof(*), arg1::Real, arg2::Zero)
+    return evaluate(arg2)
+end
+
 function evaluate(::typeof(+), arg1::Zero, arg2::Zero)
     @assert is_permutation(arg1, arg2)
 
