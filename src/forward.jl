@@ -381,8 +381,28 @@ function evaluate(::typeof(*), arg1::Union{Tensor, KrD}, arg2::BinaryOperation{O
     )
 end
 
-function evaluate(::typeof(*), arg1, arg2)
+function evaluate(::typeof(*), arg1::Value, arg2::Value)
     return BinaryOperation{*}(evaluate(arg1), evaluate(arg2))
+end
+
+function evaluate(::typeof(*), arg1::Negate, arg2::Negate)
+    return evaluate(*, arg1.arg, arg2.arg2)
+end
+
+function evaluate(::typeof(*), arg1::Negate, arg2::Zero)
+    return invoke(evaluate, Tuple{typeof(*), TensorValue, Zero}, *, arg1, arg2)
+end
+
+function evaluate(::typeof(*), arg1::Zero, arg2::Negate)
+    return invoke(evaluate, Tuple{typeof(*), Zero, TensorValue}, *, arg1, arg2)
+end
+
+function evaluate(::typeof(*), arg1::TensorValue, arg2::Negate)
+    return evaluate(*, arg2, arg1)
+end
+
+function evaluate(::typeof(*), arg1::Negate, arg2::TensorValue)
+    return Negate(evaluate(*, arg1.arg, arg2))
 end
 
 function evaluate(::typeof(*), arg1::TensorValue, arg2::Real)
