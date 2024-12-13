@@ -486,6 +486,18 @@ function evaluate(::typeof(+), arg1::BinaryOperation{*}, arg2::NonTrivialValue)
     return BinaryOperation{+}(evaluate(arg1), evaluate(arg2))
 end
 
+function evaluate(::typeof(+), arg1::BinaryOperation{Op}, arg2::Zero) where Op
+    return invoke(evaluate, Tuple{typeof(+), Value, Zero}, +, arg1, arg2)
+end
+
+function evaluate(::typeof(+), arg1::BinaryOperation{Op}, arg2::Value) where {Op}
+    if evaluate(arg1.arg1) == evaluate(arg2)
+        return BinaryOperation{Op}(BinaryOperation{*}(2, evaluate(arg1.arg1)), evaluate(arg1.arg2))
+    end
+
+    return BinaryOperation{+}(evaluate(arg1), evaluate(arg2))
+end
+
 function evaluate(::typeof(-), arg1::Zero, arg2::Zero)
     @assert is_permutation(arg1, arg2)
 
