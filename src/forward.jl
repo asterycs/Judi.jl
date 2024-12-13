@@ -145,6 +145,74 @@ function is_trace(arg1::TensorValue, arg2::KrD)
     return false
 end
 
+function can_collapse(arg1::Tensor, arg2::KrD)
+    return can_collapse(arg2, arg1)
+end
+
+function can_collapse(arg1::KrD, arg2::Tensor)
+    return !isempty(eliminated_indices(get_free_indices(arg1), get_free_indices(arg2)))
+end
+
+function can_collapse(arg1::Value, arg2::Value)
+    return false
+end
+
+function evaluate(::typeof(*), arg1::BinaryOperation{*}, arg2::BinaryOperation{*})
+    new_args = []
+
+    available1 = Any[arg1.arg1; arg1.arg2]
+    available2 = Any[arg2.arg1; arg2.arg2]
+
+    for i ∈ eachindex(available1)
+        if isnothing(available1[i])
+            continue
+        end
+        for j ∈ eachindex(available2)
+            if isnothing(available2[j]) || isnothing(available1[i])
+                continue
+            end
+
+            if can_collapse(available1[i], available2[j])
+                push!(new_args, evaluate(*, available1[i], available2[j]))
+                available1[i] = nothing
+                available2[j] = nothing
+            end
+        end
+    end
+
+    for i ∈ available1
+        if !isnothing(i)
+            push!(new_args, i)
+        end
+    end
+
+    for i ∈ available2
+        if !isnothing(i)
+            push!(new_args, i)
+        end
+    end
+
+    new_arg = nothing
+
+    for args ∈ Iterators.partition(new_args, 2)
+        if length(args) == 1
+            if isnothing(new_arg)
+                return args[1]
+            else
+                return BinaryOperation{*}(new_arg, args[1])
+            end
+        end
+
+        if isnothing(new_arg)
+            new_arg = BinaryOperation{*}(args[1], args[2])
+        else
+            new_arg = BinaryOperation{*}(new_arg, BinaryOperation{*}(args[1], args[2]))
+        end
+    end
+
+    return new_arg
+end
+
 function evaluate(::typeof(*), arg1::KrD, arg2::BinaryOperation{*})
     return evaluate(*, arg2, arg1)
 end
