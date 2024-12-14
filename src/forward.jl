@@ -369,8 +369,8 @@ end
 function evaluate(::typeof(*), arg1::BinaryOperation{Op}, arg2::Union{Tensor, KrD}) where {Op}
     return evaluate(
         Op,
-        evaluate(*, evaluate(arg1.arg1), arg2),
-        evaluate(*, evaluate(arg1.arg2), arg2),
+        evaluate(*, evaluate(arg1.arg1), evaluate(arg2)),
+        evaluate(*, evaluate(arg1.arg2), evaluate(arg2)),
     )
 end
 
@@ -467,11 +467,19 @@ function evaluate(::typeof(+), arg1::Value, arg2::Value)
     return BinaryOperation{+}(arg1, arg2)
 end
 
-function evaluate(::typeof(+), arg1::NonTrivialNonMult, arg2::BinaryOperation{*})
-    return evaluate(+, evaluate(arg2), evaluate(arg1))
+function evaluate(::typeof(+), arg1::BinaryOperation{*}, arg2::BinaryOperation{*})
+    return _add_to_product(arg1, arg2)
+end
+
+function evaluate(::typeof(+), arg1::NonTrivialValue, arg2::BinaryOperation{*})
+    return _add_to_product(arg2, arg1)
 end
 
 function evaluate(::typeof(+), arg1::BinaryOperation{*}, arg2::NonTrivialValue)
+    return _add_to_product(arg1, arg2)
+end
+
+function _add_to_product(arg1::BinaryOperation{*}, arg2::Value)
     if evaluate(arg1) == evaluate(arg2)
         return BinaryOperation{*}(2, evaluate(arg1))
     end
@@ -534,11 +542,19 @@ function evaluate(::typeof(-), arg1, arg2)
     return BinaryOperation{-}(arg1, arg2)
 end
 
-function evaluate(::typeof(-), arg1::NonTrivialNonMult, arg2::BinaryOperation{*})
-    return evaluate(+, evaluate(Negate(arg2)), evaluate(arg1))
+function evaluate(::typeof(-), arg1::BinaryOperation{*}, arg2::BinaryOperation{*})
+    return _sub_from_product(arg1, arg2)
+end
+
+function evaluate(::typeof(-), arg1::NonTrivialValue, arg2::BinaryOperation{*})
+    return _sub_from_product(arg2, arg1)
 end
 
 function evaluate(::typeof(-), arg1::BinaryOperation{*}, arg2::NonTrivialValue)
+    return _sub_from_product(arg1, arg2)
+end
+
+function _sub_from_product(arg1::BinaryOperation{*}, arg2::NonTrivialValue)
     if evaluate(arg1) == evaluate(arg2)
         arg1_indices = get_free_indices(arg1)
         return Zero(arg1_indices...)

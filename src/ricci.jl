@@ -178,9 +178,7 @@ function cos(arg::TensorValue)
     return Cos(arg)
 end
 
-NonTrivialValue = Union{Tensor,KrD,BinaryOperation{*},BinaryOperation{+},Real}
-# TODO: Rename BinaryOperation{*} and align with Mult below
-NonTrivialNonMult = Union{Tensor,KrD,BinaryOperation{+},Real}
+NonTrivialValue = Union{Tensor,KrD,BinaryOperation,UnaryOperation,Real}
 
 function _eliminate_indices(arg1::IndexList, arg2::IndexList)
     CanBeNothing = Union{Nothing,Lower,Upper}
