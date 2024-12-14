@@ -69,7 +69,7 @@ end
     op = sin(a * b)
 
     @test typeof(op) == yd.Sin
-    @test typeof(op.arg) == yd.BinaryOperation{*}
+    @test typeof(op.arg) == yd.BinaryOperation{yd.Mult}
 end
 
 @testset "Cos constructor" begin
@@ -79,7 +79,7 @@ end
     op = cos(a * b)
 
     @test typeof(op) == yd.Cos
-    @test typeof(op.arg) == yd.BinaryOperation{*}
+    @test typeof(op.arg) == yd.BinaryOperation{yd.Mult}
 end
 
 @testset "UnaryOperation equality operator" begin
@@ -120,25 +120,25 @@ end
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = yd.BinaryOperation{*}(a, b)
+    left = yd.BinaryOperation{yd.Mult}(a, b)
 
-    @test yd.BinaryOperation{*}(a, b) == yd.BinaryOperation{*}(a, b)
-    @test left == yd.BinaryOperation{*}(a, b)
-    @test left == yd.BinaryOperation{*}(b, a)
-    @test left != yd.BinaryOperation{+}(a, b)
+    @test yd.BinaryOperation{yd.Mult}(a, b) == yd.BinaryOperation{yd.Mult}(a, b)
+    @test left == yd.BinaryOperation{yd.Mult}(a, b)
+    @test left == yd.BinaryOperation{yd.Mult}(b, a)
+    @test left != yd.BinaryOperation{yd.Add}(a, b)
 end
 
 @testset "BinaryOperation equivalent" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = yd.BinaryOperation{*}(a, b)
+    left = yd.BinaryOperation{yd.Mult}(a, b)
 
-    @test equivalent(yd.BinaryOperation{*}(a, b), yd.BinaryOperation{*}(a, b))
-    @test equivalent(left, yd.BinaryOperation{*}(a, b))
-    @test equivalent(left, yd.BinaryOperation{*}(b, a))
-    @test !equivalent(left, yd.BinaryOperation{+}(a, b))
-    @test !equivalent(left, yd.BinaryOperation{*}(a, Tensor("x", Upper(1))))
+    @test equivalent(yd.BinaryOperation{yd.Mult}(a, b), yd.BinaryOperation{yd.Mult}(a, b))
+    @test equivalent(left, yd.BinaryOperation{yd.Mult}(a, b))
+    @test equivalent(left, yd.BinaryOperation{yd.Mult}(b, a))
+    @test !equivalent(left, yd.BinaryOperation{yd.Add}(a, b))
+    @test !equivalent(left, yd.BinaryOperation{yd.Mult}(a, Tensor("x", Upper(1))))
 end
 
 @testset "index hash function" begin
@@ -207,8 +207,8 @@ end
     xt = Tensor("x", Lower(1)) # row vector
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = yd.BinaryOperation{*}(xt, A)
-    op2 = yd.BinaryOperation{*}(A, xt)
+    op1 = yd.BinaryOperation{yd.Mult}(xt, A)
+    op2 = yd.BinaryOperation{yd.Mult}(A, xt)
 
     @test yd.get_free_indices(op1) == [Lower(2)]
     @test yd.get_free_indices(op2) == [Lower(2)]
@@ -218,7 +218,7 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Lower(2), Upper(1))
 
-    ops = (yd.BinaryOperation{+}, yd.BinaryOperation{-})
+    ops = (yd.BinaryOperation{yd.Add}, yd.BinaryOperation{yd.Sub})
 
     for op ∈ ops
         op1 = op(A, A)
@@ -235,8 +235,8 @@ end
     x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = yd.BinaryOperation{*}(x, δ)
-    op2 = yd.BinaryOperation{*}(δ, x)
+    op1 = yd.BinaryOperation{yd.Mult}(x, δ)
+    op2 = yd.BinaryOperation{yd.Mult}(δ, x)
 
     @test yd.get_free_indices(op1) == [Lower(2)]
     @test yd.get_free_indices(op2) == [Lower(2)]
@@ -246,8 +246,8 @@ end
     x = Tensor("x")
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = yd.BinaryOperation{*}(x, δ)
-    op2 = yd.BinaryOperation{*}(δ, x)
+    op1 = yd.BinaryOperation{yd.Mult}(x, δ)
+    op2 = yd.BinaryOperation{yd.Mult}(δ, x)
 
     @test yd.get_free_indices(op1) == [Lower(1); Lower(2)]
     @test yd.get_free_indices(op2) == [Lower(1); Lower(2)]
@@ -257,8 +257,8 @@ end
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = yd.BinaryOperation{*}(x, A)
-    op2 = yd.BinaryOperation{*}(A, x)
+    op1 = yd.BinaryOperation{yd.Mult}(x, A)
+    op2 = yd.BinaryOperation{yd.Mult}(A, x)
 
     @test yd.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
     @test yd.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
@@ -316,18 +316,18 @@ end
     @test yd.is_valid_matrix_multiplication(x, z)
 end
 
-@testset "multiplication with matching indices" begin
+@testset "yd.Multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test A * x == yd.BinaryOperation{*}(A, x)
-    @test y * A == yd.BinaryOperation{*}(y, A)
-    @test A * B == yd.BinaryOperation{*}(A, B)
+    @test A * x == yd.BinaryOperation{yd.Mult}(A, x)
+    @test y * A == yd.BinaryOperation{yd.Mult}(y, A)
+    @test A * B == yd.BinaryOperation{yd.Mult}(A, B)
 end
 
-@testset "multiplication with ambigous input fails" begin
+@testset "yd.Multiplication with ambigous input fails" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     z = Tensor("z", Upper(1))
@@ -339,7 +339,7 @@ end
     @test_throws DomainError A * A
 end
 
-@testset "multiplication with scalars" begin
+@testset "yd.Multiplication with scalars" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     A = Tensor("A", Upper(1), Lower(2), Lower(3))
@@ -348,59 +348,59 @@ end
 
     for n ∈ (z, r)
         for t ∈ (x, y, A, z)
-            @test n * t == yd.BinaryOperation{*}(n, t)
-            @test t * n == yd.BinaryOperation{*}(t, n)
+            @test n * t == yd.BinaryOperation{yd.Mult}(n, t)
+            @test t * n == yd.BinaryOperation{yd.Mult}(t, n)
         end
     end
 end
 
-@testset "elementwise multiplication matrix-matrix" begin
+@testset "elementwise yd.Multiplication matrix-matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(3), Lower(4))
 
     op1 = A .* A
 
-    @test typeof(op1) == yd.BinaryOperation{*}
+    @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
     @test equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
 
     op2 = A .* B
 
-    @test typeof(op2) == yd.BinaryOperation{*}
+    @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
     @test equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
 
     op3 = A' .* B'
 
-    @test typeof(op3) == yd.BinaryOperation{*}
+    @test typeof(op3) == yd.BinaryOperation{yd.Mult}
     @test equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
     @test equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
 end
 
-@testset "elementwise multiplication vector-vector" begin
+@testset "elementwise yd.Multiplication vector-vector" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
 
     op1 = x .* x
 
-    @test typeof(op1) == yd.BinaryOperation{*}
+    @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
     @test equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
 
     op2 = x .* y
 
-    @test typeof(op2) == yd.BinaryOperation{*}
+    @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
     @test equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
 
     op3 = x' .* y'
 
-    @test typeof(op3) == yd.BinaryOperation{*}
+    @test typeof(op3) == yd.BinaryOperation{yd.Mult}
     @test equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
     @test equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
 end
 
-@testset "elementwise multiplication with ambiguous input fails" begin
+@testset "elementwise yd.Multiplication with ambiguous input fails" begin
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(3), Lower(4))
     B = Tensor("B", Upper(5), Upper(6))
@@ -424,10 +424,10 @@ end
     @test yd.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD(Lower(3), Upper(1))
-    @test yd.update_index(x, Upper(3), Upper(1)) == yd.BinaryOperation{*}(x, expected_shift)
+    @test yd.update_index(x, Upper(3), Upper(1)) == yd.BinaryOperation{yd.Mult}(x, expected_shift)
 
     expected_shift = KrD(Lower(3), Upper(2))
-    @test yd.update_index(x, Upper(3), Upper(2)) == yd.BinaryOperation{*}(x, expected_shift)
+    @test yd.update_index(x, Upper(3), Upper(2)) == yd.BinaryOperation{yd.Mult}(x, expected_shift)
 end
 
 @testset "update_index row vector" begin
@@ -436,10 +436,10 @@ end
     @test yd.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD(Upper(3), Lower(1))
-    @test yd.update_index(x, Lower(3), Lower(1)) == yd.BinaryOperation{*}(x, expected_shift)
+    @test yd.update_index(x, Lower(3), Lower(1)) == yd.BinaryOperation{yd.Mult}(x, expected_shift)
 
     expected_shift = KrD(Upper(3), Lower(2))
-    @test yd.update_index(x, Lower(3), Lower(2)) == yd.BinaryOperation{*}(x, expected_shift)
+    @test yd.update_index(x, Lower(3), Lower(2)) == yd.BinaryOperation{yd.Mult}(x, expected_shift)
 end
 
 @testset "update_index matrix" begin
@@ -448,7 +448,7 @@ end
     @test yd.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD(Upper(2), Lower(3))
-    @test yd.update_index(A, Lower(2), Lower(3)) == yd.BinaryOperation{*}(A, expected_shift)
+    @test yd.update_index(A, Lower(2), Lower(3)) == yd.BinaryOperation{yd.Mult}(A, expected_shift)
 end
 
 @testset "transpose vector" begin
@@ -511,18 +511,18 @@ end
     @test equivalent(At, Tensor("A", Lower(1), Upper(2)))
 end
 
-@testset "transpose BinaryOperation{*}" begin
+@testset "transpose BinaryOperation{yd.Mult}" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(2))
 
     op_t = evaluate((A * x)')
     @test equivalent(
         evaluate(op_t),
-        yd.BinaryOperation{*}(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
+        yd.BinaryOperation{yd.Mult}(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
     )
 end
 
-@testset "add/subtract tensors with different order fails" begin
+@testset "yd.Add/yd.Subtract tensors with different order fails" begin
     a = Tensor("a")
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(1), Lower(2))
@@ -542,14 +542,14 @@ end
     end
 end
 
-@testset "add/subtract tensors with ambiguous indices succeeds" begin
+@testset "yd.Add/yd.Subtract tensors with ambiguous indices succeeds" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test equivalent(evaluate(A + B), yd.BinaryOperation{+}(Tensor("A", Upper(1), Lower(2)), Tensor("B", Upper(1), Lower(2))))
+    @test equivalent(evaluate(A + B), yd.BinaryOperation{yd.Add}(Tensor("A", Upper(1), Lower(2)), Tensor("B", Upper(1), Lower(2))))
 end
 
-@testset "add/subtract tensors with different indices" begin
+@testset "yd.Add/yd.Subtract tensors with different indices" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
 
@@ -614,24 +614,24 @@ end
     @test yd.can_contract(z, A)
 end
 
-@testset "multiplication with non-matching indices matrix-vector" begin
+@testset "yd.Multiplication with non-matching indices matrix-vector" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
     op1 = A * x
 
-    @test typeof(op1) == yd.BinaryOperation{*}
+    @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == yd.BinaryOperation{*}
+    @test typeof(op1.arg1) == yd.BinaryOperation{yd.Mult}
     @test op1.arg2 == x
 
     op2 = x' * A
 
-    @test typeof(op2) == yd.BinaryOperation{*}
+    @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == yd.BinaryOperation{*}
+    @test typeof(op2.arg1) == yd.BinaryOperation{yd.Mult}
     @test typeof(op2.arg1.arg1) == yd.Adjoint
-    @test typeof(op2.arg1.arg1.expr) == yd.BinaryOperation{*}
+    @test typeof(op2.arg1.arg1.expr) == yd.BinaryOperation{yd.Mult}
     @test op2.arg1.arg1.expr.arg1 == x
     @test typeof(op2.arg1.arg1.expr.arg2) == KrD
     @test op2.arg1.arg1.expr.arg2.indices[1] == yd.flip(x.indices[1])
@@ -641,14 +641,14 @@ end
     @test op2.arg2 == A
 end
 
-@testset "multiplication with non-compatible matrix-vector fails" begin
+@testset "yd.Multiplication with non-compatible matrix-vector fails" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
     @test_throws DomainError x * A
 end
 
-@testset "multiplication with adjoint matrix-matrix has correct indices" begin
+@testset "yd.Multiplication with adjoint matrix-matrix has correct indices" begin
     A = Tensor("A", Upper(1), Lower(2))
     C = Tensor("C", Upper(3), Lower(4))
 
@@ -656,7 +656,7 @@ end
 
     # TODO: Check also efter evaluate
     for op ∈ ops
-        @assert typeof(op) == yd.BinaryOperation{*}
+        @assert typeof(op) == yd.BinaryOperation{yd.Mult}
         op_indices = yd.get_free_indices(op)
         @test length(op_indices) == 2
 
@@ -672,50 +672,50 @@ end
 
     op1 = x' * y
 
-    @test typeof(op1) == yd.BinaryOperation{*}
+    @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == yd.BinaryOperation{*}
+    @test typeof(op1.arg1) == yd.BinaryOperation{yd.Mult}
     @test op1.arg2 == y
 
     op2 = y' * x
 
-    @test typeof(op2) == yd.BinaryOperation{*}
+    @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == yd.BinaryOperation{*}
+    @test typeof(op2.arg1) == yd.BinaryOperation{yd.Mult}
     @test op2.arg2 == x
 end
 
-@testset "multiplication with non-matching indices scalar-matrix" begin
+@testset "yd.Multiplication with non-matching indices scalar-matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
     z = Tensor("z")
 
     op1 = A * z
     op2 = z * A
 
-    @test typeof(op1) == yd.BinaryOperation{*}
+    @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test !yd.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == A
     @test op1.arg2 == z
 
-    @test typeof(op2) == yd.BinaryOperation{*}
+    @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test !yd.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == z
     @test op2.arg2 == A
 end
 
-@testset "multiplication with non-matching indices scalar-vector" begin
+@testset "yd.Multiplication with non-matching indices scalar-vector" begin
     x = Tensor("x", Upper(3))
     z = Tensor("z")
 
     op1 = z * x
     op2 = x * z
 
-    @test typeof(op1) == yd.BinaryOperation{*}
+    @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test !yd.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == z
     @test op1.arg2 == x
 
-    @test typeof(op2) == yd.BinaryOperation{*}
+    @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test !yd.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == x
     @test op2.arg2 == z
@@ -745,17 +745,17 @@ end
     a = Tensor("a")
     b = Tensor("b")
 
-    mul = yd.BinaryOperation{*}(a, b)
-    add = yd.BinaryOperation{+}(a, b)
-    sub = yd.BinaryOperation{-}(a, b)
+    mul = yd.BinaryOperation{yd.Mult}(a, b)
+    add = yd.BinaryOperation{yd.Add}(a, b)
+    sub = yd.BinaryOperation{yd.Sub}(a, b)
 
     @test to_string(mul) == "ab"
     @test to_string(add) == "a + b"
     @test to_string(sub) == "a - b"
-    @test to_string(yd.BinaryOperation{+}(mul, b)) == "ab + b"
-    @test to_string(yd.BinaryOperation{+}(mul, mul)) == "ab + ab"
-    @test to_string(yd.BinaryOperation{-}(mul, mul)) == "ab - ab"
-    @test to_string(yd.BinaryOperation{*}(mul, mul)) == "abab"
-    @test to_string(yd.BinaryOperation{*}(add, add)) == "(a + b)(a + b)"
-    @test to_string(yd.BinaryOperation{*}(sub, add)) == "(a - b)(a + b)"
+    @test to_string(yd.BinaryOperation{yd.Add}(mul, b)) == "ab + b"
+    @test to_string(yd.BinaryOperation{yd.Add}(mul, mul)) == "ab + ab"
+    @test to_string(yd.BinaryOperation{yd.Sub}(mul, mul)) == "ab - ab"
+    @test to_string(yd.BinaryOperation{yd.Mult}(mul, mul)) == "abab"
+    @test to_string(yd.BinaryOperation{yd.Mult}(add, add)) == "(a + b)(a + b)"
+    @test to_string(yd.BinaryOperation{yd.Mult}(sub, add)) == "(a - b)(a + b)"
 end

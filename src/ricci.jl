@@ -135,6 +135,11 @@ struct BinaryOperation{Op} <: TensorValue where {Op}
     arg2::Value
 end
 
+abstract type AdditiveOperation end
+struct Add <: AdditiveOperation end
+struct Sub <: AdditiveOperation end
+struct Mult end
+
 function equivalent(left::BinaryOperation, right::BinaryOperation)
     if typeof(left) != typeof(right)
         return false
@@ -298,7 +303,7 @@ function _get_indices(arg::Negate)
     return _get_indices(arg.arg)
 end
 
-function _get_indices(arg::BinaryOperation{*})
+function _get_indices(arg::BinaryOperation{Mult})
     return [_get_indices(arg.arg1); _get_indices(arg.arg2)]
 end
 
@@ -417,7 +422,7 @@ function tr(arg::TensorValue)
         throw(de)
     end
 
-    return BinaryOperation{*}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
+    return BinaryOperation{Mult}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
 end
 
 function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
@@ -448,7 +453,7 @@ function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
         new_arg1 = update_index(new_arg1, li, ri)
     end
 
-    return BinaryOperation{*}(new_arg1, arg2)
+    return BinaryOperation{Mult}(new_arg1, arg2)
 end
 
 function *(arg1::TensorValue, arg2::Real)
@@ -460,7 +465,7 @@ function *(arg1::Value, arg2::TensorValue)
     arg2_free_indices = get_free_indices(arg2)
 
     if isempty(arg1_free_indices) || isempty(arg2_free_indices)
-        return BinaryOperation{*}(arg1, arg2)
+        return BinaryOperation{Mult}(arg1, arg2)
     end
 
     if length(arg1_free_indices) > 2
@@ -495,7 +500,7 @@ function *(arg1::Value, arg2::TensorValue)
 
 
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper
-        return BinaryOperation{*}(
+        return BinaryOperation{Mult}(
             update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])),
             arg2,
         )
@@ -505,7 +510,7 @@ function *(arg1::Value, arg2::TensorValue)
        length(arg2_free_indices) == 1 &&
        typeof(arg1_free_indices[end]) == Upper &&
        typeof(arg2_free_indices[1]) == Lower
-        return BinaryOperation{*}(
+        return BinaryOperation{Mult}(
             arg1,
             update_index(
                 arg2,
@@ -523,11 +528,11 @@ function get_letters(indices::IndexList)
 end
 
 function +(arg1::TensorValue, arg2::TensorValue)
-    return create_additive_op(+, arg1, arg2)
+    return create_additive_op(Add, arg1, arg2)
 end
 
 function -(arg1::TensorValue, arg2::TensorValue)
-    return create_additive_op(-, arg1, arg2)
+    return create_additive_op(Sub, arg1, arg2)
 end
 
 # TODO: Constrain op
@@ -554,11 +559,11 @@ function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
     arg2_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg2_ids), new_ids)))
 
     for index ∈ unique(arg1_ids)
-        arg1 = BinaryOperation{*}(arg1, KrD(flip(index), same_to(index, arg1_index_map[index])))
+        arg1 = BinaryOperation{Mult}(arg1, KrD(flip(index), same_to(index, arg1_index_map[index])))
     end
 
     for index ∈ union(arg2_ids)
-        arg2 = BinaryOperation{*}(arg2, KrD(flip(index), same_to(index, arg2_index_map[index])))
+        arg2 = BinaryOperation{Mult}(arg2, KrD(flip(index), same_to(index, arg2_index_map[index])))
     end
 
     return BinaryOperation{op}(arg1, arg2)
@@ -574,7 +579,7 @@ function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUppe
     @assert from ∈ indices
     @assert typeof(from) != typeof(flip(to)) "update_index shall not transpose"
 
-    return BinaryOperation{*}(arg, KrD(flip(from), to))
+    return BinaryOperation{Mult}(arg, KrD(flip(from), to))
 end
 
 function reshape(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
@@ -586,7 +591,7 @@ function reshape(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperInde
 
     @assert from ∈ indices
 
-    return BinaryOperation{*}(arg, KrD(flip(from), to))
+    return BinaryOperation{Mult}(arg, KrD(flip(from), to))
 end
 
 function -(arg::TensorValue)
@@ -609,13 +614,13 @@ function adjoint(arg::T) where T <: UnaryOperation
     return T(arg.arg')
 end
 
-function adjoint(arg::BinaryOperation{*})
+function adjoint(arg::BinaryOperation{Mult})
     free_ids = get_free_indices(arg)
 
     t = arg
 
     for i ∈ union(free_ids)
-        t = BinaryOperation{*}(t, KrD(flip(i), flip_to(i, get_next_letter())))
+        t = BinaryOperation{Mult}(t, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
     return Adjoint(t)
@@ -636,11 +641,11 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
     arg2_t = arg.arg2
 
     for index ∈ unique(arg1_ids)
-        arg1_t = BinaryOperation{*}(arg1_t, KrD(flip(index), flip_to(index, arg1_index_map[index])))
+        arg1_t = BinaryOperation{Mult}(arg1_t, KrD(flip(index), flip_to(index, arg1_index_map[index])))
     end
 
     for index ∈ union(arg2_ids)
-        arg2_t = BinaryOperation{*}(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
+        arg2_t = BinaryOperation{Mult}(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
     end
 
     return Adjoint(BinaryOperation{Op}(arg1_t, arg2_t))
@@ -656,7 +661,7 @@ function adjoint(arg::Union{Tensor,KrD,Zero})
     e = arg
 
     for i ∈ free_indices
-        e = BinaryOperation{*}(e, KrD(flip(i), flip_to(i, get_next_letter())))
+        e = BinaryOperation{Mult}(e, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
     return Adjoint(e)
@@ -736,15 +741,15 @@ function parenthesize(arg)
     return to_string(arg)
 end
 
-function parenthesize(arg::BinaryOperation{+})
+function parenthesize(arg::BinaryOperation{Add})
     return "(" * to_string(arg) * ")"
 end
 
-function parenthesize(arg::BinaryOperation{-})
+function parenthesize(arg::BinaryOperation{Sub})
     return "(" * to_string(arg) * ")"
 end
 
-function to_string(arg::BinaryOperation{*})
+function to_string(arg::BinaryOperation{Mult})
     return parenthesize(arg.arg1) * parenthesize(arg.arg2)
 end
 
@@ -752,11 +757,11 @@ function to_string(arg::Adjoint)
     return to_string(arg.expr)
 end
 
-function to_string(arg::BinaryOperation{+})
+function to_string(arg::BinaryOperation{Add})
     return to_string(arg.arg1) * " + " * to_string(arg.arg2)
 end
 
-function to_string(arg::BinaryOperation{-})
+function to_string(arg::BinaryOperation{Sub})
     return to_string(arg.arg1) * " - " * parenthesize(arg.arg2)
 end
 

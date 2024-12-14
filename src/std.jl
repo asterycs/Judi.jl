@@ -175,7 +175,7 @@ function parenthesize_std(arg)
     return to_std_string(arg)
 end
 
-function parenthesize_std(arg::BinaryOperation{+})
+function parenthesize_std(arg::BinaryOperation{Add})
     return "(" * to_std_string(arg) * ")"
 end
 
@@ -187,16 +187,24 @@ function throw_not_std()
     throw(DomainError("Cannot write expression in standard notation"))
 end
 
-function to_std_string(arg::BinaryOperation{Op}) where {Op}
+function to_string(::Add)
+    return "+"
+end
+
+function to_string(::Sub)
+    return "-"
+end
+
+function to_std_string(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
     arg1_index_types = typeof.(get_free_indices(arg.arg1))
     arg2_index_types = typeof.(get_free_indices(arg.arg2))
 
     @assert is_permutation(arg1_index_types, arg2_index_types)
 
-    return to_std_string(arg.arg1) * " " * string(Op) * " " * to_std_string(arg.arg2)
+    return to_std_string(arg.arg1) * " " * to_string(Op()) * " " * to_std_string(arg.arg2)
 end
 
-function to_std_string(arg::BinaryOperation{*})
+function to_std_string(arg::BinaryOperation{Mult})
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
     arg_ids = get_free_indices(arg)
