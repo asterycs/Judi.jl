@@ -183,8 +183,6 @@ function cos(arg::TensorValue)
     return Cos(arg)
 end
 
-NonTrivialValue = Union{Tensor,KrD,BinaryOperation,UnaryOperation,Real}
-
 function _eliminate_indices(arg1::IndexList, arg2::IndexList)
     CanBeNothing = Union{Nothing,Lower,Upper}
     available1 = CanBeNothing[i for i ∈ unique(arg1)]

@@ -429,13 +429,17 @@ end
         "(x .* c)' * x", #
         "(x + y)' * x", #
         "(x - y)' * x", #
+        "x' * (y .* c)", #
+        "x' * (x .* c)", #
+        "x' * (x + y)", #
+        "x' * (x - y)", #
         "sin(tr(x * x'))", #
         "cos(tr(x * x'))", #
         "tr(sin(x * x'))", #
         "tr(A)", #
     )
 
-    # TODO: I don't think this is the proper way to do this.
+    # TODO: There's probably a better way to do this.
     @eval $(Meta.parseall(prefix))
 
     for str ∈ expr_strs

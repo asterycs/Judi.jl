@@ -467,20 +467,28 @@ function evaluate(::Add, arg1::Value, arg2::Value)
     return BinaryOperation{Add}(arg1, arg2)
 end
 
+function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::Zero)
+    return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
+end
+
 function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
     return _add_to_product(arg1, arg2)
 end
 
-function evaluate(::Add, arg1::NonTrivialValue, arg2::BinaryOperation{Mult})
+function evaluate(::Add, arg1::Value, arg2::BinaryOperation{Mult})
     return _add_to_product(arg2, arg1)
 end
 
-function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::NonTrivialValue)
+function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::Value)
     return _add_to_product(arg1, arg2)
 end
 
-function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::BinaryOperation{Mult}) where {Op<:AdditiveOperation}
+function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Mult})
     return _add_to_product(arg2, arg1)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Sub})
+    return _add_to_product(arg1, arg2)
 end
 
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
@@ -503,12 +511,99 @@ function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::Zero) where {Op<:Addit
     return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
 end
 
-function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::Value) where {Op<:AdditiveOperation}
+function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Add})
+    # TODO: extend
+    return invoke(evaluate, Tuple{Add, BinaryOperation{Add}, Value}, Add(), arg1, arg2)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::Zero)
+    return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
+end
+
+function evaluate(::Add, arg1::Zero, arg2::BinaryOperation{Add})
+    return invoke(evaluate, Tuple{Add, Zero, Value}, Add(), arg1, arg2)
+end
+
+function evaluate(::Add, arg1::Zero, arg2::BinaryOperation{Mult})
+    invoke(evaluate, Tuple{Add, Zero, Value}, Add(), arg1, arg2)
+end
+
+function evaluate(::Add, arg1::Value, arg2::BinaryOperation{Add})
+    return evaluate(Add(), arg2, arg1)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Add})
+    # TODO: extend
+    return _add_to_product(arg1, arg2)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::Value)
     if evaluate(arg1.arg1) == evaluate(arg2)
-        return BinaryOperation{Op}(BinaryOperation{Mult}(2, evaluate(arg1.arg1)), evaluate(arg1.arg2))
+        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1.arg1)), evaluate(arg1.arg2))
+    end
+
+    if evaluate(arg1.arg2) == evaluate(arg2)
+        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1.arg2)), evaluate(arg1.arg1))
     end
 
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
+end
+
+function evaluate(::Add, arg1::Value, arg2::BinaryOperation{Sub})
+    return evaluate(Add(), arg2, arg1)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::Value)
+    if evaluate(arg1.arg1) == evaluate(arg2)
+        return BinaryOperation{Sub}(BinaryOperation{Mult}(2, evaluate(arg1.arg1)), evaluate(arg1.arg2))
+    end
+
+    if evaluate(arg1.arg2) == evaluate(arg2)
+        return evaluate(arg1.arg1)
+    end
+
+    return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::Zero)
+    return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Mult})
+    return _add_to_product(arg2, arg1)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Sub})
+    return evaluate(Add, arg2, arg2)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Add})
+    if arg1.arg1 == arg2.arg1
+        return BinaryOperation{Add}(BinaryOperation{*}(2, arg1.arg1), BinaryOperation{Sub}(arg2.arg2, arg1.arg2))
+    end
+
+    if arg1.arg1 == arg2.arg2
+        return BinaryOperation{Add}(BinaryOperation{*}(2, arg1.arg1), BinaryOperation{Sub}(arg2.arg1, arg1.arg2))
+    end
+
+    if arg1.arg2 == arg2.arg1
+        return BinaryOperation{Add}(arg1.arg1, arg2.arg2)
+    end
+
+    if arg1.arg2 == arg2.arg2
+        return BinaryOperation{Add}(arg1.arg1, arg1.arg2)
+    end
+
+    return BinaryOperation{Add}(arg1, arg2)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Sub})
+    # TODO: extend
+    return BinaryOperation{Add}(arg1, arg2)
+end
+
+function evaluate(::Add, arg1::Zero, arg2::BinaryOperation{Sub})
+    return invoke(evaluate, Tuple{Add, Zero, Value}, Add(), arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::Zero, arg2::Zero)
@@ -517,13 +612,13 @@ function evaluate(::Sub, arg1::Zero, arg2::Zero)
     arg1
 end
 
-function evaluate(::Sub, arg1::Zero, arg2)
+function evaluate(::Sub, arg1::Zero, arg2::Value)
     @assert is_permutation(arg1, arg2)
 
     return Negate(evaluate(arg2))
 end
 
-function evaluate(::Sub, arg1, arg2::Zero)
+function evaluate(::Sub, arg1::Value, arg2::Zero)
     @assert is_permutation(arg1, arg2)
 
     return evaluate(arg1)
@@ -546,19 +641,27 @@ function evaluate(::Sub, arg1, arg2)
     return BinaryOperation{Sub}(arg1, arg2)
 end
 
+function evaluate(::Sub, arg1::Zero, arg2::BinaryOperation{Mult})
+    return invole(evaluate, Tuple{Sub, Zero, Value}, Sub(), arg1, arg2)
+end
+
+function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::Zero)
+    return invole(evaluate, Tuple{Sub, Value, Zero}, Sub(), arg1, arg2)
+end
+
 function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
     return _sub_from_product(arg1, arg2)
 end
 
-function evaluate(::Sub, arg1::NonTrivialValue, arg2::BinaryOperation{Mult})
+function evaluate(::Sub, arg1::Value, arg2::BinaryOperation{Mult})
     return _sub_from_product(arg2, arg1)
 end
 
-function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::NonTrivialValue)
+function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::Value)
     return _sub_from_product(arg1, arg2)
 end
 
-function _sub_from_product(arg1::BinaryOperation{Mult}, arg2::NonTrivialValue)
+function _sub_from_product(arg1::BinaryOperation{Mult}, arg2::Value)
     if evaluate(arg1) == evaluate(arg2)
         arg1_indices = get_free_indices(arg1)
         return Zero(arg1_indices...)
