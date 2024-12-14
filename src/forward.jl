@@ -49,7 +49,7 @@ function diff(arg::BinaryOperation{Mult}, wrt::Tensor)
     )
 end
 
-function diff(arg::BinaryOperation{Op}, wrt::Tensor) where {Op}
+function diff(arg::BinaryOperation{Op}, wrt::Tensor) where {Op<:AdditiveOperation}
     return BinaryOperation{Op}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
 end
 
@@ -366,7 +366,7 @@ function evaluate(::Mult, arg1::Union{Tensor,KrD}, arg2::KrD)
     newarg
 end
 
-function evaluate(::Mult, arg1::BinaryOperation{Op}, arg2::Union{Tensor, KrD}) where {Op}
+function evaluate(::Mult, arg1::BinaryOperation{Op}, arg2::Union{Tensor, KrD}) where {Op<:AdditiveOperation}
     return evaluate(
         Op(),
         evaluate(Mult(), evaluate(arg1.arg1), evaluate(arg2)),
@@ -374,7 +374,7 @@ function evaluate(::Mult, arg1::BinaryOperation{Op}, arg2::Union{Tensor, KrD}) w
     )
 end
 
-function evaluate(::Mult, arg1::Union{Tensor, KrD}, arg2::BinaryOperation{Op}) where {Op}
+function evaluate(::Mult, arg1::Union{Tensor, KrD}, arg2::BinaryOperation{Op}) where {Op<:AdditiveOperation}
     return evaluate(
         Op(),
         evaluate(Mult(), arg1, evaluate(arg2.arg1)),
@@ -479,6 +479,10 @@ function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::NonTrivialValue)
     return _add_to_product(arg1, arg2)
 end
 
+function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::BinaryOperation{Mult}) where {Op<:AdditiveOperation}
+    return _add_to_product(arg2, arg1)
+end
+
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
     if evaluate(arg1) == evaluate(arg2)
         return BinaryOperation{Mult}(2, evaluate(arg1))
@@ -495,11 +499,11 @@ function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
 end
 
-function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::Zero) where Op
+function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::Zero) where {Op<:AdditiveOperation}
     return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
 end
 
-function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::Value) where {Op}
+function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::Value) where {Op<:AdditiveOperation}
     if evaluate(arg1.arg1) == evaluate(arg2)
         return BinaryOperation{Op}(BinaryOperation{Mult}(2, evaluate(arg1.arg1)), evaluate(arg1.arg2))
     end
