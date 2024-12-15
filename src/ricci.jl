@@ -159,6 +159,8 @@ end
 
 abstract type UnaryOperation <: TensorValue end
 
+UnaryValue = Union{Tensor,KrD,Zero,UnaryOperation,Real}
+
 function equivalent(arg1::T, arg2::T) where {T<:UnaryOperation}
     return equivalent(arg1.arg, arg2.arg)
 end
