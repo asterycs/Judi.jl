@@ -591,7 +591,7 @@ function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Add})
     end
 
     if arg1.arg2 == arg2.arg2
-        return BinaryOperation{Add}(arg1.arg1, arg1.arg2)
+        return BinaryOperation{Add}(arg1.arg1, arg2.arg1)
     end
 
     return BinaryOperation{Add}(arg1, arg2)
