@@ -103,72 +103,42 @@ function hessian(expr, wrt::String)
     return H
 end
 
-function to_std_string(arg::Tensor)
-    if length(arg.indices) == 2
-        if typeof(arg.indices[1]) == Upper && typeof(arg.indices[2]) == Lower
-            return arg.id
-        end
-
-        if typeof(arg.indices[1]) == Lower && typeof(arg.indices[2]) == Upper
-            return arg.id * "ᵀ"
-        end
+function to_std_string(arg::Tensor, transpose::Bool)
+    if transpose
+        return arg.id * "ᵀ"
+    else
+        return arg.id
     end
-
-    if length(arg.indices) == 1
-        if typeof(arg.indices[1]) == Upper
-            return arg.id
-        end
-
-        if typeof(arg.indices[1]) == Lower
-            return arg.id * "ᵀ"
-        end
-    end
-
-    throw_not_std()
 end
 
-function to_std_string(arg::KrD)
-    if length(arg.indices) == 2
-        if typeof(arg.indices[1]) == Upper && typeof(arg.indices[2]) == Lower
-            return "I"
-        end
+# function to_std_string(arg::KrD, transpose::Bool)
+#     if length(arg.indices) == 2
+#         if typeof(arg.indices[1]) == Upper && typeof(arg.indices[2]) == Lower
+#             return "I"
+#         end
 
-        if typeof(arg.indices[1]) == Lower && typeof(arg.indices[2]) == Upper
-            return "I"
-        end
-    end
+#         if typeof(arg.indices[1]) == Lower && typeof(arg.indices[2]) == Upper
+#             return "I"
+#         end
+#     end
 
-    throw_not_std()
-end
+#     throw_not_std()
+# end
 
-function to_std_string(arg::Real)
+function to_std_string(arg::Real, transpose::Bool)
     return to_string(arg)
 end
 
-function to_std_string(arg::Zero)
-    d = length(arg.indices)
-
-    if d == 0
-        return "0"
-    elseif d == 1
-        return "vec(0)"
-    elseif d == 2
-        return "mat(0)"
-    else
-        throw_not_std()
-    end
+function to_std_string(arg::Negate, transpose::Bool)
+    return "-" * to_std_string(arg.arg, transpose)
 end
 
-function to_std_string(arg::Negate)
-    return "-" * to_std_string(arg.arg)
+function to_std_string(arg::Sin, transpose::Bool)
+    return "sin(" * to_std_string(arg.arg, transpose) * ")"
 end
 
-function to_std_string(arg::Sin)
-    return "sin(" * to_std_string(arg.arg) * ")"
-end
-
-function to_std_string(arg::Cos)
-    return "cos(" * to_std_string(arg.arg) * ")"
+function to_std_string(arg::Cos, transpose::Bool)
+    return "cos(" * to_std_string(arg.arg, transpose) * ")"
 end
 
 function parenthesize_std(arg)
@@ -187,153 +157,216 @@ function throw_not_std()
     throw(DomainError("Cannot write expression in standard notation"))
 end
 
-function to_string(::Add)
+function to_std_string(::Add)
     return "+"
 end
 
-function to_string(::Sub)
+function to_std_string(::Sub)
     return "-"
 end
 
-function to_std_string(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
-    arg1_index_types = typeof.(get_free_indices(arg.arg1))
-    arg2_index_types = typeof.(get_free_indices(arg.arg2))
+function vectorin(a, b)
+    s = Set(b)
 
-    @assert is_permutation(arg1_index_types, arg2_index_types)
-
-    return to_std_string(arg.arg1) * " " * to_string(Op()) * " " * to_std_string(arg.arg2)
+    return [e ∈ s for e ∈ a]
 end
 
-function to_std_string(arg::BinaryOperation{Mult})
+function to_std_string(arg::BinaryOperation{Op}, transpose::Bool) where {Op<:AdditiveOperation}
     arg1_ids = get_free_indices(arg.arg1)
     arg2_ids = get_free_indices(arg.arg2)
-    arg_ids = get_free_indices(arg)
 
-    if arg.arg1 isa Real || arg.arg2 isa Real
-        return to_std_string(arg.arg1) * to_std_string(arg.arg2)
-    end
+    @assert all(vectorin(arg1_ids, arg2_ids)) && all(vectorin(arg2_ids, arg1_ids))
 
-    if !can_contract(arg.arg1, arg.arg2)
-        if arg1_ids == arg2_ids
-            return to_std_string(arg.arg1) * " ⊙ " * to_std_string(arg.arg2)
-        end
-
-        if length(arg1_ids) == 1 && length(arg2_ids) == 1
-            if typeof(arg1_ids[1]) == Upper && typeof(arg2_ids[1]) == Lower
-                return to_std_string(arg.arg1) * to_std_string(arg.arg2)
-            end
-
-            if typeof(arg1_ids[1]) == Lower && typeof(arg2_ids[1]) == Upper
-                return to_std_string(arg.arg2) * to_std_string(arg.arg1)
-            end
-        end
-
-        if length(arg1_ids) > 2 || length(arg2_ids) > 2 # is an outer product
-            throw_not_std()
-        end
-
-        return to_std_string(arg.arg1) * to_std_string(arg.arg2)
-    end
-
-    if isempty(arg_ids) # The result is a scalar
-        if length(arg1_ids) == 1 && length(arg2_ids) == 1
-            if typeof(arg1_ids[1]) == Lower
-                return to_std_string(arg.arg1) * to_std_string(arg.arg2)
-            else # if typeof(arg1_ids[1]) == Upper
-                return to_std_string(arg.arg2) * to_std_string(arg.arg1)
-            end
-        end
-
+    if length(arg1_ids) > 2
         throw_not_std()
-    elseif length(arg_ids) == 1 # The result is a vector
-        arg1 = arg.arg1
-        arg2 = arg.arg2
+    end
 
-        if length(arg1_ids) == 1 && length(arg2_ids) == 2
-            arg1_ids, arg2_ids = arg2_ids, arg1_ids
-            arg1, arg2 = arg2, arg1
-        end
+    transpose_left = collect(reverse(arg1_ids)) == arg2_ids
+    transpose_left = transpose ? !transpose_left : transpose_left
 
-        # arg1 is 2d matrix, arg2 is 1d
+    return to_std_string(arg.arg1, transpose_left) * " " * to_std_string(Op()) * " " * to_std_string(arg.arg2, transpose)
+end
 
-        if typeof(arg_ids[1]) == Lower
-            if typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower
-                if flip(arg1_ids[1]) == arg2_ids[1]
-                    return parenthesize_std(arg2) * parenthesize_std(arg1)
-                else
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1) * "ᵀ"
-                end
-            elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Upper
-                if flip(arg1_ids[1]) == arg2_ids[1]
-                    return parenthesize_std(arg1) * "ᵀ" * parenthesize_std(arg2) * "ᵀ"
-                else
-                    return parenthesize_std(arg2) * parenthesize_std(arg1)
-                end
-            elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Lower
-                if typeof(arg1) != Tensor
-                    throw_not_std()
-                end
+function collect_terms(arg::BinaryOperation{Mult})
+    return [collect_terms(arg.arg1); collect_terms(arg.arg2)]
+end
 
-                if flip(arg1_ids[end]) == arg2_ids[1]
-                    return parenthesize_std(arg2) * "ᵀ" * get_sym(arg1) * "ᵀ"
-                else
-                    return parenthesize_std(arg2) * "ᵀ" * get_sym(arg1)
-                end
-            end
-        else # typeof(arg_ids[1]) == Upper
-            if typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Lower
-                if flip(arg1_ids[1]) == arg2_ids[1]
-                    return parenthesize_std(arg2) * "ᵀ" * parenthesize_std(arg1)
-                else
-                    return parenthesize_std(arg1) * parenthesize_std(arg2)
-                end
-            elseif typeof(arg1.indices[1]) == Lower && typeof(arg1.indices[2]) == Upper
-                if flip(arg1_ids[2]) == arg2_ids[1]
-                    return parenthesize_std(arg1) * parenthesize_std(arg2)
-                else
-                    return parenthesize_std(arg1) * parenthesize_std(arg2)
-                end
-            elseif typeof(arg1.indices[1]) == Upper && typeof(arg1.indices[2]) == Upper
-                if typeof(arg1) != Tensor || typeof(arg2) != Tensor
-                    throw_not_std()
-                end
+function collect_terms(arg)
+    return [arg]
+end
 
-                if flip(arg1_ids[end]) == arg2_ids[1]
-                    return get_sym(arg1) * get_sym(arg2)
-                else
-                    return get_sym(arg1) * "ᵀ" * get_sym(arg2)
-                end
-            end
-        end
-    elseif length(arg_ids) == 2 # The result is a matrix
-        if length(arg1_ids) == 2 && length(arg2_ids) == 2
-            if flip(arg1_ids[end]) == arg2_ids[1]
-                if typeof(arg1_ids[end]) == Lower
-                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
-                else
-                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
-                end
-            elseif flip(arg1_ids[1]) == arg2_ids[1]
-                if typeof(arg1_ids[1]) == Lower
-                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
-                else
-                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
-                end
-            elseif flip(arg1_ids[end]) == arg2_ids[end]
-                if typeof(arg1_ids[end]) == Lower
-                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
-                else
-                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
-                end
-            elseif flip(arg1_ids[1]) == arg2_ids[end]
-                if typeof(arg1_ids[1]) == Lower
-                    return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
-                else
-                    return parenthesize_std(arg.arg2) * parenthesize_std(arg.arg1)
-                end
-            end
+function is_index_order_same(terms, index_order)
+    indices = reduce(vcat, get_free_indices.(terms))
+
+    # if length(terms) == 1
+    #     is_valid = true
+    #     for idx ∈ indices
+    #         if idx ∈ index_order
+
+    i = 1
+
+    for index ∈ indices
+        if i <= length(index_order) && index == index_order[i]
+            i += 1
+        elseif index ∈ index_order
+            return false
         end
     end
 
-    throw_not_std()
+    if i == 1
+        return false
+    end
+
+    return true
+end
+
+function is_trace2(arg)
+    terms = collect_terms(arg)
+    # TODO: For completeness one should actually check all contractions and make sure that there
+    # are no vector'-vector products
+    return all(length.(get_free_indices.(terms)) .== 2) && isempty(get_free_indices(arg))
+end
+
+function transpose_sequence(seq)
+    full_term = reduce(*, seq)
+
+    full_term_t = evaluate(full_term')
+
+    return collect_terms(full_term_t)
+end
+
+function to_std_string(arg, transpose::Bool = false)
+    target_indices = get_free_indices(arg)
+
+    terms = collect_terms(arg)
+    remaining = Any[t for t ∈ terms]
+
+    trace = is_trace2(arg)
+
+    ordered_args = []
+
+    run = true
+
+    for i ∈ eachindex(remaining)
+        if isnothing(remaining[i])
+            continue
+        end
+        if isempty(ordered_args)
+            push!(ordered_args, remaining[i])
+            remaining[i] = nothing
+            continue
+        end
+        if all(isnothing.(remaining))
+            run = false
+        end
+
+        term = remaining[i]
+        term_indices = get_free_indices(term)
+
+        for fixed ∈ (ordered_args[1], ordered_args[end])
+            fixed_indices = get_free_indices(fixed)
+
+            if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[1]
+                pushfirst!(ordered_args, term)
+                remaining[i] = nothing
+                break
+            end
+
+            if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[end]
+                push!(ordered_args, term)
+                remaining[i] = nothing
+                break
+            end
+
+            if  flip(term_indices[end]) == fixed_indices[end]
+                if typeof(fixed_indices[end]) == Lower
+                    push!(ordered_args, term)
+                else
+                    pushfirst!(ordered_args, term)
+                end
+                remaining[i] = nothing
+                break
+            end
+
+            if flip(term_indices[1]) == fixed_indices[1]
+                if typeof(fixed_indices[1]) == Lower
+                    push!(ordered_args, term)
+                else
+                    pushfirst!(ordered_args, term)
+                end
+                remaining[i] = nothing
+                break
+            end
+        end
+                
+        
+    end
+
+    argstr = ""
+
+    if length(target_indices) == 2
+        if typeof(target_indices[1]) == Upper && typeof(target_indices[2]) == Lower || typeof(target_indices[1]) == Lower && typeof(target_indices[2]) == Upper
+            has_row_vector = false
+            for term ∈ ordered_args
+                ids = get_free_indices(term)
+                if length(ids) == 1 && typeof(ids[1]) == Lower
+                    has_row_vector = true
+                end
+            end
+
+            if has_row_vector
+                ordered_args = collect(reverse(ordered_args))
+            end
+        end
+    elseif length(target_indices) == 1
+        if typeof(target_indices[1]) == Upper
+            has_row_vector = false
+            for term ∈ ordered_args
+                ids = get_free_indices(term)
+                if length(ids) == 1 && typeof(ids[1]) == Lower
+                    has_row_vector = true
+                end
+            end
+
+            if has_row_vector
+                ordered_args = collect(reverse(ordered_args))
+            end
+        elseif typeof(target_indices[1]) == Lower
+            has_col_vector = false
+            for term ∈ ordered_args
+                ids = get_free_indices(term)
+                if length(ids) == 1 && typeof(ids[1]) == Upper
+                    has_col_vector = true
+                end
+            end
+
+            if has_col_vector
+                ordered_args = collect(reverse(ordered_args))
+            end
+        end
+    else
+        throw_not_std()
+    end
+
+    for t ∈ ordered_args
+        indices = get_free_indices(t)
+
+        if typeof(indices[end]) == Lower
+            if length(indices) == 2
+                argstr *= to_std_string(t, transpose)
+            elseif length(indices) == 1
+                argstr *= to_std_string(t, !transpose)
+            else
+                throw_not_std()
+            end
+        else
+            argstr *= to_std_string(t, transpose)
+        end
+    end
+
+    if trace
+        argstr = "tr(" * argstr * ")"
+    end
+
+    return argstr
 end
