@@ -249,6 +249,11 @@ function eliminate_indices(arg::IndexList)
     return first(_eliminate_indices(arg))
 end
 
+function eliminated_indices(arg::IndexList)
+    remaining = first(_eliminate_indices(arg))
+    return setdiff(arg, remaining)
+end
+
 function eliminate_indices(arg1::IndexList, arg2::IndexList)
     return first(_eliminate_indices(arg1, arg2))
 end
