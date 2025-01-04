@@ -615,6 +615,14 @@ function get_free_indices(arg::Adjoint)
     return reverse(LowerOrUpperIndex[i for i ∈ free_indices])
 end
 
+function _get_indices(arg::Adjoint)
+    free_indices = _get_indices(arg.expr)
+
+    @assert length(free_indices) <= 2
+
+    return reverse(LowerOrUpperIndex[i for i ∈ free_indices])
+end
+
 function adjoint(arg::T) where T <: UnaryOperation
     return T(arg.arg')
 end
@@ -770,6 +778,6 @@ function to_string(arg::BinaryOperation{Sub})
     return to_string(arg.arg1) * " - " * parenthesize(arg.arg2)
 end
 
-function Base.show(io::IO, expr::TensorValue)
-    return print(io, to_string(expr))
-end
+# function Base.show(io::IO, expr::TensorValue)
+    # return print(io, to_string(expr))
+# end
