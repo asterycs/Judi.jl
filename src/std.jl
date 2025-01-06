@@ -165,6 +165,15 @@ function parenthesize_std(arg::BinaryOperation{Op}) where {Op <: AdditiveOperati
     return "(" * _to_std_string(arg) * ")"
 end
 
+function parenthesize_std(arg::BinaryOperation{Mult})
+    # TODO: Create separate type for elementwise
+    if is_elementwise_multiplication(arg.arg1, arg.arg2)
+        return "(" * _to_std_string(arg.arg1) * " ⊙ " * _to_std_string(arg.arg2) * ")"
+    end
+
+    return _to_std_string(arg)
+end
+
 function get_sym(arg::Tensor)
     return arg.id
 end
@@ -192,10 +201,20 @@ function _to_std_string(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
 end
 
 function _to_std_string(arg::BinaryOperation{Mult})
+    # TODO: Create separate type for elementwise
+    if is_elementwise_multiplication(arg.arg1, arg.arg2)
+        return parenthesize_std(arg.arg1) * " ⊙ " * parenthesize_std(arg.arg2)
+    end
+
     return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
 end
 
 function collect_terms(arg::BinaryOperation{Mult})
+    # TODO: Create separate type for elementwise
+    if is_elementwise_multiplication(arg.arg1, arg.arg2)
+        return [arg]
+    end
+
     return [collect_terms(arg.arg1); collect_terms(arg.arg2)]
 end
 
@@ -228,6 +247,7 @@ function is_index_order_same(terms, index_order)
     return true
 end
 
+# TODO: rename
 function is_trace2(arg)
     terms = collect_terms(arg)
     # TODO: For completeness one should actually check all contractions and make sure that there
@@ -342,6 +362,10 @@ function to_standard(arg::BinaryOperation{Op}, upper_index = nothing, lower_inde
     return BinaryOperation{Op}(to_standard(arg.arg1, upper_index, lower_index), to_standard(arg.arg2, upper_index, lower_index))
 end
 
+function to_standard(arg::Real, upper_index = nothing, lower_index = nothing)
+    return arg
+end
+
 function get_flipped(new_term, old_term)
     new_ids = get_free_indices(new_term)
     old_ids = get_free_indices(old_term)
@@ -367,11 +391,31 @@ function was_flipped(index, flips)
     return false
 end
 
-function to_standard(arg, upper_index = nothing, lower_index = nothing)
+function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_index = nothing)
     target_indices = get_free_indices(arg)
 
     if length(target_indices) > 2
         throw_not_std()
+    end
+
+    # TODO: Create separate type for elementwise
+    if is_elementwise_multiplication(arg.arg1, arg.arg2)
+        upper = nothing
+        lower = nothing
+        if target_indices[1].letter == upper_index
+            upper = target_indices[1].letter
+        end
+        if target_indices[1].letter == lower_index
+            lower = target_indices[1].letter
+        end
+        if target_indices[2].letter == upper_index
+            upper = target_indices[2].letter
+        end
+        if target_indices[2].letter == lower_index
+            lower = target_indices[2].letter
+        end
+
+        return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, upper, lower))
     end
 
     terms = collect_terms(arg)
@@ -434,6 +478,8 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
                 remaining[i] = nothing
                 break
             end
+        elseif isempty(ids)
+            # save scalars for later
         else
             throw_not_std()
         end
@@ -462,6 +508,16 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
                 end
             end
 
+            if isempty(term_indices)
+                std_term = to_standard(term)
+                flipped_indices[std_term] = get_flipped(std_term, term)
+                pushfirst!(ordered_args, std_term)
+                remaining[i] = nothing
+                break
+            end
+
+            ### Contractions
+            ################
             if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[1]
                 std_term = to_standard(term, nothing, term_indices[end].letter)
                 flipped_indices[std_term] = get_flipped(std_term, term)
@@ -549,7 +605,7 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
 end
 
 function to_std_string(arg)
-    free_indices = get_free_indices(arg)
+    free_indices = unique(get_free_indices(arg))
 
     standardized = if length(free_indices) == 2
         if typeof(free_indices[1]) == Upper && typeof(free_indices[2]) == Lower
