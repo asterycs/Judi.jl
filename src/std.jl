@@ -35,7 +35,6 @@ function derivative(expr, wrt::String)
         throw(DomainError(wrt, "Unknown symbol $wrt"))
     end
 
-    expr = drop_decorators(expr)
     D = diff(expr, ∂)
 
     return evaluate(D)
@@ -57,7 +56,7 @@ function gradient(expr, wrt::String)
     end
 
     D = derivative(expr, wrt)
-    gradient = drop_decorators(evaluate(D'))
+    gradient = evaluate(D')
 
     return gradient
 end
@@ -98,35 +97,35 @@ function hessian(expr, wrt::String)
     end
 
     D = derivative(expr, wrt)
-    g = drop_decorators(evaluate(D'))
+    g = evaluate(D')
     H = derivative(g, wrt)
 
     return H
 end
 
-function _to_std_string(arg::Tensor)
-    return arg.id
-end
-
-# function to_std_string(arg::Tensor)
-#     ids = get_free_indices(arg)
-
-#     if length(ids) == 2
-#         if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
-#             return arg.id
-#         elseif typeof(ids[1]) == Lower && typeof(ids[2]) == Upper
-#             return arg.id * "ᵀ"
-#         end
-#     elseif length(ids) == 1
-#         if typeof(ids[1]) == Upper
-#             return arg.id
-#         elseif typeof(ids[1]) == Lower
-#             return arg.id * "ᵀ"
-#         end
-#     end
-
-#     throw_not_std()
+# function _to_std_string(arg::Tensor)
+#     return arg.id
 # end
+
+function _to_std_string(arg::Tensor)
+    ids = get_free_indices(arg)
+
+    if length(ids) == 2
+        if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
+            return arg.id
+        elseif typeof(ids[1]) == Lower && typeof(ids[2]) == Upper
+            return arg.id * "ᵀ"
+        end
+    elseif length(ids) == 1
+        if typeof(ids[1]) == Upper
+            return arg.id
+        elseif typeof(ids[1]) == Lower
+            return arg.id * "ᵀ"
+        end
+    end
+
+    throw_not_std()
+end
 
 # function to_std_string(arg::KrD)
 #     if length(arg.indices) == 2
@@ -300,13 +299,13 @@ function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
             end
 
             if ids[1].letter == lower_index
-                return Adjoint(Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter)))
+                return Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter))
             end
         end
 
         if isnothing(lower_index)
             if ids[2].letter == upper_index
-                return Adjoint(Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter)))
+                return Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter))
             end
 
             if ids[1].letter == upper_index
@@ -319,7 +318,7 @@ function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
         end
 
         if upper_index == ids[2].letter && lower_index == ids[1].letter
-            return Adjoint(Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter)))
+            return Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter))
         end
     elseif length(ids) == 1
         @assert !(!isnothing(upper_index) && !isnothing(lower_index))
@@ -328,7 +327,7 @@ function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
         end
 
         if isnothing(upper_index) && ids[1].letter == lower_index
-            return Adjoint(Tensor(term.id, Lower(ids[1].letter)))
+            return Tensor(term.id, Lower(ids[1].letter))
         end
 
         if isnothing(lower_index) && ids[1].letter == upper_index
@@ -343,16 +342,8 @@ function to_standard(arg::BinaryOperation{Op}, upper_index = nothing, lower_inde
     return BinaryOperation{Op}(to_standard(arg.arg1, upper_index, lower_index), to_standard(arg.arg2, upper_index, lower_index))
 end
 
-function to_standard(arg::Adjoint, upper_index = nothing, lower_index = nothing)
-    return Adjoint(to_standard(arg.expr, upper_index, lower_index))
-end
-
 function get_flipped(new_term, old_term)
-    new_ids = if typeof(new_term) == Adjoint
-        get_free_indices(new_term.expr)
-    else
-        get_free_indices(new_term)
-    end
+    new_ids = get_free_indices(new_term)
     old_ids = get_free_indices(old_term)
 
     flipped = Dict()
@@ -422,6 +413,8 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
                 push!(ordered_args, std_term)
                 remaining[i] = nothing
             end
+
+            break
         elseif length(ids) == 1
             std_term = nothing
             if ids[1].letter == lower_index
@@ -433,6 +426,7 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
                 flipped_indices[std_term] = get_flipped(std_term, term)
                 push!(ordered_args, std_term)
                 remaining[i] = nothing
+                break
             end
         else
             throw_not_std()
@@ -478,6 +472,22 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
                 break
             end
 
+            if typeof(term_indices[end]) == Upper && flip(term_indices[end]) == fixed_indices[1]
+                if length(term_indices) == 2
+                    std_term = to_standard(term, term_indices[end].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    push!(ordered_args, std_term)
+                elseif length(term_indices) == 1
+                    std_term = to_standard(term, term_indices[end].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    push!(ordered_args, std_term)
+                else
+                    throw_not_std()
+                end
+                remaining[i] = nothing
+                break
+            end
+
             if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[end]
                 if length(term_indices) == 2
                     std_term = to_standard(term, term_indices[1].letter)
@@ -487,6 +497,22 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
                     std_term = to_standard(term, term_indices[1].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     push!(ordered_args, std_term)
+                else
+                    throw_not_std()
+                end
+                remaining[i] = nothing
+                break
+            end
+
+            if typeof(term_indices[1]) == Lower && flip(term_indices[1]) == fixed_indices[end]
+                if length(term_indices) == 2
+                    std_term = to_standard(term, nothing, term_indices[1].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    pushfirst!(ordered_args, std_term)
+                elseif length(term_indices) == 1
+                    std_term = to_standard(term, nothing, term_indices[1].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    pushfirst!(ordered_args, std_term)
                 else
                     throw_not_std()
                 end
@@ -578,10 +604,6 @@ function to_standard(arg, upper_index = nothing, lower_index = nothing)
     @assert length(ordered_expr_ids) == length(target_indices)
 
     return standardized_term
-end
-
-function _to_std_string(arg::Adjoint)
-    return parenthesize_std(arg.expr) * "ᵀ"
 end
 
 function to_std_string(arg)

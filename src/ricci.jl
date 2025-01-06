@@ -503,10 +503,31 @@ function *(arg1::Value, arg2::TensorValue)
         arg1_free_indices = get_free_indices(arg1)
     end
 
-
+    # TODO: WETWET, simplify, add e.g. get_lower(arg::IndexList) and get_upper(arg::IndexLists)
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper
         return BinaryOperation{Mult}(
             update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])),
+            arg2,
+        )
+    end
+
+    if typeof(arg1_free_indices[1]) == Lower && typeof(arg2_free_indices[1]) == Upper
+        return BinaryOperation{Mult}(
+            update_index(arg1, arg1_free_indices[1], flip(arg2_free_indices[1])),
+            arg2,
+        )
+    end
+
+    if typeof(arg1_free_indices[1]) == Lower && typeof(arg2_free_indices[end]) == Upper
+        return BinaryOperation{Mult}(
+            update_index(arg1, arg1_free_indices[1], flip(arg2_free_indices[end])),
+            arg2,
+        )
+    end
+
+    if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[end]) == Upper
+        return BinaryOperation{Mult}(
+            update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[end])),
             arg2,
         )
     end
@@ -603,26 +624,6 @@ function -(arg::TensorValue)
     return Negate(arg)
 end
 
-struct Adjoint <: TensorValue
-    expr::TensorValue
-end
-
-function get_free_indices(arg::Adjoint)
-    free_indices = get_free_indices(arg.expr)
-
-    @assert length(free_indices) <= 2
-
-    return reverse(LowerOrUpperIndex[i for i ∈ free_indices])
-end
-
-function _get_indices(arg::Adjoint)
-    free_indices = _get_indices(arg.expr)
-
-    @assert length(free_indices) <= 2
-
-    return reverse(LowerOrUpperIndex[i for i ∈ free_indices])
-end
-
 function adjoint(arg::T) where T <: UnaryOperation
     return T(arg.arg')
 end
@@ -636,7 +637,7 @@ function adjoint(arg::BinaryOperation{Mult})
         t = BinaryOperation{Mult}(t, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
-    return Adjoint(t)
+    return t
 end
 
 function adjoint(arg::BinaryOperation{Op}) where {Op}
@@ -661,7 +662,7 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
         arg2_t = BinaryOperation{Mult}(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
     end
 
-    return Adjoint(BinaryOperation{Op}(arg1_t, arg2_t))
+    return BinaryOperation{Op}(arg1_t, arg2_t)
 end
 
 function adjoint(arg::Union{Tensor,KrD,Zero})
@@ -677,7 +678,7 @@ function adjoint(arg::Union{Tensor,KrD,Zero})
         e = BinaryOperation{Mult}(e, KrD(flip(i), flip_to(i, get_next_letter())))
     end
 
-    return Adjoint(e)
+    return e
 end
 
 function script(index::Lower)
@@ -764,10 +765,6 @@ end
 
 function to_string(arg::BinaryOperation{Mult})
     return parenthesize(arg.arg1) * parenthesize(arg.arg2)
-end
-
-function to_string(arg::Adjoint)
-    return to_string(arg.expr)
 end
 
 function to_string(arg::BinaryOperation{Add})

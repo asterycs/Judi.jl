@@ -630,13 +630,12 @@ end
     @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op2.arg1, op2.arg2)
     @test typeof(op2.arg1) == yd.BinaryOperation{yd.Mult}
-    @test typeof(op2.arg1.arg1) == yd.Adjoint
-    @test typeof(op2.arg1.arg1.expr) == yd.BinaryOperation{yd.Mult}
-    @test op2.arg1.arg1.expr.arg1 == x
-    @test typeof(op2.arg1.arg1.expr.arg2) == KrD
-    @test op2.arg1.arg1.expr.arg2.indices[1] == yd.flip(x.indices[1])
+    @test typeof(op2.arg1.arg1) == yd.BinaryOperation{yd.Mult}
+    @test op2.arg1.arg1.arg1 == x
+    @test typeof(op2.arg1.arg1.arg2) == KrD
+    @test op2.arg1.arg1.arg2.indices[1] == yd.flip(x.indices[1])
     @test typeof(op2.arg1.arg2) == KrD
-    @test yd.flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.expr.arg2.indices[2]
+    @test yd.flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.arg2.indices[2]
     @test yd.flip(op2.arg1.arg2.indices[2]) == A.indices[1]
     @test op2.arg2 == A
 end

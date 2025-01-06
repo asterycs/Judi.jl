@@ -26,10 +26,6 @@ function diff(arg::Real, wrt::Tensor)
     return Zero([flip(i) for i ∈ wrt.indices]...)
 end
 
-function diff(arg::Adjoint, wrt::Tensor)
-    return diff(arg.expr, wrt)
-end
-
 function diff(arg::Negate, wrt::Tensor)
     return Negate(diff(arg.arg, wrt))
 end
@@ -53,36 +49,8 @@ function diff(arg::BinaryOperation{Op}, wrt::Tensor) where {Op<:AdditiveOperatio
     return BinaryOperation{Op}(diff(arg.arg1, wrt), diff(arg.arg2, wrt))
 end
 
-function drop_decorators(arg::BinaryOperation{Op}) where {Op}
-    return BinaryOperation{Op}(drop_decorators(arg.arg1), drop_decorators(arg.arg2))
-end
-
-function drop_decorators(arg::UnaryOp) where {UnaryOp <: UnaryOperation}
-    return UnaryOp(drop_decorators(arg.arg))
-end
-
-function drop_decorators(arg::Adjoint)
-    return arg.expr
-end
-
-function drop_decorators(arg::KrD)
-    return arg
-end
-
-function drop_decorators(arg::Tensor)
-    return arg
-end
-
-function drop_decorators(arg::Zero)
-    return arg
-end
-
 function evaluate(arg::Negate)
     return Negate(evaluate(arg.arg))
-end
-
-function evaluate(arg::Adjoint)
-    return Adjoint(evaluate(arg.expr))
 end
 
 function evaluate(arg::Union{Tensor,KrD,Zero,Real})
