@@ -775,6 +775,6 @@ function to_string(arg::BinaryOperation{Sub})
     return to_string(arg.arg1) * " - " * parenthesize(arg.arg2)
 end
 
-# function Base.show(io::IO, expr::TensorValue)
-    # return print(io, to_string(expr))
-# end
+function Base.show(io::IO, expr::TensorValue)
+    return print(io, to_string(expr))
+end
