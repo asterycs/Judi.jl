@@ -265,9 +265,9 @@ function evaluate(::Mult, arg1::KrD, arg2::Tensor)
 
     @assert length(eliminate_indices(get_free_indices(arg1), arg2_indices)) >= 1
 
-    if is_trace(arg2, arg1)
-        return BinaryOperation{Mult}(arg1, arg2)
-    end
+    # if is_trace(arg2, arg1)
+    #     return BinaryOperation{Mult}(arg1, arg2)
+    # end
 
     if is_diag(arg2, arg1)
         return BinaryOperation{Mult}(arg1, arg2)
@@ -328,9 +328,9 @@ function evaluate(::Mult, arg1::Union{Tensor,KrD}, arg2::KrD)
         return BinaryOperation{Mult}(arg1, arg2)
     end
 
-    if is_trace(arg1, arg2)
-        return BinaryOperation{Mult}(arg1, arg2)
-    end
+    # if is_trace(arg1, arg2)
+    #     return BinaryOperation{Mult}(arg1, arg2)
+    # end
 
     if is_diag(arg1, arg2)
         return BinaryOperation{Mult}(arg1, arg2)
