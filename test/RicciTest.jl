@@ -647,22 +647,34 @@ end
     @test_throws DomainError x * A
 end
 
-@testset "yd.Multiplication with adjoint matrix-matrix has correct indices" begin
+@testset "yd.Multiplication with matrix'-matrix has correct indices" begin
     A = Tensor("A", Upper(1), Lower(2))
     C = Tensor("C", Upper(3), Lower(4))
 
-    ops = (A' * C, A' * C')
+    op = A' * C
 
-    # TODO: Check also efter evaluate
-    for op ∈ ops
-        @assert typeof(op) == yd.BinaryOperation{yd.Mult}
-        op_indices = yd.get_free_indices(op)
-        @test length(op_indices) == 2
+    @assert typeof(op) == yd.BinaryOperation{yd.Mult}
+    op_indices = yd.get_free_indices(op)
+    @test length(op_indices) == 2
 
-        @test typeof(yd.get_free_indices(op.arg1)[1]) == Lower
-        @test yd.flip(yd.get_free_indices(op.arg1)[1]) == yd.get_free_indices(op.arg2)[1]
-        @test typeof(yd.get_free_indices(op.arg2)[end]) == Lower
-    end
+    @test typeof(yd.get_free_indices(op.arg1)[1]) == Lower
+    @test yd.flip(yd.get_free_indices(op.arg1)[1]) == yd.get_free_indices(op.arg2)[1]
+    @test typeof(yd.get_free_indices(op.arg2)[end]) == Lower
+end
+
+@testset "yd.Multiplication with matrix'-matrix' has correct indices" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    C = Tensor("C", Upper(3), Lower(4))
+
+    op = A' * C'
+
+    @assert typeof(op) == yd.BinaryOperation{yd.Mult}
+    op_indices = yd.get_free_indices(op)
+    @test length(op_indices) == 2
+
+    @test typeof(yd.get_free_indices(op.arg1)[1]) == Lower
+    @test yd.flip(yd.get_free_indices(op.arg1)[1]) == yd.get_free_indices(op.arg2)[2]
+    @test typeof(yd.get_free_indices(op.arg2)[end]) == Upper
 end
 
 @testset "vector inner product with mismatching indices" begin
