@@ -13,7 +13,7 @@ function diff(arg::Tensor, wrt::Tensor)
         return evaluate(D) # evaluate to get rid of the constant factor
     end
 
-    return Zero(arg.indices..., [flip(i) for i ∈ wrt.indices]...)
+    return Zero(eliminate_indices(arg.indices)..., [flip(i) for i ∈ wrt.indices]...)
 end
 
 function diff(arg::KrD, wrt::Tensor)
