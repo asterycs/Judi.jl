@@ -481,9 +481,9 @@ function *(arg1::Value, arg2::TensorValue)
         throw(DomainError(arg2, "Multiplication involving tensor \"$arg2\" is ambiguous"))
     end
 
-    if !is_valid_matrix_multiplication(arg1, arg2)
-        throw(DomainError((arg1, arg2), "Invalid matrix multiplication"))
-    end
+    # if !is_valid_matrix_multiplication(arg1, arg2)
+    #     throw(DomainError((arg1, arg2), "Invalid matrix multiplication"))
+    # end
 
     intersecting_letters = intersect(get_letters(arg1_free_indices), get_letters(arg2_free_indices))
 
