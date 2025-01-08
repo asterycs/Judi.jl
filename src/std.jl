@@ -108,7 +108,7 @@ end
 # end
 
 function _to_std_string(arg::Tensor)
-    ids = get_free_indices(arg)
+    ids = _get_indices(arg)
 
     if length(ids) == 2
         if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
@@ -121,6 +121,40 @@ function _to_std_string(arg::Tensor)
             return arg.id
         elseif typeof(ids[1]) == Lower
             return arg.id * "ᵀ"
+        end
+    end
+
+    throw_not_std()
+end
+
+function _to_std_string(arg::KrD)
+    ids = _get_indices(arg)
+
+    if length(ids) == 2
+        if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
+            return "I"
+        elseif typeof(ids[1]) == Lower && typeof(ids[2]) == Upper
+            return "Iᵀ"
+        end
+    end
+
+    throw_not_std()
+end
+
+function _to_std_string(arg::Zero)
+    ids = _get_indices(arg)
+
+    if length(ids) == 2
+        if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
+            return "mat(0)"
+        elseif typeof(ids[1]) == Lower && typeof(ids[2]) == Upper
+            return "mat(0)ᵀ"
+        end
+    elseif length(ids) == 1
+        if typeof(ids[1]) == Upper
+            return "vec(0)"
+        elseif typeof(ids[1]) == Lower
+            return "vec(0)ᵀ"
         end
     end
 
@@ -146,15 +180,15 @@ function _to_std_string(arg::Real)
 end
 
 function _to_std_string(arg::Negate)
-    return "-" * _to_std_string(arg.arg, transpose)
+    return "-" * _to_std_string(arg.arg)
 end
 
 function _to_std_string(arg::Sin)
-    return "sin(" * _to_std_string(arg.arg, transpose) * ")"
+    return "sin(" * _to_std_string(arg.arg) * ")"
 end
 
 function _to_std_string(arg::Cos)
-    return "cos(" * _to_std_string(arg.arg, transpose) * ")"
+    return "cos(" * _to_std_string(arg.arg) * ")"
 end
 
 function parenthesize_std(arg)
@@ -250,6 +284,18 @@ end
 # TODO: rename
 function is_trace2(arg)
     terms = collect_terms(arg)
+
+    if length(terms) == 1
+        ids = _get_indices(arg)
+        free_ids = get_free_indices(arg)
+
+        if length(ids) == 2 && isempty(free_ids)
+            return true
+        else
+            return false
+        end
+    end
+
     # TODO: For completeness one should actually check all contractions and make sure that there
     # are no vector'-vector products
     return all(length.(get_free_indices.(terms)) .== 2) && isempty(get_free_indices(arg))
@@ -305,6 +351,10 @@ end
 
 # end
 
+function to_standard(term::Op, upper_index = nothing, lower_index = nothing) where {Op<:UnaryOperation}
+    return Op(to_standard(term.arg, upper_index, lower_index))
+end
+
 function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
     ids = get_free_indices(term)
 
@@ -352,6 +402,136 @@ function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
 
         if isnothing(lower_index) && ids[1].letter == upper_index
             return Tensor(term.id, Upper(ids[1].letter))
+        end
+    end
+
+    # No free indices - is this a trace?
+    if is_trace2(term)
+        ids = _get_indices(term)
+
+        if typeof(ids[1]) == Upper
+            return Tensor(term.id, ids[1], Lower(ids[2].letter))
+        else typeof(ids[2]) == Lower
+            return Tensor(term.id, ids[1], Upper(ids[2].letter))
+        end
+    end
+
+    @assert false
+end
+
+# TODO: This is WETWET, combine with the above method
+function to_standard(term::Zero, upper_index = nothing, lower_index = nothing)
+    ids = get_free_indices(term)
+
+    if length(ids) == 2
+        if isnothing(upper_index) && isnothing(lower_index)
+            return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
+        end
+
+        if isnothing(upper_index)
+            if ids[2].letter == lower_index
+                return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
+            end
+
+            if ids[1].letter == lower_index
+                return Zero(Lower(ids[1].letter), Upper(ids[2].letter))
+            end
+        end
+
+        if isnothing(lower_index)
+            if ids[2].letter == upper_index
+                return Zero(Lower(ids[1].letter), Upper(ids[2].letter))
+            end
+
+            if ids[1].letter == upper_index
+                return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
+            end
+        end
+
+        if upper_index == ids[1].letter && lower_index == ids[2].letter
+            return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
+        end
+
+        if upper_index == ids[2].letter && lower_index == ids[1].letter
+            return Zero(Lower(ids[1].letter), Upper(ids[2].letter))
+        end
+    elseif length(ids) == 1
+        @assert !(!isnothing(upper_index) && !isnothing(lower_index))
+        if isnothing(upper_index) && isnothing(lower_index)
+            return Zero(Upper(ids[1].letter))
+        end
+
+        if isnothing(upper_index) && ids[1].letter == lower_index
+            return Zero(Lower(ids[1].letter))
+        end
+
+        if isnothing(lower_index) && ids[1].letter == upper_index
+            return Zero(Upper(ids[1].letter))
+        end
+    end
+
+    # No free indices - is this a trace?
+    if is_trace2(term)
+        ids = _get_indices(term)
+
+        if typeof(ids[1]) == Upper
+            return Zero(ids[1], Lower(ids[2].letter))
+        else typeof(ids[2]) == Lower
+            return Zero(ids[1], Upper(ids[2].letter))
+        end
+    end
+
+    @assert false
+end
+
+# TODO: This is WETWET, merge with the above
+function to_standard(term::KrD, upper_index = nothing, lower_index = nothing)
+    ids = get_free_indices(term)
+
+    if length(ids) == 2
+        if isnothing(upper_index) && isnothing(lower_index)
+            return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
+        end
+
+        if isnothing(upper_index)
+            if ids[2].letter == lower_index
+                return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
+            end
+
+            if ids[1].letter == lower_index
+                return KrD(Lower(ids[1].letter), Upper(ids[2].letter))
+            end
+        end
+
+        if isnothing(lower_index)
+            if ids[2].letter == upper_index
+                return KrD(Lower(ids[1].letter), Upper(ids[2].letter))
+            end
+
+            if ids[1].letter == upper_index
+                return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
+            end
+        end
+
+        if upper_index == ids[1].letter && lower_index == ids[2].letter
+            return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
+        end
+
+        if upper_index == ids[2].letter && lower_index == ids[1].letter
+            return KrD(Lower(ids[1].letter), Upper(ids[2].letter))
+        end
+    elseif length(ids) == 1
+        @assert !(!isnothing(upper_index) && !isnothing(lower_index))
+        if isnothing(upper_index) && isnothing(lower_index)
+            return KrD(Upper(ids[1].letter))
+        end
+
+        if isnothing(upper_index) && ids[1].letter == lower_index
+            return KrD(Lower(ids[1].letter))
+        end
+
+        if isnothing(lower_index) && ids[1].letter == upper_index
+            return KrD(Upper(ids[1].letter))
         end
     end
 
@@ -483,6 +663,15 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
         else
             throw_not_std()
         end
+    end
+
+    if isnothing(upper_index) && isnothing(lower_index)
+        @assert isempty(ordered_args)
+
+        std_term = to_standard(remaining[1])
+        push!(ordered_args, std_term)
+        flipped_indices[std_term] = get_flipped(std_term, remaining[1])
+        remaining[1] = nothing
     end
 
     @assert !isempty(ordered_args)
@@ -624,7 +813,7 @@ function to_std_string(arg)
             throw_not_std()
         end
     else
-        throw_not_std()
+        to_standard(arg)
     end
 
     # TODO: rename

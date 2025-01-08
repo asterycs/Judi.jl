@@ -157,11 +157,11 @@ end
     @test to_std_string(gradient(x' * x, "x")) == "2x"
     @test to_std_string(gradient(tr(x * x'), "x")) == "2x"
     @test to_std_string(gradient((y .* c)' * x, "x")) == "y ⊙ c"
-    @test to_std_string(gradient((x .* c)' * x, "x")) == "2x ⊙ c"
+    @test to_std_string(gradient((x .* c)' * x, "x")) == "2(x ⊙ c)"
     @test to_std_string(gradient((x + y)' * x, "x")) == "2x + y"
     @test to_std_string(gradient((x - y)' * x, "x")) == "2x - y"
-    @test to_std_string(gradient(sin(tr(x * x')), "x")) == "cos(xᵀx)2x"
-    @test to_std_string(gradient(cos(tr(x * x')), "x")) == "-sin(xᵀx)2x"
+    @test to_std_string(gradient(sin(tr(x * x')), "x")) == "2cos(xᵀx)x"
+    @test to_std_string(gradient(cos(tr(x * x')), "x")) == "-2sin(xᵀx)x"
     @test to_std_string(gradient(tr(A), "x")) == "vec(0)"
 end
 
