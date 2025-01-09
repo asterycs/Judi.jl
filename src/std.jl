@@ -103,10 +103,6 @@ function hessian(expr, wrt::String)
     return H
 end
 
-# function _to_std_string(arg::Tensor)
-#     return arg.id
-# end
-
 function _to_std_string(arg::Tensor)
     ids = _get_indices(arg)
 
@@ -161,20 +157,6 @@ function _to_std_string(arg::Zero)
     throw_not_std()
 end
 
-# function to_std_string(arg::KrD)
-#     if length(arg.indices) == 2
-#         if typeof(arg.indices[1]) == Upper && typeof(arg.indices[2]) == Lower
-#             return "I"
-#         end
-
-#         if typeof(arg.indices[1]) == Lower && typeof(arg.indices[2]) == Upper
-#             return "I"
-#         end
-#     end
-
-#     throw_not_std()
-# end
-
 function _to_std_string(arg::Real)
     return to_string(arg)
 end
@@ -208,10 +190,6 @@ function parenthesize_std(arg::BinaryOperation{Mult})
     return _to_std_string(arg)
 end
 
-function get_sym(arg::Tensor)
-    return arg.id
-end
-
 function throw_not_std()
     throw(DomainError("Cannot write expression in standard notation"))
 end
@@ -222,12 +200,6 @@ end
 
 function _to_std_string(::Sub)
     return "-"
-end
-
-function vectorin(a, b)
-    s = Set(b)
-
-    return [e ∈ s for e ∈ a]
 end
 
 function _to_std_string(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
@@ -256,31 +228,6 @@ function collect_terms(arg)
     return [arg]
 end
 
-function is_index_order_same(terms, index_order)
-    indices = reduce(vcat, get_free_indices.(terms))
-
-    # if length(terms) == 1
-    #     is_valid = true
-    #     for idx ∈ indices
-    #         if idx ∈ index_order
-
-    i = 1
-
-    for index ∈ indices
-        if i <= length(index_order) && index == index_order[i]
-            i += 1
-        elseif index ∈ index_order
-            return false
-        end
-    end
-
-    if i == 1
-        return false
-    end
-
-    return true
-end
-
 function is_trace(arg)
     terms = collect_terms(arg)
 
@@ -297,56 +244,6 @@ function is_trace(arg)
 
     return all(length.(get_free_indices.(terms)) .== 2) && isempty(get_free_indices(arg))
 end
-
-function _transpose(term)
-    indices = get_free_indices(term)
-
-    for index ∈ indices
-        tmp_index = flip_to(index, get_next_letter())
-        term = evaluate(update_index(reshape(term, index, tmp_index), tmp_index, flip(index)))
-    end
-
-    return term
-end
-
-function transpose_sequence(seq)
-    return collect(reverse(map(_transpose, seq)))
-end
-
-function to_matrix(term)
-    ids = get_free_indices(term)
-    return Tensor(term.id, Upper(ids[1].letter), Lower(ids[2].letter))
-end
-
-function to_matrix_t(term)
-    return _transpose(to_matrix(term))
-end
-
-function to_column_vector(term)
-    ids = get_free_indices(term)
-    return Tensor(term.id, Upper(ids[1]))
-end
-
-function to_row_vector(term)
-    return _transpose(to_column_vector(term))
-end
-
-# function to_matrix(term, left_index = nothing, right_index = nothing)
-#     ids = get_free_indices(term)
-
-#     if isnothing(left_index) && isnothing(right_index)
-#         return Tensor(term.id, Upper(ids[1]), Lower(ids[2]))
-#     end
-
-#     if isnothing(left_index)
-#         if right_index == ids[2]
-#             return Tensor(term.id, flip_to(ids[2], ids[1]), ids[2])
-#         end
-
-#         if right_index == ids[1]
-#             return Tensor(term.id, )
-
-# end
 
 function to_standard(term::Op, upper_index = nothing, lower_index = nothing) where {Op<:UnaryOperation}
     return Op(to_standard(term.arg, upper_index, lower_index))
