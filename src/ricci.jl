@@ -584,7 +584,7 @@ function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
     return BinaryOperation{op}(arg1, arg2)
 end
 
-function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
+function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex; allow_shape_change = false)
     indices = get_free_indices(arg)
 
     if from == to
@@ -592,19 +592,12 @@ function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUppe
     end
 
     @assert from ∈ indices
-    @assert typeof(from) != typeof(flip(to)) "update_index shall not transpose"
 
-    return BinaryOperation{Mult}(arg, KrD(flip(from), to))
-end
-
-function reshape(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex)
-    indices = get_free_indices(arg)
-
-    if from == to
-        return arg
+    if !allow_shape_change
+        if typeof(from) != typeof(to)
+            throw(DomainError("A shape change is not permitted"))
+        end
     end
-
-    @assert from ∈ indices
 
     return BinaryOperation{Mult}(arg, KrD(flip(from), to))
 end

@@ -114,8 +114,8 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
         new_index = new_index[1]
         old_index = old_index[1]
 
-        arg1 = evaluate(reshape(get_tensor(arg1.arg1, arg1.arg2), old_index, new_index))
-        arg2 = evaluate(reshape(arg2, flip(old_index), new_index))
+        arg1 = evaluate(update_index(get_tensor(arg1.arg1, arg1.arg2), old_index, new_index, allow_shape_change=true))
+        arg2 = evaluate(update_index(arg2, flip(old_index), new_index, allow_shape_change=true))
 
         return BinaryOperation{Mult}(arg1, arg2)
     elseif can_contract(arg1.arg2, arg2) && !is_elementwise
