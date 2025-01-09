@@ -246,57 +246,69 @@ function is_trace(arg)
     return all(length.(get_free_indices.(terms)) .== 2) && isempty(get_free_indices(arg))
 end
 
+function reshape(term::Tensor, indices::LowerOrUpperIndex...)
+    return Tensor(term.id, indices...)
+end
+
+function reshape(term::Zero, indices::LowerOrUpperIndex...)
+    return Zero(indices...)
+end
+
+function reshape(term::KrD, indices::LowerOrUpperIndex...)
+    return KrD(indices...)
+end
+
 function to_standard(term::Op, upper_index = nothing, lower_index = nothing) where {Op<:UnaryOperation}
     return Op(to_standard(term.arg, upper_index, lower_index))
 end
 
-function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
+function to_standard(term, upper_index = nothing, lower_index = nothing)
     ids = get_free_indices(term)
 
     if length(ids) == 2
         if isnothing(upper_index) && isnothing(lower_index)
-            return Tensor(term.id, Upper(ids[1].letter), Lower(ids[2].letter))
+            return reshape(term, Upper(ids[1].letter), Lower(ids[2].letter))
         end
 
         if isnothing(upper_index)
             if ids[2].letter == lower_index
-                return Tensor(term.id, Upper(ids[1].letter), Lower(ids[2].letter))
+                return reshape(term, Upper(ids[1].letter), Lower(ids[2].letter))
             end
 
             if ids[1].letter == lower_index
-                return Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter))
+                return reshape(term, Lower(ids[1].letter), Upper(ids[2].letter))
             end
         end
 
         if isnothing(lower_index)
             if ids[2].letter == upper_index
-                return Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter))
+                return reshape(term, Lower(ids[1].letter), Upper(ids[2].letter))
             end
 
             if ids[1].letter == upper_index
-                return Tensor(term.id, Upper(ids[1].letter), Lower(ids[2].letter))
+                return reshape(term, Upper(ids[1].letter), Lower(ids[2].letter))
             end
         end
 
         if upper_index == ids[1].letter && lower_index == ids[2].letter
-            return Tensor(term.id, Upper(ids[1].letter), Lower(ids[2].letter))
+            return reshape(term, Upper(ids[1].letter), Lower(ids[2].letter))
         end
 
         if upper_index == ids[2].letter && lower_index == ids[1].letter
-            return Tensor(term.id, Lower(ids[1].letter), Upper(ids[2].letter))
+            return reshape(term, Lower(ids[1].letter), Upper(ids[2].letter))
         end
     elseif length(ids) == 1
         @assert !(!isnothing(upper_index) && !isnothing(lower_index))
         if isnothing(upper_index) && isnothing(lower_index)
-            return Tensor(term.id, Upper(ids[1].letter))
+            return reshape(term, Upper(ids[1].letter))
         end
 
         if isnothing(upper_index) && ids[1].letter == lower_index
-            return Tensor(term.id, Lower(ids[1].letter))
+            return reshape(term, Lower(ids[1].letter))
         end
 
         if isnothing(lower_index) && ids[1].letter == upper_index
-            return Tensor(term.id, Upper(ids[1].letter))
+            return reshape(term, Upper(ids[1].letter))
         end
     end
 
@@ -305,132 +317,13 @@ function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
         ids = get_indices(term)
 
         if typeof(ids[1]) == Upper
-            return Tensor(term.id, ids[1], Lower(ids[2].letter))
+            return reshape(term, ids[1], Lower(ids[2].letter))
         else typeof(ids[2]) == Lower
-            return Tensor(term.id, ids[1], Upper(ids[2].letter))
+            return reshape(term, ids[1], Upper(ids[2].letter))
         end
     end
 
-    @assert false
-end
-
-# TODO: This is WETWET, combine with the above method
-function to_standard(term::Zero, upper_index = nothing, lower_index = nothing)
-    ids = get_free_indices(term)
-
-    if length(ids) == 2
-        if isnothing(upper_index) && isnothing(lower_index)
-            return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
-        end
-
-        if isnothing(upper_index)
-            if ids[2].letter == lower_index
-                return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
-            end
-
-            if ids[1].letter == lower_index
-                return Zero(Lower(ids[1].letter), Upper(ids[2].letter))
-            end
-        end
-
-        if isnothing(lower_index)
-            if ids[2].letter == upper_index
-                return Zero(Lower(ids[1].letter), Upper(ids[2].letter))
-            end
-
-            if ids[1].letter == upper_index
-                return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
-            end
-        end
-
-        if upper_index == ids[1].letter && lower_index == ids[2].letter
-            return Zero(Upper(ids[1].letter), Lower(ids[2].letter))
-        end
-
-        if upper_index == ids[2].letter && lower_index == ids[1].letter
-            return Zero(Lower(ids[1].letter), Upper(ids[2].letter))
-        end
-    elseif length(ids) == 1
-        @assert !(!isnothing(upper_index) && !isnothing(lower_index))
-        if isnothing(upper_index) && isnothing(lower_index)
-            return Zero(Upper(ids[1].letter))
-        end
-
-        if isnothing(upper_index) && ids[1].letter == lower_index
-            return Zero(Lower(ids[1].letter))
-        end
-
-        if isnothing(lower_index) && ids[1].letter == upper_index
-            return Zero(Upper(ids[1].letter))
-        end
-    end
-
-    # No free indices - check if this is this a trace
-    if is_trace(term)
-        ids = get_indices(term)
-
-        if typeof(ids[1]) == Upper
-            return Zero(ids[1], Lower(ids[2].letter))
-        else typeof(ids[2]) == Lower
-            return Zero(ids[1], Upper(ids[2].letter))
-        end
-    end
-
-    @assert false
-end
-
-# TODO: This is WETWET, merge with the above
-function to_standard(term::KrD, upper_index = nothing, lower_index = nothing)
-    ids = get_free_indices(term)
-
-    if length(ids) == 2
-        if isnothing(upper_index) && isnothing(lower_index)
-            return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
-        end
-
-        if isnothing(upper_index)
-            if ids[2].letter == lower_index
-                return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
-            end
-
-            if ids[1].letter == lower_index
-                return KrD(Lower(ids[1].letter), Upper(ids[2].letter))
-            end
-        end
-
-        if isnothing(lower_index)
-            if ids[2].letter == upper_index
-                return KrD(Lower(ids[1].letter), Upper(ids[2].letter))
-            end
-
-            if ids[1].letter == upper_index
-                return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
-            end
-        end
-
-        if upper_index == ids[1].letter && lower_index == ids[2].letter
-            return KrD(Upper(ids[1].letter), Lower(ids[2].letter))
-        end
-
-        if upper_index == ids[2].letter && lower_index == ids[1].letter
-            return KrD(Lower(ids[1].letter), Upper(ids[2].letter))
-        end
-    elseif length(ids) == 1
-        @assert !(!isnothing(upper_index) && !isnothing(lower_index))
-        if isnothing(upper_index) && isnothing(lower_index)
-            return KrD(Upper(ids[1].letter))
-        end
-
-        if isnothing(upper_index) && ids[1].letter == lower_index
-            return KrD(Lower(ids[1].letter))
-        end
-
-        if isnothing(lower_index) && ids[1].letter == upper_index
-            return KrD(Upper(ids[1].letter))
-        end
-    end
-
-    @assert false
+    throw_not_std()
 end
 
 function to_standard(arg::BinaryOperation{Op}, upper_index = nothing, lower_index = nothing) where {Op<:AdditiveOperation}
