@@ -173,27 +173,6 @@ function _to_std_string(arg::Cos)
     return "cos(" * _to_std_string(arg.arg) * ")"
 end
 
-function parenthesize_std(arg)
-    return _to_std_string(arg)
-end
-
-function parenthesize_std(arg::BinaryOperation{Op}) where {Op <: AdditiveOperation}
-    return "(" * _to_std_string(arg) * ")"
-end
-
-function parenthesize_std(arg::BinaryOperation{Mult})
-    # TODO: Create separate type for elementwise
-    if is_elementwise_multiplication(arg.arg1, arg.arg2)
-        return "(" * _to_std_string(arg.arg1) * " ⊙ " * _to_std_string(arg.arg2) * ")"
-    end
-
-    return _to_std_string(arg)
-end
-
-function throw_not_std()
-    throw(DomainError("Cannot write expression in standard notation"))
-end
-
 function _to_std_string(::Add)
     return "+"
 end
@@ -213,6 +192,28 @@ function _to_std_string(arg::BinaryOperation{Mult})
     end
 
     return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
+end
+
+
+function parenthesize_std(arg)
+    return _to_std_string(arg)
+end
+
+function parenthesize_std(arg::BinaryOperation{Op}) where {Op <: AdditiveOperation}
+    return "(" * _to_std_string(arg) * ")"
+end
+
+function parenthesize_std(arg::BinaryOperation{Mult})
+    # TODO: Create separate type for elementwise
+    if is_elementwise_multiplication(arg.arg1, arg.arg2)
+        return "(" * _to_std_string(arg.arg1) * " ⊙ " * _to_std_string(arg.arg2) * ")"
+    end
+
+    return _to_std_string(arg)
+end
+
+function throw_not_std()
+    throw(DomainError("Cannot write expression in standard notation"))
 end
 
 function collect_terms(arg::BinaryOperation{Mult})
