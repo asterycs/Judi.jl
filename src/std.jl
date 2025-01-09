@@ -281,8 +281,7 @@ function is_index_order_same(terms, index_order)
     return true
 end
 
-# TODO: rename
-function is_trace2(arg)
+function is_trace(arg)
     terms = collect_terms(arg)
 
     if length(terms) == 1
@@ -405,8 +404,8 @@ function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
         end
     end
 
-    # No free indices - is this a trace?
-    if is_trace2(term)
+    # No free indices - check if this is this a trace
+    if is_trace(term)
         ids = _get_indices(term)
 
         if typeof(ids[1]) == Upper
@@ -470,8 +469,8 @@ function to_standard(term::Zero, upper_index = nothing, lower_index = nothing)
         end
     end
 
-    # No free indices - is this a trace?
-    if is_trace2(term)
+    # No free indices - check if this is this a trace
+    if is_trace(term)
         ids = _get_indices(term)
 
         if typeof(ids[1]) == Upper
@@ -816,8 +815,7 @@ function to_std_string(arg)
         to_standard(arg)
     end
 
-    # TODO: rename
-    trace = is_trace2(arg)
+    trace = is_trace(arg)
 
     argstr = _to_std_string(standardized)
 
