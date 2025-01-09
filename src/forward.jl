@@ -129,16 +129,6 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
     end
 end
 
-function is_trace(arg1::TensorValue, arg2::KrD)
-    arg1_indices = get_free_indices(arg1)
-
-    if flip(arg2.indices[1]) ∈ arg1_indices && flip(arg2.indices[2]) ∈ arg1_indices
-        return true
-    end
-
-    return false
-end
-
 function can_collapse(arg1::Tensor, arg2::KrD)
     return can_collapse(arg2, arg1)
 end
@@ -265,10 +255,6 @@ function evaluate(::Mult, arg1::KrD, arg2::Tensor)
 
     @assert length(eliminate_indices(get_free_indices(arg1), arg2_indices)) >= 1
 
-    # if is_trace(arg2, arg1)
-    #     return BinaryOperation{Mult}(arg1, arg2)
-    # end
-
     if is_diag(arg2, arg1)
         return BinaryOperation{Mult}(arg1, arg2)
     end
@@ -327,10 +313,6 @@ function evaluate(::Mult, arg1::Union{Tensor,KrD}, arg2::KrD)
     if isempty(contracting_index) # Is an outer product
         return BinaryOperation{Mult}(arg1, arg2)
     end
-
-    # if is_trace(arg1, arg2)
-    #     return BinaryOperation{Mult}(arg1, arg2)
-    # end
 
     if is_diag(arg1, arg2)
         return BinaryOperation{Mult}(arg1, arg2)

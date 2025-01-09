@@ -196,15 +196,6 @@ end
           yd.BinaryOperation{yd.Mult}(A, Tensor("x", Lower(4)))
 end
 
-@testset "is_trace output is correct" begin
-    A = Tensor("A", Upper(1), Lower(2))
-    d = KrD(Upper(2), Lower(1))
-    d2 = KrD(Upper(2), Lower(3))
-
-    @test yd.is_trace(A, d)
-    @test !yd.is_trace(A, d2)
-end
-
 @testset "diff Tensor" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(3))
