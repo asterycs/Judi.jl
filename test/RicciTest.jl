@@ -296,7 +296,7 @@ end
     @test yd.is_contraction_unambigous(x, A)
 end
 
-@testset "yd.Multiplication with matching indices" begin
+@testset "Multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     A = Tensor("A", Upper(1), Lower(2))
@@ -307,7 +307,7 @@ end
     @test A * B == yd.BinaryOperation{yd.Mult}(A, B)
 end
 
-@testset "yd.Multiplication with ambigous input fails" begin
+@testset "Multiplication with ambigous input fails" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     z = Tensor("z", Upper(1))
@@ -319,7 +319,7 @@ end
     @test_throws DomainError A * A
 end
 
-@testset "yd.Multiplication with scalars" begin
+@testset "Multiplication with scalars" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     A = Tensor("A", Upper(1), Lower(2), Lower(3))
@@ -334,7 +334,7 @@ end
     end
 end
 
-@testset "elementwise yd.Multiplication matrix-matrix" begin
+@testset "elementwise multiplication matrix-matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(3), Lower(4))
 
@@ -357,7 +357,7 @@ end
     @test equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
 end
 
-@testset "elementwise yd.Multiplication vector-vector" begin
+@testset "elementwise multiplication vector-vector" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
 
@@ -380,7 +380,7 @@ end
     @test equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
 end
 
-@testset "elementwise yd.Multiplication with ambiguous input fails" begin
+@testset "elementwise multiplication with ambiguous input fails" begin
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(3), Lower(4))
     B = Tensor("B", Upper(5), Upper(6))
@@ -594,7 +594,7 @@ end
     @test yd.can_contract(z, A)
 end
 
-@testset "yd.Multiplication with non-matching indices matrix-vector" begin
+@testset "Multiplication with non-matching indices matrix-vector" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -620,14 +620,14 @@ end
     @test op2.arg2 == A
 end
 
-@testset "yd.Multiplication with non-compatible matrix-vector fails" begin
+@testset "Multiplication with non-compatible matrix-vector fails" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
     @test_throws DomainError x * A
 end
 
-@testset "yd.Multiplication with matrix'-matrix has correct indices" begin
+@testset "Multiplication with matrix'-matrix has correct indices" begin
     A = Tensor("A", Upper(1), Lower(2))
     C = Tensor("C", Upper(3), Lower(4))
 
@@ -642,7 +642,7 @@ end
     @test typeof(yd.get_free_indices(op.arg2)[end]) == Lower
 end
 
-@testset "yd.Multiplication with matrix'-matrix' has correct indices" begin
+@testset "Multiplication with matrix'-matrix' has correct indices" begin
     A = Tensor("A", Upper(1), Lower(2))
     C = Tensor("C", Upper(3), Lower(4))
 
@@ -676,7 +676,7 @@ end
     @test op2.arg2 == x
 end
 
-@testset "yd.Multiplication with non-matching indices scalar-matrix" begin
+@testset "Multiplication with non-matching indices scalar-matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
     z = Tensor("z")
 
@@ -694,7 +694,7 @@ end
     @test op2.arg2 == A
 end
 
-@testset "yd.Multiplication with non-matching indices scalar-vector" begin
+@testset "Multiplication with non-matching indices scalar-vector" begin
     x = Tensor("x", Upper(3))
     z = Tensor("z")
 
