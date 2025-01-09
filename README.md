@@ -45,12 +45,16 @@ to_std_string(jacobian(A * x, "x")) # "A"
 The method `derivative` can be used to compute arbitrary derivatives.
 
 ```julia
-to_std_string(derivative(A, "A")) # "I ⊗ I"
+to_std_string(derivative(tr(A), "A")) # "I"
 ```
 The method `to_std_string` will throw an exception when given an expression that that cannot be converted to
 standard notation.
 
 There be dragons! Issues are welcome.
+
+### Supported operators
+
+`tr`, `sin`, `cos`, `+`, `-`, `*`, `'`, `.*`
 
 ### Installation
 
