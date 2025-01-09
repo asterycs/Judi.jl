@@ -295,8 +295,6 @@ function is_trace(arg)
         end
     end
 
-    # TODO: For completeness one should actually check all contractions and make sure that there
-    # are no vector'-vector products
     return all(length.(get_free_indices.(terms)) .== 2) && isempty(get_free_indices(arg))
 end
 
