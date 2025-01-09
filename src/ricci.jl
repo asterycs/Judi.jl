@@ -407,13 +407,6 @@ function is_contraction_unambigous(arg1, arg2)
     return false
 end
 
-function is_valid_matrix_multiplication(arg1, arg2)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    return typeof(flip(arg1_indices[end])) == typeof(arg2_indices[1])
-end
-
 function tr(arg::TensorValue)
     free_ids = get_free_indices(arg)
 
@@ -480,10 +473,6 @@ function *(arg1::Value, arg2::TensorValue)
     if length(arg2_free_indices) > 2
         throw(DomainError(arg2, "Multiplication involving tensor \"$arg2\" is ambiguous"))
     end
-
-    # if !is_valid_matrix_multiplication(arg1, arg2)
-    #     throw(DomainError((arg1, arg2), "Invalid matrix multiplication"))
-    # end
 
     intersecting_letters = intersect(get_letters(arg1_free_indices), get_letters(arg2_free_indices))
 

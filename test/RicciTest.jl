@@ -296,26 +296,6 @@ end
     @test yd.is_contraction_unambigous(x, A)
 end
 
-@testset "is_valid_matrix_multiplication fails with invalid input" begin
-    A = Tensor("A", Upper(1), Lower(2))
-    x = Tensor("x", Upper(1))
-    y = Tensor("y", Lower(2))
-
-    @test !yd.is_valid_matrix_multiplication(x, A)
-    @test !yd.is_valid_matrix_multiplication(A, y)
-end
-
-@testset "is_valid_matrix_multiplication succeeds with valid input" begin
-    A = Tensor("A", Upper(1), Lower(2))
-    x = Tensor("x", Upper(2))
-    y = Tensor("y", Lower(1))
-    z = Tensor("z", Lower(2))
-
-    @test yd.is_valid_matrix_multiplication(A, x)
-    @test yd.is_valid_matrix_multiplication(y, A)
-    @test yd.is_valid_matrix_multiplication(x, z)
-end
-
 @testset "yd.Multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
