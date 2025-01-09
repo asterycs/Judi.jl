@@ -104,7 +104,7 @@ function hessian(expr, wrt::String)
 end
 
 function _to_std_string(arg::Tensor)
-    ids = _get_indices(arg)
+    ids = get_indices(arg)
 
     if length(ids) == 2
         if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
@@ -124,7 +124,7 @@ function _to_std_string(arg::Tensor)
 end
 
 function _to_std_string(arg::KrD)
-    ids = _get_indices(arg)
+    ids = get_indices(arg)
 
     if length(ids) == 2
         if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
@@ -138,7 +138,7 @@ function _to_std_string(arg::KrD)
 end
 
 function _to_std_string(arg::Zero)
-    ids = _get_indices(arg)
+    ids = get_indices(arg)
 
     if length(ids) == 2
         if typeof(ids[1]) == Upper && typeof(ids[2]) == Lower
@@ -232,7 +232,7 @@ function is_trace(arg)
     terms = collect_terms(arg)
 
     if length(terms) == 1
-        ids = _get_indices(arg)
+        ids = get_indices(arg)
         free_ids = get_free_indices(arg)
 
         if length(ids) == 2 && isempty(free_ids)
@@ -301,7 +301,7 @@ function to_standard(term::Tensor, upper_index = nothing, lower_index = nothing)
 
     # No free indices - check if this is this a trace
     if is_trace(term)
-        ids = _get_indices(term)
+        ids = get_indices(term)
 
         if typeof(ids[1]) == Upper
             return Tensor(term.id, ids[1], Lower(ids[2].letter))
@@ -366,7 +366,7 @@ function to_standard(term::Zero, upper_index = nothing, lower_index = nothing)
 
     # No free indices - check if this is this a trace
     if is_trace(term)
-        ids = _get_indices(term)
+        ids = get_indices(term)
 
         if typeof(ids[1]) == Upper
             return Zero(ids[1], Lower(ids[2].letter))
