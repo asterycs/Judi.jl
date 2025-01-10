@@ -498,30 +498,38 @@ function *(arg1::Value, arg2::TensorValue)
 
     # TODO: WETWET, simplify, add e.g. get_lower(arg::IndexList) and get_upper(arg::IndexLists)
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper
+        new_letter = get_next_letter()
+
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[1])),
-            arg2,
+            update_index(arg1, arg1_free_indices[end], same_to(arg1_free_indices[end], new_letter)),
+            update_index(arg2, arg2_free_indices[1], same_to(arg2_free_indices[1], new_letter)),
         )
     end
 
     if typeof(arg1_free_indices[1]) == Lower && typeof(arg2_free_indices[1]) == Upper
+        new_letter = get_next_letter()
+
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[1], flip(arg2_free_indices[1])),
-            arg2,
+            update_index(arg1, arg1_free_indices[1], same_to(arg1_free_indices[1], new_letter)),
+            update_index(arg2, arg2_free_indices[1], same_to(arg2_free_indices[1], new_letter))
         )
     end
 
     if typeof(arg1_free_indices[1]) == Lower && typeof(arg2_free_indices[end]) == Upper
+        new_letter = get_next_letter()
+
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[1], flip(arg2_free_indices[end])),
-            arg2,
+            update_index(arg1, arg1_free_indices[1], same_to(arg1_free_indices[1], new_letter)),
+            update_index(arg2, arg2_free_indices[end], same_to(arg2_free_indices[end], new_letter)),
         )
     end
 
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[end]) == Upper
+        new_letter = get_next_letter()
+
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[end], flip(arg2_free_indices[end])),
-            arg2,
+            update_index(arg1, arg1_free_indices[end], same_to(arg1_free_indices[end], new_letter)),
+            update_index(arg2, arg2_free_indices[end], same_to(arg2_free_indices[end], new_letter))
         )
     end
 

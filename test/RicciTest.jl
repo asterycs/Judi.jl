@@ -86,11 +86,13 @@ end
     a = KrD(Upper(1), Lower(2))
     b = Tensor("b", Upper(2))
 
-    left = sin(a * b)
+    inner = a * b
 
-    @test left == yd.Sin(a * b)
-    @test left != yd.Cos(a * b)
-    @test left != -yd.Sin(a * b)
+    left = sin(inner)
+
+    @test left == yd.Sin(inner)
+    @test left != yd.Cos(inner)
+    @test left != -yd.Sin(inner)
 end
 
 @testset "is_permutation true positive" begin
@@ -296,18 +298,18 @@ end
     @test yd.is_contraction_unambigous(x, A)
 end
 
-@testset "Multiplication with matching indices" begin
+@testset "multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test A * x == yd.BinaryOperation{yd.Mult}(A, x)
-    @test y * A == yd.BinaryOperation{yd.Mult}(y, A)
-    @test A * B == yd.BinaryOperation{yd.Mult}(A, B)
+    @test yd.get_free_indices(A * x) == yd.get_free_indices(yd.BinaryOperation{yd.Mult}(A, x))
+    @test yd.get_free_indices(y * A) == yd.get_free_indices(yd.BinaryOperation{yd.Mult}(y, A))
+    @test yd.get_free_indices(A * B) == yd.get_free_indices(yd.BinaryOperation{yd.Mult}(A, B))
 end
 
-@testset "Multiplication with ambigous input fails" begin
+@testset "multiplication with ambigous input fails" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     z = Tensor("z", Upper(1))
@@ -319,7 +321,7 @@ end
     @test_throws DomainError A * A
 end
 
-@testset "Multiplication with scalars" begin
+@testset "multiplication with scalars" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
     A = Tensor("A", Upper(1), Lower(2), Lower(3))
@@ -467,7 +469,7 @@ end
         op2 = evaluate(op(x)')
 
         @test typeof(op1) == type
-        @test evaluate(op1.arg) == y * x
+        @test yd.get_free_indices(op1.arg) == yd.get_free_indices(y * x)
         @test equivalent(evaluate(op2).arg, Tensor("x", Lower(1)))
     end
 end
@@ -594,7 +596,7 @@ end
     @test yd.can_contract(z, A)
 end
 
-@testset "Multiplication with non-matching indices matrix-vector" begin
+@testset "multiplication with non-matching indices matrix-vector" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
@@ -602,32 +604,23 @@ end
 
     @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == yd.BinaryOperation{yd.Mult}
-    @test op1.arg2 == x
+    @test yd.get_free_indices(op1) == yd.LowerOrUpperIndex[Upper(1)]
 
     op2 = x' * A
 
     @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == yd.BinaryOperation{yd.Mult}
-    @test typeof(op2.arg1.arg1) == yd.BinaryOperation{yd.Mult}
-    @test op2.arg1.arg1.arg1 == x
-    @test typeof(op2.arg1.arg1.arg2) == KrD
-    @test op2.arg1.arg1.arg2.indices[1] == yd.flip(x.indices[1])
-    @test typeof(op2.arg1.arg2) == KrD
-    @test yd.flip(op2.arg1.arg2.indices[1]) == op2.arg1.arg1.arg2.indices[2]
-    @test yd.flip(op2.arg1.arg2.indices[2]) == A.indices[1]
-    @test op2.arg2 == A
+    @test yd.get_free_indices(op2) == yd.LowerOrUpperIndex[Lower(2)]
 end
 
-@testset "Multiplication with non-compatible matrix-vector fails" begin
+@testset "multiplication with non-compatible matrix-vector fails" begin
     x = Tensor("x", Upper(3))
     A = Tensor("A", Upper(1), Lower(2))
 
     @test_throws DomainError x * A
 end
 
-@testset "Multiplication with matrix'-matrix has correct indices" begin
+@testset "multiplication with matrix'-matrix has correct indices" begin
     A = Tensor("A", Upper(1), Lower(2))
     C = Tensor("C", Upper(3), Lower(4))
 
@@ -642,7 +635,7 @@ end
     @test typeof(yd.get_free_indices(op.arg2)[end]) == Lower
 end
 
-@testset "Multiplication with matrix'-matrix' has correct indices" begin
+@testset "multiplication with matrix'-matrix' has correct indices" begin
     A = Tensor("A", Upper(1), Lower(2))
     C = Tensor("C", Upper(3), Lower(4))
 
@@ -665,18 +658,16 @@ end
 
     @test typeof(op1) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op1.arg1, op1.arg2)
-    @test typeof(op1.arg1) == yd.BinaryOperation{yd.Mult}
-    @test op1.arg2 == y
+    @test isempty(yd.get_free_indices(op1))
 
     op2 = y' * x
 
     @test typeof(op2) == yd.BinaryOperation{yd.Mult}
     @test yd.can_contract(op2.arg1, op2.arg2)
-    @test typeof(op2.arg1) == yd.BinaryOperation{yd.Mult}
-    @test op2.arg2 == x
+    @test isempty(yd.get_free_indices(op2))
 end
 
-@testset "Multiplication with non-matching indices scalar-matrix" begin
+@testset "multiplication with non-matching indices scalar-matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
     z = Tensor("z")
 
@@ -694,7 +685,7 @@ end
     @test op2.arg2 == A
 end
 
-@testset "Multiplication with non-matching indices scalar-vector" begin
+@testset "multiplication with non-matching indices scalar-vector" begin
     x = Tensor("x", Upper(3))
     z = Tensor("z")
 
