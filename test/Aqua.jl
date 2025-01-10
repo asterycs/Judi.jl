@@ -1,4 +1,4 @@
-using Yodi
+using Judi
 using Aqua
 
-Aqua.test_all(Yodi)
+Aqua.test_all(Judi)

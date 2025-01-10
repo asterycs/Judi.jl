@@ -1,8 +1,8 @@
-# Yodi.jl
+# Judi.jl
 
-_<ins>Y</ins>et an<ins>o</ins>ther <ins>di</ins>fferentiation library_
+_<ins>J</ins>ust a <ins>di</ins>fferentiation library_
 
-[![Run tests](https://github.com/asterycs/Yodi.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/asterycs/Yodi.jl/actions/workflows/CI.yml)
+[![Run tests](https://github.com/asterycs/Judi.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/asterycs/Judi.jl/actions/workflows/CI.yml)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 ## Symbolic differentiation of vector/matrix/tensor expressions in Julia
@@ -14,7 +14,7 @@ This library computes symbolic derivatives of expressions involving vectors and 
 Create a matrix and a vector:
 
 ```julia
-using Yodi
+using Judi
 
 A = create_matrix("A")
 x = create_vector("x")
@@ -61,7 +61,7 @@ There be dragons! Issues are welcome.
 This library is not yet published in the general registry. To install it directly from Github:
 
 ```julia
-using Pkg; Pkg.add("https://github.com/asterycs/Yodi.jl.git")
+using Pkg; Pkg.add("https://github.com/asterycs/Judi.jl.git")
 ```
 
 ### Acknowledgements
