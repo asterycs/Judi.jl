@@ -7,7 +7,7 @@ _<ins>J</ins>ust a <ins>di</ins>fferentiation library_
 
 ## Symbolic differentiation of vector/matrix/tensor expressions in Julia
 
-This library computes symbolic derivatives of expressions involving vectors and matrices from Julia syntax.
+#### This package is still under development - there be dragons. Issues are welcome.
 
 ### Example
 
@@ -49,8 +49,6 @@ to_std_string(derivative(tr(A), "A")) # "I"
 ```
 The method `to_std_string` will throw an exception when given an expression that that cannot be converted to
 standard notation.
-
-There be dragons! Issues are welcome.
 
 ### Supported operators
 
