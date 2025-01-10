@@ -422,6 +422,7 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                 flipped_indices[std_term] = get_flipped(std_term, term)
                 push!(ordered_args, std_term)
                 remaining[i] = nothing
+                break
             elseif ids[1].letter == lower_index || ids[2].letter == upper_index
                 std_term = nothing
                 if !isnothing(upper_index) && !isnothing(lower_index)
@@ -434,9 +435,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                 flipped_indices[std_term] = get_flipped(std_term, term)
                 push!(ordered_args, std_term)
                 remaining[i] = nothing
+                break
             end
-
-            break
         elseif length(ids) == 1
             std_term = nothing
             if ids[1].letter == lower_index
