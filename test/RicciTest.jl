@@ -712,6 +712,14 @@ end
     @test op2.arg2 == z
 end
 
+@testset "multiplication with adjoint and adjoint of multiplication is equal" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
+
+    @test yd.get_free_indices(x' * A') == yd.get_free_indices((A * x)')
+    @test yd.get_free_indices(x' * A) == yd.get_free_indices((A' * x)')
+end
+
 @testset "to_string output is correct for primitive types" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(1), Upper(2), Upper(3), Lower(4), Upper(5), Lower(6), Lower(7))

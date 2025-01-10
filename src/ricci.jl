@@ -615,44 +615,33 @@ function adjoint(arg::T) where T <: UnaryOperation
 end
 
 function adjoint(arg::BinaryOperation{Mult})
-    free_ids = get_free_indices(arg)
-
-    t = arg
-
-    for i ∈ union(free_ids)
-        t = BinaryOperation{Mult}(t, KrD(flip(i), flip_to(i, get_next_letter())))
-    end
-
-    return t
+    return BinaryOperation{Mult}(adjoint(arg.arg2), adjoint(arg.arg1))
 end
 
 function adjoint(arg::BinaryOperation{Op}) where {Op}
-    arg1_ids = get_free_indices(arg.arg1)
-    arg2_ids = get_free_indices(arg.arg2)
+    arg1_ids = unique(get_free_indices(arg.arg1))
+    arg2_ids = unique(get_free_indices(arg.arg2))
 
     @assert length(unique(arg1_ids)) == length(unique(arg2_ids))
-
-    new_ids = [get_next_letter() for _ ∈ 1:length(unique(arg1_ids))]
-
-    arg1_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg1_ids), new_ids)))
-    arg2_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg2_ids), new_ids)))
 
     arg1_t = arg.arg1
     arg2_t = arg.arg2
 
-    for index ∈ unique(arg1_ids)
-        arg1_t = BinaryOperation{Mult}(arg1_t, KrD(flip(index), flip_to(index, arg1_index_map[index])))
+    for i ∈ arg1_ids
+        tmp_letter = get_next_letter()
+        arg1_t = BinaryOperation{Mult}(BinaryOperation{Mult}(arg1_t, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
     end
 
-    for index ∈ union(arg2_ids)
-        arg2_t = BinaryOperation{Mult}(arg2_t, KrD(flip(index), flip_to(index, arg2_index_map[index])))
+    for i ∈ arg2_ids
+        tmp_letter = get_next_letter()
+        arg2_t = BinaryOperation{Mult}(BinaryOperation{Mult}(arg2_t, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
     end
 
     return BinaryOperation{Op}(arg1_t, arg2_t)
 end
 
 function adjoint(arg::Union{Tensor,KrD,Zero})
-    free_indices = get_free_indices(arg)
+    free_indices = unique(get_free_indices(arg))
 
     if length(free_indices) > 2
         throw(DomainError(arg.id, "Adjoint is only defined for vectors and matrices"))
@@ -661,7 +650,8 @@ function adjoint(arg::Union{Tensor,KrD,Zero})
     e = arg
 
     for i ∈ free_indices
-        e = BinaryOperation{Mult}(e, KrD(flip(i), flip_to(i, get_next_letter())))
+        tmp_letter = get_next_letter()
+        e = BinaryOperation{Mult}(BinaryOperation{Mult}(e, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
     end
 
     return e

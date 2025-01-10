@@ -69,6 +69,17 @@ end
     @test evaluate(op2) == X
 end
 
+@testset "evaluate adjoint is consistent" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(3), Lower(4))
+    x = Tensor("x", Upper(5))
+    y = Tensor("y", Upper(6))
+
+    @test equivalent(evaluate(x' * A'), evaluate((A * x)'))
+    @test equivalent(evaluate(x' * A), evaluate((A' * x)'))
+    @test equivalent(evaluate(x' * A * x), evaluate((A' * x)' * x))
+end
+
 @testset "evaluate BinaryOperation vector * KrD" begin
     x = Tensor("x", Upper(2))
     d1 = KrD(Lower(2), Upper(3))
