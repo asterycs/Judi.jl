@@ -139,7 +139,7 @@ end
     @test evaluate(yd.BinaryOperation{yd.Mult}(A, y)) == yd.BinaryOperation{yd.Mult}(A, y)
 end
 
-@testset "evaluate yd.Subtraction with * and +" begin
+@testset "evaluate subtraction with * and +" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(3))
@@ -151,7 +151,7 @@ end
     @test length(yd.get_free_indices(evaluate(op2))) == 1
 end
 
-@testset "evaluate yd.Subtraction with * and + and simplify" begin
+@testset "evaluate subtraction with * and + and simplify" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(2))
     y = Tensor("y", Upper(3))
