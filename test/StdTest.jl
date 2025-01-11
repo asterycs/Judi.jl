@@ -155,6 +155,7 @@ end
     y = create_vector("y")
     c = create_vector("c")
     A = create_matrix("A")
+    B = create_matrix("B")
 
     # TODO: Ensure evaluate(diff') == gradient
     @test to_std_string(gradient(x' * x, "x")) == "2x"
@@ -166,6 +167,8 @@ end
     @test to_std_string(gradient(sin(tr(x * x')), "x")) == "cos(xᵀx)2x"
     @test to_std_string(gradient(cos(tr(x * x')), "x")) == "-sin(xᵀx)2x"
     @test to_std_string(gradient(tr(A), "x")) == "vec(0)"
+    @test to_std_string(gradient(x' * B' * A * A * x, "x")) == "AᵀAᵀBx + BᵀAAx"
+    @test to_std_string(gradient((A' * B * x)' * A * x, "x")) == "AᵀAᵀBx + BᵀAAx"
 end
 
 @testset "to_std_string of jacobian {A, A'} * x" begin

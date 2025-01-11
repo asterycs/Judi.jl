@@ -468,99 +468,123 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
 
     @assert !isempty(ordered_args)
 
-    for i ∈ eachindex(remaining)
-        if isnothing(remaining[i])
-            continue
-        end
+    repeat_try_add = true
 
-        if all(isnothing.(remaining))
-            break
-        end
+    # TODO: Refactor this loop
+    while repeat_try_add
+        term_was_added = false
 
-        term = remaining[i]
+        for i ∈ eachindex(remaining)
+            if isnothing(remaining[i])
+                continue
+            end
 
-        for fixed ∈ (ordered_args[1], ordered_args[end])
-            fixed_indices = get_free_indices(fixed)
-            term_indices = get_free_indices(term)
+            if all(isnothing.(remaining))
+                break
+            end
 
-            for i ∈ eachindex(term_indices)
-                if was_flipped(term_indices[i], flipped_indices[fixed])
-                    term_indices[i] = flip(term_indices[i])
+            term = remaining[i]
+
+            for fixed ∈ (ordered_args[1], ordered_args[end])
+                fixed_indices = get_free_indices(fixed)
+                term_indices = get_free_indices(term)
+
+                for i ∈ eachindex(term_indices)
+                    if was_flipped(term_indices[i], flipped_indices[fixed])
+                        term_indices[i] = flip(term_indices[i])
+                    end
+                end
+
+                if isempty(term_indices)
+                    std_term = to_standard(term)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    pushfirst!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                ### Contractions
+                ################
+                if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[1]
+                    std_term = to_standard(term, nothing, term_indices[end].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    pushfirst!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                if typeof(term_indices[end]) == Upper && flip(term_indices[end]) == fixed_indices[1]
+                    std_term = to_standard(term, term_indices[end].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    push!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[end]
+                    std_term = to_standard(term, term_indices[1].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    push!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                if typeof(term_indices[1]) == Lower && flip(term_indices[1]) == fixed_indices[end]
+                    std_term = to_standard(term, nothing, term_indices[1].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    pushfirst!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                if typeof(term_indices[end]) == Upper && flip(term_indices[end]) == fixed_indices[end]
+                    std_term = to_standard(term, term_indices[end].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    push!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[end]
+                    std_term = to_standard(term, nothing, term_indices[end].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    pushfirst!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[1]
+                    std_term = to_standard(term, term_indices[1].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    push!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
+                end
+
+                if typeof(term_indices[1]) == Lower && flip(term_indices[1]) == fixed_indices[1]
+                    std_term = to_standard(term, nothing, term_indices[1].letter)
+                    flipped_indices[std_term] = get_flipped(std_term, term)
+                    pushfirst!(ordered_args, std_term)
+                    remaining[i] = nothing
+                    term_was_added = true
+                    break
                 end
             end
+        end
 
-            if isempty(term_indices)
-                std_term = to_standard(term)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                pushfirst!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            ### Contractions
-            ################
-            if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[1]
-                std_term = to_standard(term, nothing, term_indices[end].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                pushfirst!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            if typeof(term_indices[end]) == Upper && flip(term_indices[end]) == fixed_indices[1]
-                std_term = to_standard(term, term_indices[end].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                push!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[end]
-                std_term = to_standard(term, term_indices[1].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                push!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            if typeof(term_indices[1]) == Lower && flip(term_indices[1]) == fixed_indices[end]
-                std_term = to_standard(term, nothing, term_indices[1].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                pushfirst!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            if typeof(term_indices[end]) == Upper && flip(term_indices[end]) == fixed_indices[end]
-                std_term = to_standard(term, term_indices[end].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                push!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[end]
-                std_term = to_standard(term, nothing, term_indices[end].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                pushfirst!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[1]
-                std_term = to_standard(term, term_indices[1].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                push!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
-            end
-
-            if typeof(term_indices[1]) == Lower && flip(term_indices[1]) == fixed_indices[1]
-                std_term = to_standard(term, nothing, term_indices[1].letter)
-                flipped_indices[std_term] = get_flipped(std_term, term)
-                pushfirst!(ordered_args, std_term)
-                remaining[i] = nothing
-                break
+        if !term_was_added
+            if all(isnothing.(remaining))
+                repeat_try_add = false
+            else
+                throw_not_std()
             end
         end
     end
