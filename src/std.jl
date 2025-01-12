@@ -11,12 +11,8 @@ export gradient
 export jacobian
 export hessian
 
-const global REGISTERED_SYMBOLS = Dict{String,Tensor}()
-
 function create_matrix(name::String)
     T = Tensor(name, Upper(get_next_letter()), Lower(get_next_letter()))
-
-    REGISTERED_SYMBOLS[name] = T
 
     return T
 end
@@ -24,15 +20,11 @@ end
 function create_vector(name::String)
     T = Tensor(name, Upper(get_next_letter()))
 
-    REGISTERED_SYMBOLS[name] = T
-
     return T
 end
 
 function create_scalar(name::String)
     T = Tensor(name)
-
-    REGISTERED_SYMBOLS[name] = T
 
     return T
 end
@@ -53,15 +45,11 @@ macro scalar(ids...)
     return Expr(:block, syms...)
 end
 
-function derivative(expr, wrt::String)
-    ∂ = Tensor(wrt)
+function derivative(expr, wrt::Tensor)
+    ∂ = Tensor(wrt.id)
 
-    if wrt ∈ keys(REGISTERED_SYMBOLS)
-        for index ∈ REGISTERED_SYMBOLS[wrt].indices
-            push!(∂.indices, same_to(index, get_next_letter()))
-        end
-    else
-        throw(DomainError(wrt, "Unknown symbol $wrt"))
+    for index ∈ wrt.indices
+        push!(∂.indices, same_to(index, get_next_letter()))
     end
 
     D = diff(expr, ∂)
@@ -69,19 +57,15 @@ function derivative(expr, wrt::String)
     return evaluate(D)
 end
 
-function gradient(expr, wrt::String)
+function gradient(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
 
     if !isempty(free_indices)
         throw(DomainError(evaluate(expr), "Input is not a scalar"))
     end
 
-    if wrt ∈ keys(REGISTERED_SYMBOLS)
-        if length(REGISTERED_SYMBOLS[wrt].indices) != 1
-            throw(DomainError(wrt, "\"$wrt\" is not a vector"))
-        end
-    else
-        throw(DomainError(wrt, "Unknown symbol \"$wrt\""))
+    if length(wrt.indices) != 1
+        throw(DomainError(wrt, "\"$wrt\" is not a vector"))
     end
 
     D = derivative(expr, wrt)
@@ -90,19 +74,15 @@ function gradient(expr, wrt::String)
     return gradient
 end
 
-function jacobian(expr, wrt::String)
+function jacobian(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
 
     if length(free_indices) != 1 || typeof(free_indices[1]) != Upper
         throw(DomainError(evaluate(expr), "Input is not a column vector"))
     end
 
-    if wrt ∈ keys(REGISTERED_SYMBOLS)
-        if length(REGISTERED_SYMBOLS[wrt].indices) != 1
-            throw(DomainError(wrt, "\"$wrt\" is not a vector"))
-        end
-    else
-        throw(DomainError(wrt, "Unknown symbol \"$wrt\""))
+    if length(wrt.indices) != 1
+        throw(DomainError(wrt, "\"$wrt\" is not a vector"))
     end
 
     D = derivative(expr, wrt)
@@ -110,19 +90,15 @@ function jacobian(expr, wrt::String)
     return D
 end
 
-function hessian(expr, wrt::String)
+function hessian(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
 
     if !isempty(free_indices)
         throw(DomainError(evaluate(expr), "Input is not a scalar"))
     end
 
-    if wrt ∈ keys(REGISTERED_SYMBOLS)
-        if length(REGISTERED_SYMBOLS[wrt].indices) != 1
-            throw(DomainError(wrt, "\"$wrt\" is not a vector"))
-        end
-    else
-        throw(DomainError(wrt, "Unknown symbol \"$wrt\""))
+    if length(wrt.indices) != 1
+        throw(DomainError(wrt, "\"$wrt\" is not a vector"))
     end
 
     D = derivative(expr, wrt)

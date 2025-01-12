@@ -125,36 +125,32 @@ end
     @matrix A
     @vector x
 
-    @test equivalent(derivative(x' * A * x, "A"), evaluate(x * x')) # scalar input works
-    @test equivalent(derivative(A * x, "x"), A) # vector input works
-    @test_throws DomainError derivative(A * x, "ö") # ö is undefined
+    @test equivalent(derivative(x' * A * x, A), evaluate(x * x')) # scalar input works
+    @test equivalent(derivative(A * x, x), A) # vector input works
 end
 
 @testset "gradient interface checks" begin
     @matrix A
     @vector x
 
-    @test_throws DomainError gradient(A * x, "x") # input not a scalar
-    @test_throws DomainError gradient(x' * A * x, "A") # A is a matrix
-    @test_throws DomainError gradient(x' * A * x, "ö") # ö is undefined
+    @test_throws DomainError gradient(A * x, x) # input not a scalar
+    @test_throws DomainError gradient(x' * A * x, A) # A is a matrix
 end
 
 @testset "jacobian interface checks" begin
     @matrix A
     @vector x
 
-    @test_throws DomainError jacobian(x' * A * x, "x") # input not a vector
-    @test_throws DomainError jacobian(A * x, "A") # A is a matrix
-    @test_throws DomainError jacobian(A * x, "ö") # ö is undefined
+    @test_throws DomainError jacobian(x' * A * x, x) # input not a vector
+    @test_throws DomainError jacobian(A * x, A) # A is a matrix
 end
 
 @testset "hessian interface checks" begin
     @matrix A
     @vector x
 
-    @test_throws DomainError hessian(A * x, "x") # input not a scalar
-    @test_throws DomainError hessian(x' * A * x, "A") # A is a matrix
-    @test_throws DomainError hessian(x' * A * x, "ö") # ö is undefined
+    @test_throws DomainError hessian(A * x, x) # input not a scalar
+    @test_throws DomainError hessian(x' * A * x, A) # A is a matrix
 end
 
 @testset "to_std_string of gradient" begin
@@ -162,32 +158,32 @@ end
     @matrix A B
 
     # TODO: Ensure evaluate(diff') == gradient
-    @test to_std_string(gradient(x' * x, "x")) == "2x"
-    @test to_std_string(gradient(tr(x * x'), "x")) == "2x"
-    @test to_std_string(gradient((y .* c)' * x, "x")) == "y ⊙ c"
-    @test to_std_string(gradient((x .* c)' * x, "x")) == "2(x ⊙ c)"
-    @test to_std_string(gradient((x + y)' * x, "x")) == "2x + y"
-    @test to_std_string(gradient((x - y)' * x, "x")) == "2x - y"
-    @test to_std_string(gradient(sin(tr(x * x')), "x")) == "cos(xᵀx)2x"
-    @test to_std_string(gradient(cos(tr(x * x')), "x")) == "-sin(xᵀx)2x"
-    @test to_std_string(gradient(tr(A), "x")) == "vec(0)"
-    @test to_std_string(gradient(x' * B' * A * A * x, "x")) == "AᵀAᵀBx + BᵀAAx"
-    @test to_std_string(gradient((A' * B * x)' * A * x, "x")) == "AᵀAᵀBx + BᵀAAx"
+    @test to_std_string(gradient(x' * x, x)) == "2x"
+    @test to_std_string(gradient(tr(x * x'), x)) == "2x"
+    @test to_std_string(gradient((y .* c)' * x, x)) == "y ⊙ c"
+    @test to_std_string(gradient((x .* c)' * x, x)) == "2(x ⊙ c)"
+    @test to_std_string(gradient((x + y)' * x, x)) == "2x + y"
+    @test to_std_string(gradient((x - y)' * x, x)) == "2x - y"
+    @test to_std_string(gradient(sin(tr(x * x')), x)) == "cos(xᵀx)2x"
+    @test to_std_string(gradient(cos(tr(x * x')), x)) == "-sin(xᵀx)2x"
+    @test to_std_string(gradient(tr(A), x)) == "vec(0)"
+    @test to_std_string(gradient(x' * B' * A * A * x, x)) == "AᵀAᵀBx + BᵀAAx"
+    @test to_std_string(gradient((A' * B * x)' * A * x, x)) == "AᵀAᵀBx + BᵀAAx"
 end
 
 @testset "to_std_string of jacobian {A, A'} * x" begin
     @matrix A
     @vector x
 
-    @test to_std_string(jacobian(A * x, "x")) == "A"
-    @test to_std_string(jacobian(A' * x, "x")) == "Aᵀ"
+    @test to_std_string(jacobian(A * x, x)) == "A"
+    @test to_std_string(jacobian(A' * x, x)) == "Aᵀ"
 end
 
 @testset "to_std_string of hessian" begin
     @matrix A
     @vector x
 
-    @test to_std_string(hessian(x' * A * x, "x")) == "Aᵀ + A"
-    @test to_std_string(hessian(2 * x' * A * x, "x")) == "2Aᵀ + 2A"
-    @test to_std_string(hessian(2 * x' * x, "x")) == "4I"
+    @test to_std_string(hessian(x' * A * x, x)) == "Aᵀ + A"
+    @test to_std_string(hessian(2 * x' * A * x, x)) == "2Aᵀ + 2A"
+    @test to_std_string(hessian(2 * x' * x, x)) == "4I"
 end

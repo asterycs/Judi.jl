@@ -25,10 +25,10 @@ expr = x' * A * x
 ```
 The variable `expr` now contains an internal representation of the expression `x' * A * x`.
 
-Compute the gradient and the Hessian with respect to the vector `x`. Please note that the second argument is of type `String`.
+Compute the gradient and the Hessian with respect to the vector `x`.
 ```julia
-g = gradient(expr, "x")
-H = hessian(expr, "x")
+g = gradient(expr, x)
+H = hessian(expr, x)
 ```
 Convert the gradient and the Hessian into standard notation using `to_std_string`:
 ```julia
@@ -39,13 +39,13 @@ to_std_string(H) # "Aᵀ + A"
 Jacobians can be computed with `jacobian`:
 
 ```julia
-to_std_string(jacobian(A * x, "x")) # "A"
+to_std_string(jacobian(A * x, x)) # "A"
 ```
 
 The method `derivative` can be used to compute arbitrary derivatives.
 
 ```julia
-to_std_string(derivative(tr(A), "A")) # "I"
+to_std_string(derivative(tr(A), A)) # "I"
 ```
 The method `to_std_string` will throw an exception when given an expression that that cannot be converted to
 standard notation.
