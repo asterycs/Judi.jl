@@ -183,7 +183,7 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    # @test evaluate(tr(A)) == Tensor("A", Upper(1), Lower(1)) # TODO: Triggers assertion
+    @test evaluate(tr(A)) == Tensor("A", Upper(2), Lower(2))
     @test equivalent(evaluate(tr(A * B)), jd.BinaryOperation{jd.Mult}(A, Tensor("B", Upper(2), Lower(1))))
 end
 
