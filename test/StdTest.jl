@@ -7,9 +7,8 @@ using Test
 jd = Judi
 
 @testset "create column vector" begin
-    x = create_vector("x")
-    y = create_vector("y")
-    A = create_vector("A")
+    @vector x
+    @vector y A
 
     # TODO: Find a better way to keep track of the indices and remove all "equivalent"
     @test equivalent(x, Tensor("x", Upper(1)))
@@ -18,13 +17,21 @@ jd = Judi
 end
 
 @testset "create matrix" begin
-    A = create_matrix("A")
-    B = create_matrix("B")
-    X = create_matrix("X")
+    @matrix A
+    @matrix B X
 
     @test equivalent(A, Tensor("A", Upper(4), Lower(5)))
     @test equivalent(B, Tensor("B", Upper(6), Lower(7)))
     @test equivalent(X, Tensor("X", Upper(8), Lower(9)))
+end
+
+@testset "create scalar" begin
+    @scalar a
+    @scalar b c
+
+    @test equivalent(a, Tensor("a"))
+    @test equivalent(b, Tensor("b"))
+    @test equivalent(c, Tensor("c"))
 end
 
 @testset "to_std_string output is correct with matrix-vector contraction" begin
@@ -115,8 +122,8 @@ end
 end
 
 @testset "derivative interface checks" begin
-    A = create_matrix("A")
-    x = create_vector("x")
+    @matrix A
+    @vector x
 
     @test equivalent(derivative(x' * A * x, "A"), evaluate(x * x')) # scalar input works
     @test equivalent(derivative(A * x, "x"), A) # vector input works
@@ -124,8 +131,8 @@ end
 end
 
 @testset "gradient interface checks" begin
-    A = create_matrix("A")
-    x = create_vector("x")
+    @matrix A
+    @vector x
 
     @test_throws DomainError gradient(A * x, "x") # input not a scalar
     @test_throws DomainError gradient(x' * A * x, "A") # A is a matrix
@@ -133,8 +140,8 @@ end
 end
 
 @testset "jacobian interface checks" begin
-    A = create_matrix("A")
-    x = create_vector("x")
+    @matrix A
+    @vector x
 
     @test_throws DomainError jacobian(x' * A * x, "x") # input not a vector
     @test_throws DomainError jacobian(A * x, "A") # A is a matrix
@@ -142,8 +149,8 @@ end
 end
 
 @testset "hessian interface checks" begin
-    A = create_matrix("A")
-    x = create_vector("x")
+    @matrix A
+    @vector x
 
     @test_throws DomainError hessian(A * x, "x") # input not a scalar
     @test_throws DomainError hessian(x' * A * x, "A") # A is a matrix
@@ -151,11 +158,8 @@ end
 end
 
 @testset "to_std_string of gradient" begin
-    x = create_vector("x")
-    y = create_vector("y")
-    c = create_vector("c")
-    A = create_matrix("A")
-    B = create_matrix("B")
+    @vector x y c
+    @matrix A B
 
     # TODO: Ensure evaluate(diff') == gradient
     @test to_std_string(gradient(x' * x, "x")) == "2x"
@@ -172,16 +176,16 @@ end
 end
 
 @testset "to_std_string of jacobian {A, A'} * x" begin
-    A = create_matrix("A")
-    x = create_vector("x")
+    @matrix A
+    @vector x
 
     @test to_std_string(jacobian(A * x, "x")) == "A"
     @test to_std_string(jacobian(A' * x, "x")) == "Aᵀ"
 end
 
 @testset "to_std_string of hessian" begin
-    A = create_matrix("A")
-    x = create_vector("x")
+    @matrix A
+    @vector x
 
     @test to_std_string(hessian(x' * A * x, "x")) == "Aᵀ + A"
     @test to_std_string(hessian(2 * x' * A * x, "x")) == "2Aᵀ + 2A"

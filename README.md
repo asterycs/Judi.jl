@@ -16,8 +16,8 @@ Create a matrix and a vector:
 ```julia
 using Judi
 
-A = create_matrix("A")
-x = create_vector("x")
+@matrix A
+@vector x
 ```
 Create an expression:
 ```julia

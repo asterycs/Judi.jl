@@ -2,8 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-export create_matrix
-export create_vector
+export @matrix
+export @vector
+export @scalar
 
 export derivative
 export gradient
@@ -26,6 +27,30 @@ function create_vector(name::String)
     REGISTERED_SYMBOLS[name] = T
 
     return T
+end
+
+function create_scalar(name::String)
+    T = Tensor(name)
+
+    REGISTERED_SYMBOLS[name] = T
+
+    return T
+end
+
+# From https://discourse.julialang.org/t/macro-question-create-variables/90160
+macro matrix(ids...)
+    syms = (:($(esc(id)) = create_matrix($(string(id)))) for id ∈ ids)
+    return Expr(:block, syms...)
+end
+
+macro vector(ids...)
+    syms = (:($(esc(id)) = create_vector($(string(id)))) for id ∈ ids)
+    return Expr(:block, syms...)
+end
+
+macro scalar(ids...)
+    syms = (:($(esc(id)) = create_scalar($(string(id)))) for id ∈ ids)
+    return Expr(:block, syms...)
 end
 
 function derivative(expr, wrt::String)
