@@ -425,43 +425,35 @@ end
 end
 
 @testset "evaluated derivative is equal to derivative of evaluated expression" begin
-    prefix =
-    """
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
     y = Tensor("y", Upper(4))
     c = Tensor("c", Upper(5))
-    """
 
-    expr_strs = ( #
-        "A * x", #
-        "x' * A", #
-        "x' * A * x", #
-        "A * (x + 2 * x)", #
-        "A * (2 * x + x)", #
-        "x' * x", #
-        "tr(x * x')", #
-        "(y .* c)' * x", #
-        "(x .* c)' * x", #
-        "(x + y)' * x", #
-        "(x - y)' * x", #
-        "x' * (y .* c)", #
-        "x' * (x .* c)", #
-        "x' * (x + y)", #
-        "x' * (x - y)", #
-        "sin(tr(x * x'))", #
-        "cos(tr(x * x'))", #
-        "tr(sin(x * x'))", #
-        "tr(A)", #
+    exprs = ( #
+        A * x, #
+        x' * A, #
+        x' * A * x, #
+        A * (x + 2 * x), #
+        A * (2 * x + x), #
+        x' * x, #
+        tr(x * x'), #
+        (y .* c)' * x, #
+        (x .* c)' * x, #
+        (x + y)' * x, #
+        (x - y)' * x, #
+        x' * (y .* c), #
+        x' * (x .* c), #
+        x' * (x + y), #
+        x' * (x - y), #
+        sin(tr(x * x')), #
+        cos(tr(x * x')), #
+        tr(sin(x * x')), #
+        tr(A), #
     )
 
-    # TODO: There's probably a better way to do this.
-    @eval $(Meta.parseall(prefix))
-
-    for str ∈ expr_strs
-        expr = @eval $(Meta.parse(str))
-
-        @testset "$str" begin
+    for expr ∈ exprs
+        @testset "$(to_string(expr))" begin
             @test evaluate(jd.diff(evaluate(expr), Tensor("A", Upper(10), Lower(11)))) == evaluate(jd.diff(expr, Tensor("A", Upper(10), Lower(11))))
             @test evaluate(jd.diff(evaluate(expr), Tensor("x", Upper(10)))) == evaluate(jd.diff(expr, Tensor("x", Upper(10))))
             @test evaluate(jd.diff(evaluate(expr), Tensor("y", Upper(10)))) == evaluate(jd.diff(expr, Tensor("y", Upper(10))))
