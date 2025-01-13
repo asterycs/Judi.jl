@@ -193,7 +193,23 @@ end
 function _to_std_string(arg::BinaryOperation{Mult})
     # TODO: Create separate type for elementwise
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
-        return parenthesize_std(arg.arg1) * " ⊙ " * parenthesize_std(arg.arg2)
+        arg1_indices,arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
+
+        if length(arg1_indices) == length(arg2_indices)
+            return parenthesize_std(arg.arg1) * " ⊙ " * parenthesize_std(arg.arg2)
+        elseif length(arg1_indices) == 1 && length(arg2_indices) == 2
+            if typeof(arg1_indices[1]) == Upper
+                return "diag(" * _to_std_string(arg.arg1) * ")" * parenthesize_std(arg.arg2)
+            else # typeof(arg1_indices[1]) == Lower
+                return parenthesize_std(arg.arg2) * " diag(" * _to_std_string(arg.arg1) * ")"
+            end
+        elseif length(arg1_indices) == 2 && length(arg2_indices) == 1
+            if typeof(arg2_indices[1]) == Upper
+                return "diag(" * _to_std_string(arg.arg2) * ")" * parenthesize_std(arg.arg1)
+            else # typeof(arg2_indices[1]) == Lower
+                return parenthesize_std(arg.arg1) * " diag(" * _to_std_string(arg.arg2) * ")"
+            end
+        end
     end
 
     return parenthesize_std(arg.arg1) * parenthesize_std(arg.arg2)
@@ -365,7 +381,7 @@ function was_flipped(index, flips)
 end
 
 function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_index = nothing)
-    target_indices = get_free_indices(arg)
+    target_indices = unique(get_free_indices(arg))
 
     if length(target_indices) > 2
         throw_not_std()
@@ -375,20 +391,42 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
         upper = nothing
         lower = nothing
-        if target_indices[1].letter == upper_index
-            upper = target_indices[1].letter
+        if !isempty(target_indices)
+            if target_indices[1].letter == upper_index
+                upper = target_indices[1].letter
+            end
+            if target_indices[1].letter == lower_index
+                lower = target_indices[1].letter
+            end
         end
-        if target_indices[1].letter == lower_index
-            lower = target_indices[1].letter
-        end
-        if target_indices[2].letter == upper_index
-            upper = target_indices[2].letter
-        end
-        if target_indices[2].letter == lower_index
-            lower = target_indices[2].letter
+        if length(target_indices) > 1
+            if target_indices[2].letter == upper_index
+                upper = target_indices[2].letter
+            end
+            if target_indices[2].letter == lower_index
+                lower = target_indices[2].letter
+            end
         end
 
-        return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, upper, lower))
+        arg1_indices,arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
+
+        if length(arg1_indices) == length(arg2_indices)
+            return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, upper, lower))
+        elseif length(arg1_indices) == 1 && length(arg2_indices) == 2
+            if typeof(arg1_indices[1]) == Upper
+                return BinaryOperation{Mult}(to_standard(arg.arg1, upper), to_standard(arg.arg2, upper, lower))
+            else # typeof(arg1_indices[1]) == Lower
+                return BinaryOperation{Mult}(to_standard(arg.arg1, nothing, lower), to_standard(arg.arg2, upper, lower))
+            end
+        elseif length(arg1_indices) == 2 && length(arg2_indices) == 1
+            if typeof(arg2_indices[1]) == Upper
+                return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, upper))
+            elseif typeof(arg2_indices[1]) == Lower
+                return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, nothing, lower))
+            end
+        end
+
+        throw_not_std()
     end
 
     terms = collect_terms(arg)
@@ -605,7 +643,7 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
 
     ordered_expr_ids = get_free_indices(standardized_term)
 
-    @assert length(ordered_expr_ids) == length(target_indices)
+    @assert length(unique(ordered_expr_ids)) == length(target_indices)
 
     return standardized_term
 end

@@ -121,6 +121,21 @@ end
     @test to_std_string(sum(C, A)) == "Cᵀ + A"
 end
 
+@testset "to_std_string output is correct with vector-matrix elementwise" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Lower(2))
+
+    function mul(l, r)
+        return jd.BinaryOperation{jd.Mult}(l, r)
+    end
+
+    @test to_std_string(mul(A, x)) == "diag(x)A"
+    @test to_std_string(mul(x, A)) == "diag(x)A"
+    @test to_std_string(mul(A, y)) == "A diag(yᵀ)"
+    @test to_std_string(mul(y, A)) == "A diag(yᵀ)"
+end
+
 @testset "derivative interface checks" begin
     @matrix A
     @vector x
