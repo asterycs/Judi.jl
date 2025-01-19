@@ -34,6 +34,29 @@ end
     @test equivalent(c, Tensor("c"))
 end
 
+@testset "to_std_string output is correct with scalar-tensor multiplication" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    At = Tensor("A", Lower(1), Upper(2))
+    x = Tensor("x", Upper(2))
+    xt = Tensor("x", Lower(2))
+    a = Tensor("a")
+    b = Tensor("b")
+
+    function mult(l, r)
+        return evaluate(jd.BinaryOperation{jd.Mult}(l, r))
+    end
+
+    @test to_std_string(mult(A, a)) == "aA"
+    @test to_std_string(mult(a, A)) == "aA"
+    @test to_std_string(mult(At, a)) == "aAᵀ"
+    @test to_std_string(mult(a, At)) == "aAᵀ"
+    @test to_std_string(mult(x, a)) == "ax"
+    @test to_std_string(mult(a, x)) == "ax"
+    @test to_std_string(mult(xt, a)) == "axᵀ"
+    @test to_std_string(mult(a, xt)) == "axᵀ"
+    @test to_std_string(mult(b, a)) == "ab"
+end
+
 @testset "to_std_string output is correct with matrix-vector contraction" begin
     A = Tensor("A", Upper(1), Lower(2))
     At = Tensor("A", Lower(1), Upper(2))
