@@ -29,22 +29,63 @@ function create_scalar(name::String)
     return T
 end
 
-# From https://discourse.julialang.org/t/macro-question-create-variables/90160
+"""
+    @matrix(ids...)
+
+Create one or more matrices. Example:
+```jldoctest; output=false
+@matrix A X
+
+# output
+
+X¹⁰²₁₀₃
+```
+"""
 macro matrix(ids...)
+    # From https://discourse.julialang.org/t/macro-question-create-variables/90160
     syms = (:($(esc(id)) = create_matrix($(string(id)))) for id ∈ ids)
     return Expr(:block, syms...)
 end
 
+"""
+    @vector(ids...)
+
+Create one or more vectors. Example:
+```jldoctest; output=false
+@vector x y
+
+# output
+
+y¹⁰⁵
+```
+"""
 macro vector(ids...)
     syms = (:($(esc(id)) = create_vector($(string(id)))) for id ∈ ids)
     return Expr(:block, syms...)
 end
 
+"""
+    @scalar(ids...)
+
+Create one or more scalars. Example:
+```jldoctest; output=false
+@scalar a β
+
+# output
+
+β
+```
+"""
 macro scalar(ids...)
     syms = (:($(esc(id)) = create_scalar($(string(id)))) for id ∈ ids)
     return Expr(:block, syms...)
 end
 
+"""
+    derivative(expr, wrt::Tensor)
+
+Compute the derivative of `expr` with respect to `wrt`.
+"""
 function derivative(expr, wrt::Tensor)
     ∂ = Tensor(wrt.id)
 
@@ -57,6 +98,11 @@ function derivative(expr, wrt::Tensor)
     return evaluate(D)
 end
 
+"""
+    gradient(expr, wrt::Tensor)
+
+Compute the gradient of `expr` with respect to `wrt`. `expr` must be a scalar and `wrt` a vector.
+"""
 function gradient(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
 
@@ -74,6 +120,11 @@ function gradient(expr, wrt::Tensor)
     return gradient
 end
 
+"""
+    jacobian(expr, wrt::Tensor)
+
+Compute the jacobian of `expr` with respect to `wrt`. `expr` must be a column vector and `wrt` a vector.
+"""
 function jacobian(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
 
@@ -90,6 +141,11 @@ function jacobian(expr, wrt::Tensor)
     return D
 end
 
+"""
+    hessian(expr, wrt::Tensor)
+
+Compute the hessian of `expr` with respect to `wrt`. `expr` must be a scalar and `wrt` a vector.
+"""
 function hessian(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
 
