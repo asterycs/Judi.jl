@@ -179,6 +179,8 @@ function _to_std_string(arg::Tensor)
         elseif typeof(ids[1]) == Lower
             return arg.id * "ᵀ"
         end
+    elseif isempty(ids)
+        return arg.id
     end
 
     throw_not_std()
@@ -387,17 +389,20 @@ function to_standard(term, upper_index = nothing, lower_index = nothing)
         if isnothing(lower_index) && ids[1].letter == upper_index
             return reshape(term, Upper(ids[1].letter))
         end
-    end
+    elseif isempty(ids)
+        # No free indices - check if this is this a trace
+        if is_trace(term)
+            ids = get_indices(term)
 
-    # No free indices - check if this is this a trace
-    if is_trace(term)
-        ids = get_indices(term)
-
-        if typeof(ids[1]) == Upper
-            return reshape(term, ids[1], Lower(ids[2].letter))
-        else typeof(ids[2]) == Lower
-            return reshape(term, ids[1], Upper(ids[2].letter))
+            if typeof(ids[1]) == Upper
+                return reshape(term, ids[1], Lower(ids[2].letter))
+            else typeof(ids[2]) == Lower
+                return reshape(term, ids[1], Upper(ids[2].letter))
+            end
         end
+
+        # Term is a scalar
+        return term
     end
 
     throw_not_std()
