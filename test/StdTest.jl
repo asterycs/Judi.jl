@@ -159,6 +159,16 @@ end
     @test to_std_string(mul(y, A)) == "A diag(yᵀ)"
 end
 
+@testset "to_std_string output is correct with complex expression" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Upper(2))
+    a = Tensor("a")
+
+    @test to_std_string(evaluate(a * sin(x)' * y)) == "yᵀsin(x)a"
+    @test to_std_string(evaluate(sin(x)' * a * y)) == "ayᵀsin(x)"
+    @test to_std_string(evaluate(sin(x)' * y * a)) == "ayᵀsin(x)"
+end
+
 @testset "derivative interface checks" begin
     @matrix A
     @vector x

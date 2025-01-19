@@ -595,7 +595,7 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     end
                 end
 
-                if isempty(term_indices)
+                if isempty(term_indices) || isempty(fixed_indices)
                     std_term = to_standard(term)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     pushfirst!(ordered_args, std_term)
