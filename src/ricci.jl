@@ -359,58 +359,6 @@ function can_contract(arg1::Value, arg2::Value)
     return false
 end
 
-function is_contraction_unambigous(arg1, arg2)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    # Check that indices are unique.
-    if !are_indices_unique(arg1_indices) || !are_indices_unique(arg2_indices)
-        return false
-    end
-
-    # Otherwise, if there is exactly one matching index pair then the contraction is unambigous.
-    pairs = Dict{Letter,Int}()
-
-    for i ∈ arg1_indices
-        for j ∈ arg2_indices
-            if flip(i) == j
-                if haskey(pairs, i.letter)
-                    pairs[i.letter] += 1
-                else
-                    pairs[i.letter] = 1
-                end
-            end
-        end
-    end
-
-    if length(pairs) == 1 && first(values(pairs)) == 1
-        return true
-    end
-
-    # Otherwise, if there is an unambigous Upper/Lower pair then the
-    # contraction can be done with updated indices.
-    # We don't updated the indices here.
-    if length(arg1_indices) == 1 || length(arg2_indices) == 1
-        for i ∈ arg1_indices
-            for j ∈ arg2_indices
-                if typeof(flip(i)) == typeof(j)
-                    return true
-                end
-            end
-        end
-    end
-
-    # Otherwise, check if this is a matrix-matrix or a matrix-vector multiplication.
-    # We don't updated the indices here.
-    if length(arg1_indices) <= 2 && length(arg2_indices) <= 2
-        if typeof(flip(arg1_indices[end])) == typeof(arg2_indices[1])
-            return true
-        end
-    end
-
-    return false
-end
-
 function tr(arg::TensorValue)
     free_ids = get_free_indices(arg)
 

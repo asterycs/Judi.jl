@@ -270,38 +270,6 @@ end
     @test jd.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
 end
 
-@testset "is_contraction_unambigous vector * vector with matching pair" begin
-    x = Tensor("x", Upper(1))
-    y = Tensor("y", Lower(1))
-
-    @test jd.is_contraction_unambigous(x, y)
-    @test jd.is_contraction_unambigous(y, x)
-end
-
-@testset "is_contraction_unambigous vector * vector with non-matching pair" begin
-    x = Tensor("x", Lower(1))
-    y = Tensor("y", Lower(1))
-
-    @test !jd.is_contraction_unambigous(x, y)
-    @test !jd.is_contraction_unambigous(y, x)
-end
-
-@testset "is_contraction_unambigous matrix * vector with matching pair" begin
-    x = Tensor("x", Upper(2))
-    A = Tensor("A", Upper(1), Lower(2))
-
-    @test jd.is_contraction_unambigous(A, x)
-    @test jd.is_contraction_unambigous(x, A)
-end
-
-@testset "is_contraction_unambigous matrix * vector with non-matching pair" begin
-    x = Tensor("x", Lower(3))
-    A = Tensor("A", Upper(1), Lower(2))
-
-    @test jd.is_contraction_unambigous(A, x)
-    @test jd.is_contraction_unambigous(x, A)
-end
-
 @testset "multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
