@@ -229,6 +229,17 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::KrD)
     end
 end
 
+function evaluate(::Mult, arg1::Zero, arg2::UnaryOperation)
+    return evaluate(Mult(), arg2, arg1)
+end
+
+function evaluate(::Mult, arg1::UnaryOperation, arg2::Zero)
+    arg1_free_indices, arg2_free_indices =
+        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+
+    return Zero(union(arg1_free_indices, arg2_free_indices)...)
+end
+
 function evaluate(::Mult, arg1::Zero, arg2::TensorValue)
     return evaluate(Mult(), arg2, arg1)
 end
@@ -295,6 +306,34 @@ function evaluate(::Mult, arg1::KrD, arg2::Tensor)
     end
 
     newarg
+end
+
+function evaluate(::Mult, arg1::Negate, arg2::TensorValue)
+    return Negate(evaluate(Mult(), arg1.arg, arg2))
+end
+
+function evaluate(::Mult, arg1::TensorValue, arg2::Negate)
+    return Negate(evaluate(Mult(), arg1, arg2.arg))
+end
+
+function evaluate(::Mult, arg1::Negate, arg2::KrD)
+    return invoke(evaluate, Tuple{Mult, UnaryOperation, KrD}, Mult(), arg1, arg2)
+end
+
+function evaluate(::Mult, arg1::KrD, arg2::Negate)
+    return invoke(evaluate, Tuple{Mult, KrD, UnaryOperation}, Mult(), arg1, arg2)
+end
+
+function evaluate(::Mult, arg1::UnaryOperation, arg2::KrD)
+    return evaluate(Mult(), arg2, arg1)
+end
+
+function evaluate(::Mult, arg1::KrD, arg2::UnaryOp) where {UnaryOp<:UnaryOperation}
+    if can_contract(evaluate(arg1), evaluate(arg2.arg))
+        return UnaryOp(evaluate(Mult(), evaluate(arg1), evaluate(arg2.arg)))
+    end
+
+    return BinaryOperation{Mult}(evaluate(arg2), evaluate(arg1))
 end
 
 function is_diag(arg1::KrD, arg2::TensorValue)
@@ -386,14 +425,6 @@ end
 
 function evaluate(::Mult, arg1::Zero, arg2::Negate)
     return invoke(evaluate, Tuple{Mult, Zero, TensorValue}, Mult(), arg1, arg2)
-end
-
-function evaluate(::Mult, arg1::TensorValue, arg2::Negate)
-    return evaluate(Mult(), arg2, arg1)
-end
-
-function evaluate(::Mult, arg1::Negate, arg2::TensorValue)
-    return Negate(evaluate(Mult(), arg1.arg, arg2))
 end
 
 function evaluate(::Mult, arg1::TensorValue, arg2::Real)
