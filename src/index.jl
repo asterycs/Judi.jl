@@ -66,13 +66,3 @@ function get_repeated_indices(arg::IndexList)
 
     return [i for (i,c) ∈ with_counts if c != 1]
 end
-
-# TODO: Find a better solution for this. Perhaps a set with taken indices?
-const global NEXT_LETTER = Ref{Letter}(100)
-
-function get_next_letter()
-    tmp = NEXT_LETTER[]
-    NEXT_LETTER[] += 1
-
-    return tmp
-end

@@ -357,21 +357,21 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test equivalent(jd.diff(A * x, Tensor("x", Upper(4))), A)
+    @test equivalent(jd.diff(A * x, Tensor("x", Upper(5))), A)
 end
 
 @testset "Differentiate xᵀA " begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test equivalent(jd.diff(x' * A, Tensor("x", Upper(4))), Tensor("A", Lower(1), Lower(2)))
+    @test equivalent(jd.diff(x' * A, Tensor("x", Upper(6))), Tensor("A", Lower(1), Lower(2)))
 end
 
 @testset "Differentiate xᵀAx" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    D = jd.diff(x' * A * x, Tensor("x", Upper(4)))
+    D = jd.diff(x' * A * x, Tensor("x", Upper(7)))
 
     @test equivalent(evaluate(D.arg1), evaluate(x' * A))
     @test equivalent(
@@ -388,7 +388,7 @@ end
     rr = jd.BinaryOperation{jd.Mult}(KrD(Upper(100), Lower(2)), x'*x)
     expected = jd.BinaryOperation{jd.Add}(l, jd.BinaryOperation{jd.Add}(rl, rr))
 
-    D = jd.diff(x * x' * x, Tensor("x", Upper(2)))
+    D = jd.diff(x * x' * x, Tensor("x", Upper(6)))
 
     @test equivalent(evaluate(D), expected)
 end
@@ -397,7 +397,7 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    D = jd.diff(A * (x + 2 * x), Tensor("x", Upper(4)))
+    D = jd.diff(A * (x + 2 * x), Tensor("x", Upper(5)))
 
     @test equivalent(evaluate(D), 3 * A)
 end
@@ -419,7 +419,7 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    D = jd.diff(A * (x + 2 * x), Tensor("x", Upper(4)))
+    D = jd.diff(A * (x + 2 * x), Tensor("x", Upper(5)))
 
     @test equivalent(evaluate(D), 3 * A)
 end

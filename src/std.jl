@@ -12,13 +12,13 @@ export jacobian
 export hessian
 
 function create_matrix(name::String)
-    T = Tensor(name, Upper(get_next_letter()), Lower(get_next_letter()))
+    T = Tensor(name, Upper(1), Lower(2))
 
     return T
 end
 
 function create_vector(name::String)
-    T = Tensor(name, Upper(get_next_letter()))
+    T = Tensor(name, Upper(1))
 
     return T
 end
@@ -90,7 +90,7 @@ function derivative(expr, wrt::Tensor)
     ∂ = Tensor(wrt.id)
 
     for index ∈ wrt.indices
-        push!(∂.indices, same_to(index, get_next_letter()))
+        push!(∂.indices, same_to(index, get_next_letter(expr, ∂)))
     end
 
     D = diff(expr, ∂)

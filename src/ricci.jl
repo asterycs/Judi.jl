@@ -270,6 +270,16 @@ function count_values(input::AbstractArray{T}) where {T}
     return Dict((i => count(==(i), input)) for i ∈ unique(input))
 end
 
+function get_next_letter(exprs...)
+    exprs = [e for e ∈ exprs]
+    indices = get_indices.(exprs)
+
+    letters = [index.letter for index ∈ Iterators.flatten(indices)]
+    max_letter = maximum(letters)
+
+    return max_letter + 1
+end
+
 function is_permutation(l::AbstractArray{T}, r::AbstractArray{T}) where {T}
     if length(l) != length(r)
         return false
@@ -436,7 +446,7 @@ function *(arg1::Value, arg2::TensorValue)
 
             for i ∈ arg1_free_indices
                 if i.letter ∈ intersecting_letters
-                    arg1 = update_index(arg1, i, same_to(i, get_next_letter()))
+                    arg1 = update_index(arg1, i, same_to(i, get_next_letter(arg1, arg2)))
                 end
             end
         end
@@ -446,7 +456,7 @@ function *(arg1::Value, arg2::TensorValue)
 
     # TODO: WETWET, simplify, add e.g. get_lower(arg::IndexList) and get_upper(arg::IndexLists)
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[1]) == Upper
-        new_letter = get_next_letter()
+        new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
             update_index(arg1, arg1_free_indices[end], same_to(arg1_free_indices[end], new_letter)),
@@ -455,7 +465,7 @@ function *(arg1::Value, arg2::TensorValue)
     end
 
     if typeof(arg1_free_indices[1]) == Lower && typeof(arg2_free_indices[1]) == Upper
-        new_letter = get_next_letter()
+        new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
             update_index(arg1, arg1_free_indices[1], same_to(arg1_free_indices[1], new_letter)),
@@ -464,7 +474,7 @@ function *(arg1::Value, arg2::TensorValue)
     end
 
     if typeof(arg1_free_indices[1]) == Lower && typeof(arg2_free_indices[end]) == Upper
-        new_letter = get_next_letter()
+        new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
             update_index(arg1, arg1_free_indices[1], same_to(arg1_free_indices[1], new_letter)),
@@ -473,7 +483,7 @@ function *(arg1::Value, arg2::TensorValue)
     end
 
     if typeof(arg1_free_indices[end]) == Lower && typeof(arg2_free_indices[end]) == Upper
-        new_letter = get_next_letter()
+        new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
             update_index(arg1, arg1_free_indices[end], same_to(arg1_free_indices[end], new_letter)),
@@ -490,7 +500,7 @@ function *(arg1::Value, arg2::TensorValue)
             update_index(
                 arg2,
                 arg2_free_indices[end],
-                same_to(arg2_free_indices[end], get_next_letter()),
+                same_to(arg2_free_indices[end], get_next_letter(arg1, arg2)),
             ),
         )
     end
@@ -528,7 +538,9 @@ function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
         return BinaryOperation{op}(arg1, arg2)
     end
 
-    new_ids = [get_next_letter() for _ ∈ 1:length(unique(arg1_ids))]
+    next_letter = get_next_letter(arg1, arg2)
+
+    new_ids = [next_letter + i - 1 for i ∈ 1:length(unique(arg1_ids))]
 
     arg1_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg1_ids), new_ids)))
     arg2_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg2_ids), new_ids)))
@@ -584,12 +596,12 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
     arg2_t = arg.arg2
 
     for i ∈ arg1_ids
-        tmp_letter = get_next_letter()
+        tmp_letter = get_next_letter(arg1_t, arg2_t)
         arg1_t = BinaryOperation{Mult}(BinaryOperation{Mult}(arg1_t, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
     end
 
     for i ∈ arg2_ids
-        tmp_letter = get_next_letter()
+        tmp_letter = get_next_letter(arg1_t, arg2_t)
         arg2_t = BinaryOperation{Mult}(BinaryOperation{Mult}(arg2_t, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
     end
 
@@ -606,7 +618,7 @@ function adjoint(arg::Union{Tensor,KrD,Zero})
     e = arg
 
     for i ∈ free_indices
-        tmp_letter = get_next_letter()
+        tmp_letter = get_next_letter(e)
         e = BinaryOperation{Mult}(BinaryOperation{Mult}(e, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
     end
 
