@@ -84,23 +84,27 @@ function evaluate(::Mult, arg1::Real, arg2::BinaryOperation{Mult})
 end
 
 # TODO: Create separate type for elementwise products and delete this method
-function is_elementwise_multiplication(arg1::Value, arg2::Value)
+function is_elementwise_multiplication(arg1::TensorValue, arg2::TensorValue)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
+
+    # TODO: Make symmetric and refactor
+    if typeof(arg1) == BinaryOperation{Mult}
+        if (typeof(arg1.arg1) == KrD || typeof(arg1.arg2) == KrD) &&
+           is_elementwise_multiplication(arg1.arg1, arg1.arg2)
+            return can_contract(arg1, arg2)
+        end
+    end
 
     return !isempty(intersect(arg1_indices, arg2_indices))
 end
 
+function is_elementwise_multiplication(arg1, arg2)
+    return false
+end
+
 function evaluate(::Mult, arg1::Tensor, arg2::BinaryOperation{Mult})
     return evaluate(Mult(), arg2, arg1)
-end
-
-function get_tensor(arg1::KrD, arg2::Tensor)
-    return get_tensor(arg2, arg1)
-end
-
-function get_tensor(arg1::Tensor, arg2::KrD)
-    return arg1
 end
 
 function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
@@ -118,7 +122,10 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
         new_index = new_index[1]
         old_index = old_index[1]
 
-        arg1 = evaluate(update_index(get_tensor(arg1.arg1, arg1.arg2), old_index, new_index, allow_shape_change=true))
+        # Either arg1.arg1 OR arg1.arg2 is a KrD when is_diag is true
+        left_tensor = typeof(arg1.arg1) == KrD ? arg1.arg2 : arg1.arg1
+
+        arg1 = evaluate(update_index(left_tensor, old_index, new_index, allow_shape_change=true))
         arg2 = evaluate(update_index(arg2, flip(old_index), new_index, allow_shape_change=true))
 
         return BinaryOperation{Mult}(arg1, arg2)
@@ -290,14 +297,18 @@ function evaluate(::Mult, arg1::KrD, arg2::Tensor)
     newarg
 end
 
-function is_diag(arg1::KrD, arg2::Tensor)
+function is_diag(arg1::KrD, arg2::TensorValue)
     return is_diag(arg2, arg1)
 end
 
-function is_diag(arg1::Tensor, arg2::KrD)
+function is_diag(arg1::TensorValue, arg2::KrD)
     arg1_indices, arg2_indices = get_free_indices.((arg1, arg2))
 
     return length(arg1_indices) == 1 && !isempty(intersect(arg1_indices, arg2_indices))
+end
+
+function is_diag(arg1::KrD, arg2::KrD)
+    return false
 end
 
 function is_diag(arg::BinaryOperation{Mult})
