@@ -110,8 +110,8 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
     contracting_indices = eliminated_indices(arg1_indices, arg2_indices)
 
     if is_elementwise && is_diag(arg1) && !isempty(contracting_indices) && length(arg2_indices) == 1
-        new_index = get_unique_indices(arg1_indices)
-        old_index = get_repeated_indices(arg1_indices)
+        new_index = setdiff(arg1_indices, contracting_indices)
+        old_index = intersect(arg1_indices, contracting_indices)
 
         @assert length(new_index) == 1
         @assert length(old_index) == 1

@@ -326,17 +326,18 @@ function get_indices(arg::BinaryOperation{Mult})
     return [get_indices(arg.arg1); get_indices(arg.arg2)]
 end
 
-function get_indices(arg::BinaryOperation{Op}) where {Op}
-    arg1_ids = get_free_indices(arg.arg1)
-    arg2_ids = get_free_indices(arg.arg2)
+function get_indices(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
+    arg1_free_ids,arg2_free_ids = get_free_indices.((arg.arg1, arg.arg2))
 
-    @assert is_permutation(arg1_ids, arg2_ids)
+    @assert is_permutation(arg1_free_ids, arg2_free_ids)
 
-    return arg1_ids
+    arg1_ids,arg2_ids = get_indices.((arg.arg1, arg.arg2))
+
+    return union(arg1_ids, arg2_ids)
 end
 
 function get_free_indices(arg)
-    return eliminate_indices(get_indices(evaluate(arg)))
+    return unique(eliminate_indices(get_indices(evaluate(arg))))
 end
 
 function are_indices_unique(indices::IndexList)

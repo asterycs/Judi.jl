@@ -266,8 +266,8 @@ end
     op1 = jd.BinaryOperation{jd.Mult}(x, A)
     op2 = jd.BinaryOperation{jd.Mult}(A, x)
 
-    @test jd.get_free_indices(op1) == [Upper(1); Upper(1); Lower(2)]
-    @test jd.get_free_indices(op2) == [Upper(1); Lower(2); Upper(1)]
+    @test jd.get_free_indices(op1) == [Upper(1); Lower(2)]
+    @test jd.get_free_indices(op2) == [Upper(1); Lower(2)]
 end
 
 @testset "multiplication with matching indices" begin
