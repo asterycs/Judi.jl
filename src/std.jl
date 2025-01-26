@@ -38,7 +38,7 @@ Create one or more matrices. Example:
 
 # output
 
-X¹⁰²₁₀₃
+X¹₂
 ```
 """
 macro matrix(ids...)
@@ -56,7 +56,7 @@ Create one or more vectors. Example:
 
 # output
 
-y¹⁰⁵
+y¹
 ```
 """
 macro vector(ids...)
