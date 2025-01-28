@@ -209,7 +209,6 @@ end
     @vector x y c
     @matrix A B
 
-    # TODO: Ensure evaluate(diff') == gradient
     @test to_std_string(gradient(x' * x, x)) == "2x"
     @test to_std_string(gradient(tr(x * x'), x)) == "2x"
     @test to_std_string(gradient((y .* c)' * x, x)) == "y ⊙ c"
