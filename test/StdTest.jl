@@ -6,6 +6,7 @@ using Test
 
 using Judi: Tensor, KrD, Zero
 using Judi: evaluate
+using Judi: Upper, Lower
 
 jd = Judi
 

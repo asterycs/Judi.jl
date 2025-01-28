@@ -4,8 +4,6 @@
 
 import Base.hash
 
-export Upper, Lower
-
 Letter = Int
 
 struct Upper
