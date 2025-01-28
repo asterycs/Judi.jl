@@ -453,7 +453,7 @@ end
     )
 
     for expr ∈ exprs
-        @testset "$(to_string(expr))" begin
+        @testset "$(jd.to_string(expr))" begin
             @test evaluate(jd.diff(evaluate(expr), Tensor("A", Upper(10), Lower(11)))) == evaluate(jd.diff(expr, Tensor("A", Upper(10), Lower(11))))
             @test evaluate(jd.diff(evaluate(expr), Tensor("x", Upper(10)))) == evaluate(jd.diff(expr, Tensor("x", Upper(10))))
             @test evaluate(jd.diff(evaluate(expr), Tensor("y", Upper(10)))) == evaluate(jd.diff(expr, Tensor("y", Upper(10))))

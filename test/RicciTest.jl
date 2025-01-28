@@ -693,14 +693,14 @@ end
     d2 = KrD(Upper(3), Lower(4))
     zero = Zero(Upper(1), Lower(3), Lower(4))
 
-    @test to_string(A) == "A¹₂"
-    @test to_string(B) == "B¹²³₄⁵₆₇"
-    @test to_string(x) == "x²"
-    @test to_string(y) == "y₁"
-    @test to_string(z) == "z"
-    @test to_string(d1) == "δ¹²"
-    @test to_string(d2) == "δ³₄"
-    @test to_string(zero) == "0¹₃₄"
+    @test jd.to_string(A) == "A¹₂"
+    @test jd.to_string(B) == "B¹²³₄⁵₆₇"
+    @test jd.to_string(x) == "x²"
+    @test jd.to_string(y) == "y₁"
+    @test jd.to_string(z) == "z"
+    @test jd.to_string(d1) == "δ¹²"
+    @test jd.to_string(d2) == "δ³₄"
+    @test jd.to_string(zero) == "0¹₃₄"
 end
 
 @testset "to_string output is correct for BinaryOperation" begin
@@ -711,13 +711,13 @@ end
     add = jd.BinaryOperation{jd.Add}(a, b)
     sub = jd.BinaryOperation{jd.Sub}(a, b)
 
-    @test to_string(mul) == "ab"
-    @test to_string(add) == "a + b"
-    @test to_string(sub) == "a - b"
-    @test to_string(jd.BinaryOperation{jd.Add}(mul, b)) == "ab + b"
-    @test to_string(jd.BinaryOperation{jd.Add}(mul, mul)) == "ab + ab"
-    @test to_string(jd.BinaryOperation{jd.Sub}(mul, mul)) == "ab - ab"
-    @test to_string(jd.BinaryOperation{jd.Mult}(mul, mul)) == "abab"
-    @test to_string(jd.BinaryOperation{jd.Mult}(add, add)) == "(a + b)(a + b)"
-    @test to_string(jd.BinaryOperation{jd.Mult}(sub, add)) == "(a - b)(a + b)"
+    @test jd.to_string(mul) == "ab"
+    @test jd.to_string(add) == "a + b"
+    @test jd.to_string(sub) == "a - b"
+    @test jd.to_string(jd.BinaryOperation{jd.Add}(mul, b)) == "ab + b"
+    @test jd.to_string(jd.BinaryOperation{jd.Add}(mul, mul)) == "ab + ab"
+    @test jd.to_string(jd.BinaryOperation{jd.Sub}(mul, mul)) == "ab - ab"
+    @test jd.to_string(jd.BinaryOperation{jd.Mult}(mul, mul)) == "abab"
+    @test jd.to_string(jd.BinaryOperation{jd.Mult}(add, add)) == "(a + b)(a + b)"
+    @test jd.to_string(jd.BinaryOperation{jd.Mult}(sub, add)) == "(a - b)(a + b)"
 end

@@ -16,8 +16,6 @@ export Tensor, KrD, Zero
 
 export tr
 
-export to_string
-
 abstract type TensorValue end
 
 # Shortcut for simpler comparison from
