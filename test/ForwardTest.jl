@@ -36,8 +36,8 @@ end
     x = Tensor("x", Upper(1))
     z = Tensor("z")
 
-    @test equivalent(evaluate(A'), Tensor("A", Lower(1), Upper(2)))
-    @test equivalent(evaluate(x'), Tensor("x", Lower(1)))
+    @test jd.equivalent(evaluate(A'), Tensor("A", Lower(1), Upper(2)))
+    @test jd.equivalent(evaluate(x'), Tensor("x", Lower(1)))
     @test evaluate(z') == Tensor("z")
 end
 
@@ -79,9 +79,9 @@ end
     x = Tensor("x", Upper(5))
     y = Tensor("y", Upper(6))
 
-    @test equivalent(evaluate(x' * A'), evaluate((A * x)'))
-    @test equivalent(evaluate(x' * A), evaluate((A' * x)'))
-    @test equivalent(evaluate(x' * A * x), evaluate((A' * x)' * x))
+    @test jd.equivalent(evaluate(x' * A'), evaluate((A * x)'))
+    @test jd.equivalent(evaluate(x' * A), evaluate((A' * x)'))
+    @test jd.equivalent(evaluate(x' * A * x), evaluate((A' * x)' * x))
 end
 
 @testset "evaluate BinaryOperation vector * KrD" begin
@@ -163,8 +163,8 @@ end
     op1 = (x + y) - (x + y)
     op2 = 2 * x - 2 * x
 
-    @test equivalent(evaluate(op1), Zero(Upper(2)))
-    @test equivalent(evaluate(op2), Zero(Upper(2)))
+    @test jd.equivalent(evaluate(op1), Zero(Upper(2)))
+    @test jd.equivalent(evaluate(op2), Zero(Upper(2)))
 end
 
 @testset "evaluate unary operations" begin
@@ -184,7 +184,7 @@ end
     B = Tensor("B", Upper(2), Lower(3))
 
     @test evaluate(tr(A)) == Tensor("A", Upper(2), Lower(2))
-    @test equivalent(evaluate(tr(A * B)), jd.BinaryOperation{jd.Mult}(A, Tensor("B", Upper(2), Lower(1))))
+    @test jd.equivalent(evaluate(tr(A * B)), jd.BinaryOperation{jd.Mult}(A, Tensor("B", Upper(2), Lower(1))))
 end
 
 @testset "evaluate outer product - contraction" begin
@@ -270,7 +270,7 @@ end
 
     D = jd.diff(op, Tensor("A", Upper(3), Lower(4)))
 
-    @test equivalent(evaluate(D), KrD(Upper(1), Lower(2)))
+    @test jd.equivalent(evaluate(D), KrD(Upper(1), Lower(2)))
 end
 
 @testset "diff sin" begin
@@ -280,7 +280,7 @@ end
 
     D = jd.diff(op, Tensor("x", Upper(3)))
 
-    @test equivalent(D, jd.BinaryOperation{jd.Mult}(jd.Cos(x), KrD(Upper(2), Lower(3))))
+    @test jd.equivalent(D, jd.BinaryOperation{jd.Mult}(jd.Cos(x), KrD(Upper(2), Lower(3))))
 end
 
 @testset "diff cos" begin
@@ -290,7 +290,7 @@ end
 
     D = jd.diff(op, Tensor("x", Upper(3)))
 
-    @test equivalent(D, jd.BinaryOperation{jd.Mult}(jd.Negate(jd.Sin(x)), KrD(Upper(2), Lower(3))))
+    @test jd.equivalent(D, jd.BinaryOperation{jd.Mult}(jd.Negate(jd.Sin(x)), KrD(Upper(2), Lower(3))))
 end
 
 @testset "diff negated vector" begin
@@ -300,7 +300,7 @@ end
 
     D = jd.diff(op, Tensor("x", Upper(3)))
 
-    @test equivalent(D, jd.Negate(KrD(Upper(2), Lower(3))))
+    @test jd.equivalent(D, jd.Negate(KrD(Upper(2), Lower(3))))
 end
 
 @testset "free indices constant after evaluate" begin
@@ -328,12 +328,12 @@ end
 
     expected = jd.BinaryOperation{jd.Mult}(Tensor("y", Lower(1)), Tensor("x", Lower(1)))
 
-    @test equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))), expected)
+    @test jd.equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))), expected)
 
     expected = jd.BinaryOperation{jd.Mult}(Tensor("y", Upper(1)), Tensor("x", Upper(1)))
-    @test equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))'), expected)
-    @test equivalent(evaluate(jd.diff(e', Tensor("z", Upper(9)))), expected)
-    @test equivalent(evaluate(evaluate(jd.diff(e, Tensor("z", Upper(9))))'), expected)
+    @test jd.equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test jd.equivalent(evaluate(jd.diff(e', Tensor("z", Upper(9)))), expected)
+    @test jd.equivalent(evaluate(evaluate(jd.diff(e, Tensor("z", Upper(9))))'), expected)
 end
 
 @testset "KrD collapsed correctly on element wise jd.Multiplications (mirrored)" begin
@@ -345,26 +345,26 @@ end
 
     expected = jd.BinaryOperation{jd.Mult}(Tensor("y", Lower(1)), Tensor("x", Lower(1)))
 
-    @test equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))), expected)
+    @test jd.equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))), expected)
 
     expected = jd.BinaryOperation{jd.Mult}(Tensor("y", Upper(1)), Tensor("x", Upper(1)))
-    @test equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))'), expected)
-    @test equivalent(evaluate(jd.diff(e', Tensor("z", Upper(9)))), expected)
-    @test equivalent(evaluate(evaluate(jd.diff(e, Tensor("z", Upper(9))))'), expected)
+    @test jd.equivalent(evaluate(jd.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test jd.equivalent(evaluate(jd.diff(e', Tensor("z", Upper(9)))), expected)
+    @test jd.equivalent(evaluate(evaluate(jd.diff(e, Tensor("z", Upper(9))))'), expected)
 end
 
 @testset "Differentiate Ax" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test equivalent(jd.diff(A * x, Tensor("x", Upper(5))), A)
+    @test jd.equivalent(jd.diff(A * x, Tensor("x", Upper(5))), A)
 end
 
 @testset "Differentiate xᵀA " begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test equivalent(jd.diff(x' * A, Tensor("x", Upper(6))), Tensor("A", Lower(1), Lower(2)))
+    @test jd.equivalent(jd.diff(x' * A, Tensor("x", Upper(6))), Tensor("A", Lower(1), Lower(2)))
 end
 
 @testset "Differentiate xᵀAx" begin
@@ -373,8 +373,8 @@ end
 
     D = jd.diff(x' * A * x, Tensor("x", Upper(7)))
 
-    @test equivalent(evaluate(D.arg1), evaluate(x' * A))
-    @test equivalent(
+    @test jd.equivalent(evaluate(D.arg1), evaluate(x' * A))
+    @test jd.equivalent(
         evaluate(D.arg2),
         evaluate(jd.BinaryOperation{jd.Mult}(Tensor("A", Lower(1), Lower(3)), x)),
     )
@@ -390,7 +390,7 @@ end
 
     D = jd.diff(x * x' * x, Tensor("x", Upper(6)))
 
-    @test equivalent(evaluate(D), expected)
+    @test jd.equivalent(evaluate(D), expected)
 end
 
 @testset "Differentiate A(x + 2x)" begin
@@ -399,7 +399,7 @@ end
 
     D = jd.diff(A * (x + 2 * x), Tensor("x", Upper(5)))
 
-    @test equivalent(evaluate(D), 3 * A)
+    @test jd.equivalent(evaluate(D), 3 * A)
 end
 
 # TODO: Fails because KrD(Upper(3), Lower(3)) * Tensor("A", Upper(1), Lower(3)) isn't evaluated properly
@@ -412,7 +412,7 @@ end
 #     expected = jd.BinaryOperation{jd.Mult}(3, KrD(Upper(3), Lower(3)))
 #     expected = jd.BinaryOperation{jd.Mult}(expected, Tensor("A", Upper(1), Lower(3)))
 
-#     @test equivalent(evaluate(D), expected)
+#     @test jd.equivalent(evaluate(D), expected)
 # end
 
 @testset "Differentiate A(2x + x)" begin
@@ -421,7 +421,7 @@ end
 
     D = jd.diff(A * (x + 2 * x), Tensor("x", Upper(5)))
 
-    @test equivalent(evaluate(D), 3 * A)
+    @test jd.equivalent(evaluate(D), 3 * A)
 end
 
 @testset "evaluated derivative is equal to derivative of evaluated expression" begin

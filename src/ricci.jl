@@ -16,8 +16,6 @@ export Tensor, KrD, Zero
 
 export tr
 
-export equivalent
-
 export to_string
 export to_std_string
 
