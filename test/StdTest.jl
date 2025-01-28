@@ -5,6 +5,7 @@ using Judi
 using Test
 
 using Judi: Tensor, KrD, Zero
+using Judi: evaluate
 
 jd = Judi
 
