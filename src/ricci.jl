@@ -17,7 +17,6 @@ export Tensor, KrD, Zero
 export tr
 
 export to_string
-export to_std_string
 
 abstract type TensorValue end
 

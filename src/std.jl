@@ -11,6 +11,8 @@ export gradient
 export jacobian
 export hessian
 
+export to_std_string
+
 function create_matrix(name::String)
     T = Tensor(name, Upper(1), Lower(2))
 
