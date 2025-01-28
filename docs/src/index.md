@@ -10,4 +10,5 @@ derivative(expr, wrt::Tensor)
 gradient(expr, wrt::Tensor)
 jacobian(expr, wrt::Tensor)
 hessian(expr, wrt::Tensor)
+to_std_string(expr)
 ```
