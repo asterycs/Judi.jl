@@ -2,6 +2,7 @@
 
 _<ins>J</ins>ust a <ins>di</ins>fferentiation library_
 
+[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://asterycs.github.io/Judi.jl/dev)
 [![Run tests](https://github.com/asterycs/Judi.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/asterycs/Judi.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/asterycs/Judi.jl/graph/badge.svg?token=XIVXM5EPAC)](https://codecov.io/gh/asterycs/Judi.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
