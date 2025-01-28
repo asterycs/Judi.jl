@@ -12,8 +12,6 @@ import Base.sin
 import Base.cos
 import Base.show
 
-export Tensor, KrD, Zero
-
 export tr
 
 abstract type TensorValue end

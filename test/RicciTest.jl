@@ -5,6 +5,8 @@
 using Judi
 using Test
 
+using Judi: Tensor, KrD, Zero
+
 jd = Judi
 
 @testset "Tensor constructor throws on invalid input" begin

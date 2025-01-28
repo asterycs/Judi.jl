@@ -4,6 +4,8 @@
 using Judi
 using Test
 
+using Judi: Tensor, KrD, Zero
+
 jd = Judi
 
 @testset "create column vector" begin
