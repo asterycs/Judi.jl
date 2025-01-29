@@ -106,12 +106,15 @@ function evaluate(::Mult, arg1::Tensor, arg2::BinaryOperation{Mult})
 end
 
 function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
-    is_elementwise =  is_elementwise_multiplication(arg1.arg1, arg1.arg2)
+    is_elementwise = is_elementwise_multiplication(arg1.arg1, arg1.arg2)
     arg1_indices, arg2_indices = get_free_indices.((arg1, arg2))
 
     contracting_indices = eliminated_indices(arg1_indices, arg2_indices)
 
-    if is_elementwise && is_diag(arg1) && !isempty(contracting_indices) && length(arg2_indices) == 1
+    if is_elementwise &&
+       is_diag(arg1) &&
+       !isempty(contracting_indices) &&
+       length(arg2_indices) == 1
         new_index = setdiff(arg1_indices, contracting_indices)
         old_index = intersect(arg1_indices, contracting_indices)
 
@@ -123,8 +126,12 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
         # Either arg1.arg1 OR arg1.arg2 is a KrD when is_diag is true
         left_tensor = typeof(arg1.arg1) == KrD ? arg1.arg2 : arg1.arg1
 
-        arg1 = evaluate(update_index(left_tensor, old_index, new_index, allow_shape_change=true))
-        arg2 = evaluate(update_index(arg2, flip(old_index), new_index, allow_shape_change=true))
+        arg1 = evaluate(
+            update_index(left_tensor, old_index, new_index, allow_shape_change = true),
+        )
+        arg2 = evaluate(
+            update_index(arg2, flip(old_index), new_index, allow_shape_change = true),
+        )
 
         return BinaryOperation{Mult}(arg1, arg2)
     elseif can_contract(arg1.arg2, arg2) && !is_elementwise
@@ -199,7 +206,8 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mul
         if isnothing(new_arg)
             new_arg = BinaryOperation{Mult}(args[1], args[2])
         else
-            new_arg = BinaryOperation{Mult}(new_arg, BinaryOperation{Mult}(args[1], args[2]))
+            new_arg =
+                BinaryOperation{Mult}(new_arg, BinaryOperation{Mult}(args[1], args[2]))
         end
     end
 
@@ -211,7 +219,9 @@ function evaluate(::Mult, arg1::KrD, arg2::BinaryOperation{Mult})
 end
 
 function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::KrD)
-    if is_elementwise_multiplication(arg1.arg1, arg1.arg2) && can_contract(arg1.arg1, arg2) && can_contract(arg1.arg2, arg2)
+    if is_elementwise_multiplication(arg1.arg1, arg1.arg2) &&
+       can_contract(arg1.arg1, arg2) &&
+       can_contract(arg1.arg2, arg2)
         return BinaryOperation{Mult}(
             evaluate(Mult(), arg1.arg1, arg2),
             evaluate(Mult(), arg1.arg2, arg2),
@@ -315,11 +325,11 @@ function evaluate(::Mult, arg1::TensorValue, arg2::Negate)
 end
 
 function evaluate(::Mult, arg1::Negate, arg2::KrD)
-    return invoke(evaluate, Tuple{Mult, UnaryOperation, KrD}, Mult(), arg1, arg2)
+    return invoke(evaluate, Tuple{Mult,UnaryOperation,KrD}, Mult(), arg1, arg2)
 end
 
 function evaluate(::Mult, arg1::KrD, arg2::Negate)
-    return invoke(evaluate, Tuple{Mult, KrD, UnaryOperation}, Mult(), arg1, arg2)
+    return invoke(evaluate, Tuple{Mult,KrD,UnaryOperation}, Mult(), arg1, arg2)
 end
 
 function evaluate(::Mult, arg1::UnaryOperation, arg2::KrD)
@@ -393,7 +403,11 @@ function evaluate(::Mult, arg1::Union{Tensor,KrD}, arg2::KrD)
     newarg
 end
 
-function evaluate(::Mult, arg1::BinaryOperation{Op}, arg2::Union{Tensor, KrD}) where {Op<:AdditiveOperation}
+function evaluate(
+    ::Mult,
+    arg1::BinaryOperation{Op},
+    arg2::Union{Tensor,KrD},
+) where {Op<:AdditiveOperation}
     return evaluate(
         Op(),
         evaluate(Mult(), evaluate(arg1.arg1), evaluate(arg2)),
@@ -401,7 +415,11 @@ function evaluate(::Mult, arg1::BinaryOperation{Op}, arg2::Union{Tensor, KrD}) w
     )
 end
 
-function evaluate(::Mult, arg1::Union{Tensor, KrD}, arg2::BinaryOperation{Op}) where {Op<:AdditiveOperation}
+function evaluate(
+    ::Mult,
+    arg1::Union{Tensor,KrD},
+    arg2::BinaryOperation{Op},
+) where {Op<:AdditiveOperation}
     return evaluate(
         Op(),
         evaluate(Mult(), arg1, evaluate(arg2.arg1)),
@@ -418,11 +436,11 @@ function evaluate(::Mult, arg1::Negate, arg2::Negate)
 end
 
 function evaluate(::Mult, arg1::Negate, arg2::Zero)
-    return invoke(evaluate, Tuple{Mult, TensorValue, Zero}, Mult(), arg1, arg2)
+    return invoke(evaluate, Tuple{Mult,TensorValue,Zero}, Mult(), arg1, arg2)
 end
 
 function evaluate(::Mult, arg1::Zero, arg2::Negate)
-    return invoke(evaluate, Tuple{Mult, Zero, TensorValue}, Mult(), arg1, arg2)
+    return invoke(evaluate, Tuple{Mult,Zero,TensorValue}, Mult(), arg1, arg2)
 end
 
 function evaluate(::Mult, arg1::TensorValue, arg2::Real)
@@ -487,7 +505,7 @@ function evaluate(::Add, arg1::Value, arg2::Value)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::Zero)
-    return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
+    return invoke(evaluate, Tuple{Add,Value,Zero}, Add(), arg1, arg2)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
@@ -528,25 +546,29 @@ function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
 end
 
-function evaluate(::Add, arg1::BinaryOperation{Op}, arg2::Zero) where {Op<:AdditiveOperation}
-    return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
+function evaluate(
+    ::Add,
+    arg1::BinaryOperation{Op},
+    arg2::Zero,
+) where {Op<:AdditiveOperation}
+    return invoke(evaluate, Tuple{Add,Value,Zero}, Add(), arg1, arg2)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Add})
     # TODO: extend and change the below overload to (BinaryOp{Add}, UnaryValue)
-    return invoke(evaluate, Tuple{Add, BinaryOperation{Add}, Value}, Add(), arg1, arg2)
+    return invoke(evaluate, Tuple{Add,BinaryOperation{Add},Value}, Add(), arg1, arg2)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::Zero)
-    return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
+    return invoke(evaluate, Tuple{Add,Value,Zero}, Add(), arg1, arg2)
 end
 
 function evaluate(::Add, arg1::Zero, arg2::BinaryOperation{Add})
-    return invoke(evaluate, Tuple{Add, Zero, Value}, Add(), arg1, arg2)
+    return invoke(evaluate, Tuple{Add,Zero,Value}, Add(), arg1, arg2)
 end
 
 function evaluate(::Add, arg1::Zero, arg2::BinaryOperation{Mult})
-    invoke(evaluate, Tuple{Add, Zero, Value}, Add(), arg1, arg2)
+    invoke(evaluate, Tuple{Add,Zero,Value}, Add(), arg1, arg2)
 end
 
 function evaluate(::Add, arg1::Value, arg2::BinaryOperation{Add})
@@ -560,11 +582,17 @@ end
 
 function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::Value)
     if evaluate(arg1.arg1) == evaluate(arg2)
-        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1.arg1)), evaluate(arg1.arg2))
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, evaluate(arg1.arg1)),
+            evaluate(arg1.arg2),
+        )
     end
 
     if evaluate(arg1.arg2) == evaluate(arg2)
-        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1.arg2)), evaluate(arg1.arg1))
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, evaluate(arg1.arg2)),
+            evaluate(arg1.arg1),
+        )
     end
 
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
@@ -576,7 +604,10 @@ end
 
 function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::Value)
     if evaluate(arg1.arg1) == evaluate(arg2)
-        return BinaryOperation{Sub}(BinaryOperation{Mult}(2, evaluate(arg1.arg1)), evaluate(arg1.arg2))
+        return BinaryOperation{Sub}(
+            BinaryOperation{Mult}(2, evaluate(arg1.arg1)),
+            evaluate(arg1.arg2),
+        )
     end
 
     if evaluate(arg1.arg2) == evaluate(arg2)
@@ -587,7 +618,7 @@ function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::Value)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::Zero)
-    return invoke(evaluate, Tuple{Add, Value, Zero}, Add(), arg1, arg2)
+    return invoke(evaluate, Tuple{Add,Value,Zero}, Add(), arg1, arg2)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Mult})
@@ -600,11 +631,17 @@ end
 
 function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Add})
     if arg1.arg1 == arg2.arg1
-        return BinaryOperation{Add}(BinaryOperation{*}(2, arg1.arg1), BinaryOperation{Sub}(arg2.arg2, arg1.arg2))
+        return BinaryOperation{Add}(
+            BinaryOperation{*}(2, arg1.arg1),
+            BinaryOperation{Sub}(arg2.arg2, arg1.arg2),
+        )
     end
 
     if arg1.arg1 == arg2.arg2
-        return BinaryOperation{Add}(BinaryOperation{*}(2, arg1.arg1), BinaryOperation{Sub}(arg2.arg1, arg1.arg2))
+        return BinaryOperation{Add}(
+            BinaryOperation{*}(2, arg1.arg1),
+            BinaryOperation{Sub}(arg2.arg1, arg1.arg2),
+        )
     end
 
     if arg1.arg2 == arg2.arg1
@@ -624,7 +661,7 @@ function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Sub})
 end
 
 function evaluate(::Add, arg1::Zero, arg2::BinaryOperation{Sub})
-    return invoke(evaluate, Tuple{Add, Zero, Value}, Add(), arg1, arg2)
+    return invoke(evaluate, Tuple{Add,Zero,Value}, Add(), arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::Zero, arg2::Zero)
@@ -663,11 +700,11 @@ function evaluate(::Sub, arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::Zero, arg2::BinaryOperation{Mult})
-    return invole(evaluate, Tuple{Sub, Zero, Value}, Sub(), arg1, arg2)
+    return invole(evaluate, Tuple{Sub,Zero,Value}, Sub(), arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::Zero)
-    return invole(evaluate, Tuple{Sub, Value, Zero}, Sub(), arg1, arg2)
+    return invole(evaluate, Tuple{Sub,Value,Zero}, Sub(), arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})

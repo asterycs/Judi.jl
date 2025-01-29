@@ -144,7 +144,10 @@ end
 
     left = jd.BinaryOperation{jd.Mult}(a, b)
 
-    @test jd.equivalent(jd.BinaryOperation{jd.Mult}(a, b), jd.BinaryOperation{jd.Mult}(a, b))
+    @test jd.equivalent(
+        jd.BinaryOperation{jd.Mult}(a, b),
+        jd.BinaryOperation{jd.Mult}(a, b),
+    )
     @test jd.equivalent(left, jd.BinaryOperation{jd.Mult}(a, b))
     @test jd.equivalent(left, jd.BinaryOperation{jd.Mult}(b, a))
     @test !jd.equivalent(left, jd.BinaryOperation{jd.Add}(a, b))
@@ -280,9 +283,12 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test jd.get_free_indices(A * x) == jd.get_free_indices(jd.BinaryOperation{jd.Mult}(A, x))
-    @test jd.get_free_indices(y * A) == jd.get_free_indices(jd.BinaryOperation{jd.Mult}(y, A))
-    @test jd.get_free_indices(A * B) == jd.get_free_indices(jd.BinaryOperation{jd.Mult}(A, B))
+    @test jd.get_free_indices(A * x) ==
+          jd.get_free_indices(jd.BinaryOperation{jd.Mult}(A, x))
+    @test jd.get_free_indices(y * A) ==
+          jd.get_free_indices(jd.BinaryOperation{jd.Mult}(y, A))
+    @test jd.get_free_indices(A * B) ==
+          jd.get_free_indices(jd.BinaryOperation{jd.Mult}(A, B))
 end
 
 @testset "multiplication with ambigous input fails" begin
@@ -382,10 +388,12 @@ end
     @test jd.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD(Lower(3), Upper(1))
-    @test jd.update_index(x, Upper(3), Upper(1)) == jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test jd.update_index(x, Upper(3), Upper(1)) ==
+          jd.BinaryOperation{jd.Mult}(x, expected_shift)
 
     expected_shift = KrD(Lower(3), Upper(2))
-    @test jd.update_index(x, Upper(3), Upper(2)) == jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test jd.update_index(x, Upper(3), Upper(2)) ==
+          jd.BinaryOperation{jd.Mult}(x, expected_shift)
 end
 
 @testset "update_index row vector" begin
@@ -394,10 +402,12 @@ end
     @test jd.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD(Upper(3), Lower(1))
-    @test jd.update_index(x, Lower(3), Lower(1)) == jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test jd.update_index(x, Lower(3), Lower(1)) ==
+          jd.BinaryOperation{jd.Mult}(x, expected_shift)
 
     expected_shift = KrD(Upper(3), Lower(2))
-    @test jd.update_index(x, Lower(3), Lower(2)) == jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test jd.update_index(x, Lower(3), Lower(2)) ==
+          jd.BinaryOperation{jd.Mult}(x, expected_shift)
 end
 
 @testset "update_index matrix" begin
@@ -406,7 +416,8 @@ end
     @test jd.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD(Upper(2), Lower(3))
-    @test jd.update_index(A, Lower(2), Lower(3)) == jd.BinaryOperation{jd.Mult}(A, expected_shift)
+    @test jd.update_index(A, Lower(2), Lower(3)) ==
+          jd.BinaryOperation{jd.Mult}(A, expected_shift)
 end
 
 @testset "transpose vector" begin
@@ -504,7 +515,13 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test jd.equivalent(evaluate(A + B), jd.BinaryOperation{jd.Add}(Tensor("A", Upper(1), Lower(2)), Tensor("B", Upper(1), Lower(2))))
+    @test jd.equivalent(
+        evaluate(A + B),
+        jd.BinaryOperation{jd.Add}(
+            Tensor("A", Upper(1), Lower(2)),
+            Tensor("B", Upper(1), Lower(2)),
+        ),
+    )
 end
 
 @testset "jd.Add/jd.Subtract tensors with different indices" begin

@@ -68,7 +68,7 @@ function can_remap(left::IndexList, right::IndexList)
         end
     end
 
-    index_map = Dict((l => r) for (l,r) ∈ zip(lu, ru))
+    index_map = Dict((l => r) for (l, r) ∈ zip(lu, ru))
 
     left_remap = [index_map[i] for i ∈ left]
 
@@ -76,13 +76,13 @@ function can_remap(left::IndexList, right::IndexList)
 end
 
 function equivalent(left, right)
-    left_ids,right_ids = get_free_indices.((left, right))
+    left_ids, right_ids = get_free_indices.((left, right))
 
     return can_remap(left_ids, right_ids)
 end
 
 function equivalent(left::Tensor, right::Tensor)
-    left_ids,right_ids = get_free_indices.((left, right))
+    left_ids, right_ids = get_free_indices.((left, right))
 
     return left.id == right.id && can_remap(left_ids, right_ids)
 end
@@ -320,11 +320,11 @@ function get_indices(arg::BinaryOperation{Mult})
 end
 
 function get_indices(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
-    arg1_free_ids,arg2_free_ids = get_free_indices.((arg.arg1, arg.arg2))
+    arg1_free_ids, arg2_free_ids = get_free_indices.((arg.arg1, arg.arg2))
 
     @assert is_permutation(arg1_free_ids, arg2_free_ids)
 
-    arg1_ids,arg2_ids = get_indices.((arg.arg1, arg.arg2))
+    arg1_ids, arg2_ids = get_indices.((arg.arg1, arg.arg2))
 
     return union(arg1_ids, arg2_ids)
 end
@@ -430,10 +430,12 @@ function *(arg1::Value, arg2::TensorValue)
         throw(DomainError(arg2, "Multiplication involving tensor \"$arg2\" is ambiguous"))
     end
 
-    intersecting_letters = intersect(get_letters(arg1_free_indices), get_letters(arg2_free_indices))
+    intersecting_letters =
+        intersect(get_letters(arg1_free_indices), get_letters(arg2_free_indices))
 
     if !isempty(intersecting_letters)
-        if length(intersecting_letters) > 1 || arg1_free_indices[end].letter != arg2_free_indices[1].letter
+        if length(intersecting_letters) > 1 ||
+           arg1_free_indices[end].letter != arg2_free_indices[1].letter
             # Intersecting letters need updating if:
             #   - There are multiple intersecting letters
             #   - The intersecting letters are any other than the contracting indices
@@ -453,8 +455,16 @@ function *(arg1::Value, arg2::TensorValue)
         new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[end], same_to(arg1_free_indices[end], new_letter)),
-            update_index(arg2, arg2_free_indices[1], same_to(arg2_free_indices[1], new_letter)),
+            update_index(
+                arg1,
+                arg1_free_indices[end],
+                same_to(arg1_free_indices[end], new_letter),
+            ),
+            update_index(
+                arg2,
+                arg2_free_indices[1],
+                same_to(arg2_free_indices[1], new_letter),
+            ),
         )
     end
 
@@ -462,8 +472,16 @@ function *(arg1::Value, arg2::TensorValue)
         new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[1], same_to(arg1_free_indices[1], new_letter)),
-            update_index(arg2, arg2_free_indices[1], same_to(arg2_free_indices[1], new_letter))
+            update_index(
+                arg1,
+                arg1_free_indices[1],
+                same_to(arg1_free_indices[1], new_letter),
+            ),
+            update_index(
+                arg2,
+                arg2_free_indices[1],
+                same_to(arg2_free_indices[1], new_letter),
+            ),
         )
     end
 
@@ -471,8 +489,16 @@ function *(arg1::Value, arg2::TensorValue)
         new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[1], same_to(arg1_free_indices[1], new_letter)),
-            update_index(arg2, arg2_free_indices[end], same_to(arg2_free_indices[end], new_letter)),
+            update_index(
+                arg1,
+                arg1_free_indices[1],
+                same_to(arg1_free_indices[1], new_letter),
+            ),
+            update_index(
+                arg2,
+                arg2_free_indices[end],
+                same_to(arg2_free_indices[end], new_letter),
+            ),
         )
     end
 
@@ -480,8 +506,16 @@ function *(arg1::Value, arg2::TensorValue)
         new_letter = get_next_letter(arg1, arg2)
 
         return BinaryOperation{Mult}(
-            update_index(arg1, arg1_free_indices[end], same_to(arg1_free_indices[end], new_letter)),
-            update_index(arg2, arg2_free_indices[end], same_to(arg2_free_indices[end], new_letter))
+            update_index(
+                arg1,
+                arg1_free_indices[end],
+                same_to(arg1_free_indices[end], new_letter),
+            ),
+            update_index(
+                arg2,
+                arg2_free_indices[end],
+                same_to(arg2_free_indices[end], new_letter),
+            ),
         )
     end
 
@@ -536,21 +570,32 @@ function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
 
     new_ids = [next_letter + i - 1 for i ∈ 1:length(unique(arg1_ids))]
 
-    arg1_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg1_ids), new_ids)))
-    arg2_index_map = Dict((old => new for (old,new) ∈ zip(unique(arg2_ids), new_ids)))
+    arg1_index_map = Dict((old => new for (old, new) ∈ zip(unique(arg1_ids), new_ids)))
+    arg2_index_map = Dict((old => new for (old, new) ∈ zip(unique(arg2_ids), new_ids)))
 
     for index ∈ unique(arg1_ids)
-        arg1 = BinaryOperation{Mult}(arg1, KrD(flip(index), same_to(index, arg1_index_map[index])))
+        arg1 = BinaryOperation{Mult}(
+            arg1,
+            KrD(flip(index), same_to(index, arg1_index_map[index])),
+        )
     end
 
     for index ∈ union(arg2_ids)
-        arg2 = BinaryOperation{Mult}(arg2, KrD(flip(index), same_to(index, arg2_index_map[index])))
+        arg2 = BinaryOperation{Mult}(
+            arg2,
+            KrD(flip(index), same_to(index, arg2_index_map[index])),
+        )
     end
 
     return BinaryOperation{op}(arg1, arg2)
 end
 
-function update_index(arg::TensorValue, from::LowerOrUpperIndex, to::LowerOrUpperIndex; allow_shape_change = false)
+function update_index(
+    arg::TensorValue,
+    from::LowerOrUpperIndex,
+    to::LowerOrUpperIndex;
+    allow_shape_change = false,
+)
     indices = get_free_indices(arg)
 
     if from == to
@@ -572,7 +617,7 @@ function -(arg::TensorValue)
     return Negate(arg)
 end
 
-function adjoint(arg::T) where T <: UnaryOperation
+function adjoint(arg::T) where {T<:UnaryOperation}
     return T(arg.arg')
 end
 
@@ -591,12 +636,18 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
 
     for i ∈ arg1_ids
         tmp_letter = get_next_letter(arg1_t, arg2_t)
-        arg1_t = BinaryOperation{Mult}(BinaryOperation{Mult}(arg1_t, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
+        arg1_t = BinaryOperation{Mult}(
+            BinaryOperation{Mult}(arg1_t, KrD(flip(i), flip_to(i, tmp_letter))),
+            KrD(same_to(i, tmp_letter), flip(i)),
+        )
     end
 
     for i ∈ arg2_ids
         tmp_letter = get_next_letter(arg1_t, arg2_t)
-        arg2_t = BinaryOperation{Mult}(BinaryOperation{Mult}(arg2_t, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
+        arg2_t = BinaryOperation{Mult}(
+            BinaryOperation{Mult}(arg2_t, KrD(flip(i), flip_to(i, tmp_letter))),
+            KrD(same_to(i, tmp_letter), flip(i)),
+        )
     end
 
     return BinaryOperation{Op}(arg1_t, arg2_t)
@@ -613,7 +664,10 @@ function adjoint(arg::Union{Tensor,KrD,Zero})
 
     for i ∈ free_indices
         tmp_letter = get_next_letter(e)
-        e = BinaryOperation{Mult}(BinaryOperation{Mult}(e, KrD(flip(i), flip_to(i, tmp_letter))), KrD(same_to(i, tmp_letter), flip(i)))
+        e = BinaryOperation{Mult}(
+            BinaryOperation{Mult}(e, KrD(flip(i), flip_to(i, tmp_letter))),
+            KrD(same_to(i, tmp_letter), flip(i)),
+        )
     end
 
     return e

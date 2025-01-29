@@ -188,7 +188,10 @@ end
     B = Tensor("B", Upper(2), Lower(3))
 
     @test evaluate(tr(A)) == Tensor("A", Upper(2), Lower(2))
-    @test jd.equivalent(evaluate(tr(A * B)), jd.BinaryOperation{jd.Mult}(A, Tensor("B", Upper(2), Lower(1))))
+    @test jd.equivalent(
+        evaluate(tr(A * B)),
+        jd.BinaryOperation{jd.Mult}(A, Tensor("B", Upper(2), Lower(1))),
+    )
 end
 
 @testset "evaluate outer product - contraction" begin
@@ -294,7 +297,10 @@ end
 
     D = jd.diff(op, Tensor("x", Upper(3)))
 
-    @test jd.equivalent(D, jd.BinaryOperation{jd.Mult}(jd.Negate(jd.Sin(x)), KrD(Upper(2), Lower(3))))
+    @test jd.equivalent(
+        D,
+        jd.BinaryOperation{jd.Mult}(jd.Negate(jd.Sin(x)), KrD(Upper(2), Lower(3))),
+    )
 end
 
 @testset "diff negated vector" begin
@@ -368,7 +374,10 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test jd.equivalent(jd.diff(x' * A, Tensor("x", Upper(6))), Tensor("A", Lower(1), Lower(2)))
+    @test jd.equivalent(
+        jd.diff(x' * A, Tensor("x", Upper(6))),
+        Tensor("A", Lower(1), Lower(2)),
+    )
 end
 
 @testset "Differentiate xᵀAx" begin
@@ -389,7 +398,7 @@ end
 
     l = jd.BinaryOperation{jd.Mult}(Tensor("x", Upper(100)), Tensor("x", Lower(2)))
     rl = jd.BinaryOperation{jd.Mult}(Tensor("x", Upper(100)), Tensor("x", Lower(2)))
-    rr = jd.BinaryOperation{jd.Mult}(KrD(Upper(100), Lower(2)), x'*x)
+    rr = jd.BinaryOperation{jd.Mult}(KrD(Upper(100), Lower(2)), x' * x)
     expected = jd.BinaryOperation{jd.Add}(l, jd.BinaryOperation{jd.Add}(rl, rr))
 
     D = jd.diff(x * x' * x, Tensor("x", Upper(6)))
@@ -458,10 +467,14 @@ end
 
     for expr ∈ exprs
         @testset "$(jd.to_string(expr))" begin
-            @test evaluate(jd.diff(evaluate(expr), Tensor("A", Upper(10), Lower(11)))) == evaluate(jd.diff(expr, Tensor("A", Upper(10), Lower(11))))
-            @test evaluate(jd.diff(evaluate(expr), Tensor("x", Upper(10)))) == evaluate(jd.diff(expr, Tensor("x", Upper(10))))
-            @test evaluate(jd.diff(evaluate(expr), Tensor("y", Upper(10)))) == evaluate(jd.diff(expr, Tensor("y", Upper(10))))
-            @test evaluate(jd.diff(evaluate(expr), Tensor("c", Upper(10)))) == evaluate(jd.diff(expr, Tensor("c", Upper(10))))
+            @test evaluate(jd.diff(evaluate(expr), Tensor("A", Upper(10), Lower(11)))) ==
+                  evaluate(jd.diff(expr, Tensor("A", Upper(10), Lower(11))))
+            @test evaluate(jd.diff(evaluate(expr), Tensor("x", Upper(10)))) ==
+                  evaluate(jd.diff(expr, Tensor("x", Upper(10))))
+            @test evaluate(jd.diff(evaluate(expr), Tensor("y", Upper(10)))) ==
+                  evaluate(jd.diff(expr, Tensor("y", Upper(10))))
+            @test evaluate(jd.diff(evaluate(expr), Tensor("c", Upper(10)))) ==
+                  evaluate(jd.diff(expr, Tensor("c", Upper(10))))
         end
     end
 end

@@ -287,13 +287,17 @@ function _to_std_string(::Sub)
 end
 
 function _to_std_string(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
-    return _to_std_string(arg.arg1) * " " * _to_std_string(Op()) * " " * _to_std_string(arg.arg2)
+    return _to_std_string(arg.arg1) *
+           " " *
+           _to_std_string(Op()) *
+           " " *
+           _to_std_string(arg.arg2)
 end
 
 function _to_std_string(arg::BinaryOperation{Mult})
     # TODO: Create separate type for elementwise
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
-        arg1_indices,arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
+        arg1_indices, arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
 
         if length(arg1_indices) == length(arg2_indices)
             return parenthesize_std(arg.arg1) * " ⊙ " * parenthesize_std(arg.arg2)
@@ -301,13 +305,19 @@ function _to_std_string(arg::BinaryOperation{Mult})
             if typeof(arg1_indices[1]) == Upper
                 return "diag(" * _to_std_string(arg.arg1) * ")" * parenthesize_std(arg.arg2)
             else # typeof(arg1_indices[1]) == Lower
-                return parenthesize_std(arg.arg2) * " diag(" * _to_std_string(arg.arg1) * ")"
+                return parenthesize_std(arg.arg2) *
+                       " diag(" *
+                       _to_std_string(arg.arg1) *
+                       ")"
             end
         elseif length(arg1_indices) == 2 && length(arg2_indices) == 1
             if typeof(arg2_indices[1]) == Upper
                 return "diag(" * _to_std_string(arg.arg2) * ")" * parenthesize_std(arg.arg1)
             else # typeof(arg2_indices[1]) == Lower
-                return parenthesize_std(arg.arg1) * " diag(" * _to_std_string(arg.arg2) * ")"
+                return parenthesize_std(arg.arg1) *
+                       " diag(" *
+                       _to_std_string(arg.arg2) *
+                       ")"
             end
         end
     end
@@ -320,7 +330,7 @@ function parenthesize_std(arg)
     return _to_std_string(arg)
 end
 
-function parenthesize_std(arg::BinaryOperation{Op}) where {Op <: AdditiveOperation}
+function parenthesize_std(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
     return "(" * _to_std_string(arg) * ")"
 end
 
@@ -379,7 +389,11 @@ function reshape(term::KrD, indices::LowerOrUpperIndex...)
     return KrD(indices...)
 end
 
-function to_standard(term::Op, upper_index = nothing, lower_index = nothing) where {Op<:UnaryOperation}
+function to_standard(
+    term::Op,
+    upper_index = nothing,
+    lower_index = nothing,
+) where {Op<:UnaryOperation}
     return Op(to_standard(term.arg, upper_index, lower_index))
 end
 
@@ -438,7 +452,8 @@ function to_standard(term, upper_index = nothing, lower_index = nothing)
 
             if typeof(ids[1]) == Upper
                 return reshape(term, ids[1], Lower(ids[2].letter))
-            else typeof(ids[2]) == Lower
+            else
+                typeof(ids[2]) == Lower
                 return reshape(term, ids[1], Upper(ids[2].letter))
             end
         end
@@ -450,8 +465,15 @@ function to_standard(term, upper_index = nothing, lower_index = nothing)
     throw_not_std()
 end
 
-function to_standard(arg::BinaryOperation{Op}, upper_index = nothing, lower_index = nothing) where {Op<:AdditiveOperation}
-    return BinaryOperation{Op}(to_standard(arg.arg1, upper_index, lower_index), to_standard(arg.arg2, upper_index, lower_index))
+function to_standard(
+    arg::BinaryOperation{Op},
+    upper_index = nothing,
+    lower_index = nothing,
+) where {Op<:AdditiveOperation}
+    return BinaryOperation{Op}(
+        to_standard(arg.arg1, upper_index, lower_index),
+        to_standard(arg.arg2, upper_index, lower_index),
+    )
 end
 
 function to_standard(arg::Real, upper_index = nothing, lower_index = nothing)
@@ -464,7 +486,7 @@ function get_flipped(new_term, old_term)
 
     flipped = Dict()
 
-    for (l,r) ∈ zip(new_ids, old_ids)
+    for (l, r) ∈ zip(new_ids, old_ids)
         @assert l.letter == r.letter
 
         if typeof(l) != typeof(r)
@@ -483,7 +505,11 @@ function was_flipped(index, flips)
     return false
 end
 
-function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_index = nothing)
+function to_standard(
+    arg::BinaryOperation{Mult},
+    upper_index = nothing,
+    lower_index = nothing,
+)
     target_indices = unique(get_free_indices(arg))
 
     if length(target_indices) > 2
@@ -511,21 +537,36 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
             end
         end
 
-        arg1_indices,arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
+        arg1_indices, arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
 
         if length(arg1_indices) == length(arg2_indices)
-            return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, upper, lower))
+            return BinaryOperation{Mult}(
+                to_standard(arg.arg1, upper, lower),
+                to_standard(arg.arg2, upper, lower),
+            )
         elseif length(arg1_indices) == 1 && length(arg2_indices) == 2
             if typeof(arg1_indices[1]) == Upper
-                return BinaryOperation{Mult}(to_standard(arg.arg1, upper), to_standard(arg.arg2, upper, lower))
+                return BinaryOperation{Mult}(
+                    to_standard(arg.arg1, upper),
+                    to_standard(arg.arg2, upper, lower),
+                )
             else # typeof(arg1_indices[1]) == Lower
-                return BinaryOperation{Mult}(to_standard(arg.arg1, nothing, lower), to_standard(arg.arg2, upper, lower))
+                return BinaryOperation{Mult}(
+                    to_standard(arg.arg1, nothing, lower),
+                    to_standard(arg.arg2, upper, lower),
+                )
             end
         elseif length(arg1_indices) == 2 && length(arg2_indices) == 1
             if typeof(arg2_indices[1]) == Upper
-                return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, upper))
+                return BinaryOperation{Mult}(
+                    to_standard(arg.arg1, upper, lower),
+                    to_standard(arg.arg2, upper),
+                )
             elseif typeof(arg2_indices[1]) == Lower
-                return BinaryOperation{Mult}(to_standard(arg.arg1, upper, lower), to_standard(arg.arg2, nothing, lower))
+                return BinaryOperation{Mult}(
+                    to_standard(arg.arg1, upper, lower),
+                    to_standard(arg.arg2, nothing, lower),
+                )
             end
         end
 
@@ -648,7 +689,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
 
                 ### Contractions
                 ################
-                if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[1]
+                if typeof(term_indices[end]) == Lower &&
+                   flip(term_indices[end]) == fixed_indices[1]
                     std_term = to_standard(term, nothing, term_indices[end].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     pushfirst!(ordered_args, std_term)
@@ -657,7 +699,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     break
                 end
 
-                if typeof(term_indices[end]) == Upper && flip(term_indices[end]) == fixed_indices[1]
+                if typeof(term_indices[end]) == Upper &&
+                   flip(term_indices[end]) == fixed_indices[1]
                     std_term = to_standard(term, term_indices[end].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     push!(ordered_args, std_term)
@@ -666,7 +709,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     break
                 end
 
-                if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[end]
+                if typeof(term_indices[1]) == Upper &&
+                   flip(term_indices[1]) == fixed_indices[end]
                     std_term = to_standard(term, term_indices[1].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     push!(ordered_args, std_term)
@@ -675,7 +719,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     break
                 end
 
-                if typeof(term_indices[1]) == Lower && flip(term_indices[1]) == fixed_indices[end]
+                if typeof(term_indices[1]) == Lower &&
+                   flip(term_indices[1]) == fixed_indices[end]
                     std_term = to_standard(term, nothing, term_indices[1].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     pushfirst!(ordered_args, std_term)
@@ -684,7 +729,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     break
                 end
 
-                if typeof(term_indices[end]) == Upper && flip(term_indices[end]) == fixed_indices[end]
+                if typeof(term_indices[end]) == Upper &&
+                   flip(term_indices[end]) == fixed_indices[end]
                     std_term = to_standard(term, term_indices[end].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     push!(ordered_args, std_term)
@@ -693,7 +739,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     break
                 end
 
-                if typeof(term_indices[end]) == Lower && flip(term_indices[end]) == fixed_indices[end]
+                if typeof(term_indices[end]) == Lower &&
+                   flip(term_indices[end]) == fixed_indices[end]
                     std_term = to_standard(term, nothing, term_indices[end].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     pushfirst!(ordered_args, std_term)
@@ -702,7 +749,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     break
                 end
 
-                if typeof(term_indices[1]) == Upper && flip(term_indices[1]) == fixed_indices[1]
+                if typeof(term_indices[1]) == Upper &&
+                   flip(term_indices[1]) == fixed_indices[1]
                     std_term = to_standard(term, term_indices[1].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     push!(ordered_args, std_term)
@@ -711,7 +759,8 @@ function to_standard(arg::BinaryOperation{Mult}, upper_index = nothing, lower_in
                     break
                 end
 
-                if typeof(term_indices[1]) == Lower && flip(term_indices[1]) == fixed_indices[1]
+                if typeof(term_indices[1]) == Lower &&
+                   flip(term_indices[1]) == fixed_indices[1]
                     std_term = to_standard(term, nothing, term_indices[1].letter)
                     flipped_indices[std_term] = get_flipped(std_term, term)
                     pushfirst!(ordered_args, std_term)
