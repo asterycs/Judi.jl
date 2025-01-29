@@ -52,15 +52,3 @@ function hash(arg::LowerOrUpperIndex)
 
     h
 end
-
-function get_unique_indices(arg::IndexList)
-    with_counts = [(i => count(==(i), arg)) for i ∈ unique(arg)]
-
-    return [i for (i,c) ∈ with_counts if c == 1]
-end
-
-function get_repeated_indices(arg::IndexList)
-    with_counts = [(i => count(==(i), arg)) for i ∈ unique(arg)]
-
-    return [i for (i,c) ∈ with_counts if c != 1]
-end
