@@ -6,9 +6,9 @@ Documentation for Judi.jl
 @matrix(ids...)
 @vector(ids...)
 @scalar(ids...)
-derivative(expr, wrt::Tensor)
-gradient(expr, wrt::Tensor)
-jacobian(expr, wrt::Tensor)
-hessian(expr, wrt::Tensor)
+derivative(expr, wrt::Judi.Tensor)
+gradient(expr, wrt::Judi.Tensor)
+jacobian(expr, wrt::Judi.Tensor)
+hessian(expr, wrt::Judi.Tensor)
 to_std_string(expr)
 ```

@@ -87,7 +87,7 @@ end
     derivative(expr, wrt::Tensor)
 
 Compute the derivative of `expr` with respect to `wrt`. Example:
-```jldoctest; output=false
+```jldoctest
 @matrix A
 @vector x
 
@@ -95,7 +95,8 @@ gradient(x' * x, x)
 
 # output
 
-2x₄
+2x⁴
+```
 """
 function derivative(expr, wrt::Tensor)
     ∂ = Tensor(wrt.id)
@@ -113,7 +114,7 @@ end
     gradient(expr, wrt::Tensor)
 
 Compute the gradient of `expr` with respect to `wrt`. `expr` must be a scalar and `wrt` a vector. Example:
-```jldoctest; output=false
+```jldoctest
 @matrix A
 @vector x
 
@@ -122,6 +123,7 @@ gradient(x' * A * x, x)
 # output
 
 x₃A³⁵ + A⁵₄x⁴
+```
 """
 function gradient(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
@@ -144,7 +146,7 @@ end
     jacobian(expr, wrt::Tensor)
 
 Compute the jacobian of `expr` with respect to `wrt`. `expr` must be a column vector and `wrt` a vector. Example:
-```jldoctest; output=false
+```jldoctest
 @matrix A
 @vector x
 
@@ -153,6 +155,7 @@ jacobian(A * x, x)
 # output
 
 A³₅
+```
 """
 function jacobian(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
@@ -174,7 +177,7 @@ end
     hessian(expr, wrt::Tensor)
 
 Compute the hessian of `expr` with respect to `wrt`. `expr` must be a scalar and `wrt` a vector. Example:
-```jldoctest; output=false
+```jldoctest
 @matrix A
 @vector x
 
@@ -183,6 +186,7 @@ hessian(x' * A * x, x)
 # output
 
 A₆⁵ + A⁵₆
+```
 """
 function hessian(expr, wrt::Tensor)
     free_indices = get_free_indices(evaluate(expr))
@@ -751,7 +755,7 @@ end
     to_std_string(expr)
 
 Convert the expression `expr` to standard matrix notation. `expr` must be a scalar and `wrt` a vector. Example:
-```jldoctest;
+```jldoctest
 @matrix A
 @vector x
 
@@ -760,6 +764,7 @@ to_std_string(gradient(x' * A * x, x))
 # output
 
 "Aᵀx + Ax"
+```
 """
 function to_std_string(arg)
     free_indices = unique(get_free_indices(arg))
