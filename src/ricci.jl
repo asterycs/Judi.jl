@@ -341,7 +341,7 @@ function can_contract(arg1::Value, arg2::Value)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
-    # If there is exactly one matching index pair then the contraction is unambigous.
+    # If there is at least one matching index pair then the contraction is unambigous.
     pairs = Dict{Letter,Int}()
 
     for i ∈ arg1_indices
