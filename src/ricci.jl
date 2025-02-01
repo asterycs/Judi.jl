@@ -544,21 +544,20 @@ function get_letters(indices::IndexList)
 end
 
 function +(arg1::TensorValue, arg2::TensorValue)
-    return create_additive_op(Add, arg1, arg2)
+    return create_additive_op(Add(), arg1, arg2)
 end
 
 function -(arg1::TensorValue, arg2::TensorValue)
-    return create_additive_op(Sub, arg1, arg2)
+    return create_additive_op(Sub(), arg1, arg2)
 end
 
-# TODO: Constrain op
-function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
+function create_additive_op(op::Op, arg1::TensorValue, arg2::TensorValue) where {Op<:AdditiveOperation}
     arg1_ids, arg2_ids = get_free_indices.((arg1, arg2))
 
     if length(unique(arg1_ids)) != length(unique(arg2_ids))
-        op_text = if op == +
+        op_text = if typeof(Op) == Add
             "add"
-        elseif op == -
+        elseif typeof(Op) == Sub
             "subtract"
         end
 
@@ -566,7 +565,7 @@ function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
     end
 
     if arg1_ids == arg2_ids
-        return BinaryOperation{op}(arg1, arg2)
+        return BinaryOperation{Op}(arg1, arg2)
     end
 
     next_letter = get_next_letter(arg1, arg2)
@@ -590,7 +589,7 @@ function create_additive_op(op, arg1::TensorValue, arg2::TensorValue)
         )
     end
 
-    return BinaryOperation{op}(arg1, arg2)
+    return BinaryOperation{Op}(arg1, arg2)
 end
 
 function update_index(
