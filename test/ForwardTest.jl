@@ -40,8 +40,8 @@ end
     x = Tensor("x", Upper(1))
     z = Tensor("z")
 
-    @test jd.equivalent(evaluate(A'), Tensor("A", Lower(1), Upper(2)))
-    @test jd.equivalent(evaluate(x'), Tensor("x", Lower(1)))
+    @test evaluate(A') == Tensor("A", Lower(1), Upper(2))
+    @test evaluate(x') == Tensor("x", Lower(1))
     @test evaluate(z') == Tensor("z")
 end
 
