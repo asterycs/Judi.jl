@@ -448,7 +448,7 @@ function evaluate(::Mult, arg1::Real, arg2::TensorValue)
 end
 
 function evaluate(::Mult, arg1::Zero, arg2::Zero)
-    new_indices = eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    new_indices = eliminate_indices([get_free_indices(arg1); get_free_indices(arg2)])
 
     return Zero(new_indices...)
 end

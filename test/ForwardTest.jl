@@ -85,6 +85,14 @@ end
     @test evaluate(op) == dc.BinaryOperation{dc.Mult}(x, y)
 end
 
+@testset "evaluate Zero - Zero product" begin
+    zl = Zero(Upper(1), Upper(2))
+    zr = Zero(Lower(1), Upper(3))
+
+    op = dc.BinaryOperation{dc.Mult}(zl, zr)
+    @test evaluate(op) == Zero(Upper(2), Upper(3))
+end
+
 @testset "evaluate Real - Zero product" begin
     a = 1
     z = Zero(Upper(1), Lower(2))
