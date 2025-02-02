@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Judi
+using DiffMatic
 using Test
 
-using Judi: Tensor, KrD, Zero
-using Judi: evaluate
-using Judi: Upper, Lower
+using DiffMatic: Tensor, KrD, Zero
+using DiffMatic: evaluate
+using DiffMatic: Upper, Lower
 
-jd = Judi
+dc = DiffMatic
 
 @testset "Tensor constructor throws on invalid input" begin
     @test_throws DomainError Tensor("A", Lower(2), Lower(2))
@@ -76,8 +76,8 @@ end
 
     op = sin(a * b)
 
-    @test typeof(op) == jd.Sin
-    @test typeof(op.arg) == jd.BinaryOperation{jd.Mult}
+    @test typeof(op) == dc.Sin
+    @test typeof(op.arg) == dc.BinaryOperation{dc.Mult}
 end
 
 @testset "Cos constructor" begin
@@ -86,8 +86,8 @@ end
 
     op = cos(a * b)
 
-    @test typeof(op) == jd.Cos
-    @test typeof(op.arg) == jd.BinaryOperation{jd.Mult}
+    @test typeof(op) == dc.Cos
+    @test typeof(op.arg) == dc.BinaryOperation{dc.Mult}
 end
 
 @testset "UnaryOperation equality operator" begin
@@ -98,19 +98,19 @@ end
 
     left = sin(inner)
 
-    @test left == jd.Sin(inner)
-    @test left != jd.Cos(inner)
-    @test left != -jd.Sin(inner)
+    @test left == dc.Sin(inner)
+    @test left != dc.Cos(inner)
+    @test left != -dc.Sin(inner)
 end
 
 @testset "is_permutation true positive" begin
     l = [Lower(9); Upper(2); Lower(2); Lower(2)]
     r = collect(reverse(l))
 
-    @test jd.is_permutation(l, l)
-    @test jd.is_permutation(l, r)
-    @test jd.is_permutation(r, l)
-    @test jd.is_permutation(r, r)
+    @test dc.is_permutation(l, l)
+    @test dc.is_permutation(l, r)
+    @test dc.is_permutation(r, l)
+    @test dc.is_permutation(r, r)
 end
 
 @testset "is_permutation true negative" begin
@@ -120,38 +120,38 @@ end
     r3 = []
     r4 = [Lower(9); Upper(2); Upper(2); Lower(2)]
 
-    @test !jd.is_permutation(l, r1)
-    @test !jd.is_permutation(l, r2)
-    @test !jd.is_permutation(l, r3)
-    @test !jd.is_permutation(l, r4)
+    @test !dc.is_permutation(l, r1)
+    @test !dc.is_permutation(l, r2)
+    @test !dc.is_permutation(l, r3)
+    @test !dc.is_permutation(l, r4)
 end
 
 @testset "BinaryOperation equality operator" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = jd.BinaryOperation{jd.Mult}(a, b)
+    left = dc.BinaryOperation{dc.Mult}(a, b)
 
-    @test jd.BinaryOperation{jd.Mult}(a, b) == jd.BinaryOperation{jd.Mult}(a, b)
-    @test left == jd.BinaryOperation{jd.Mult}(a, b)
-    @test left == jd.BinaryOperation{jd.Mult}(b, a)
-    @test left != jd.BinaryOperation{jd.Add}(a, b)
+    @test dc.BinaryOperation{dc.Mult}(a, b) == dc.BinaryOperation{dc.Mult}(a, b)
+    @test left == dc.BinaryOperation{dc.Mult}(a, b)
+    @test left == dc.BinaryOperation{dc.Mult}(b, a)
+    @test left != dc.BinaryOperation{dc.Add}(a, b)
 end
 
-@testset "BinaryOperation jd.equivalent" begin
+@testset "BinaryOperation dc.equivalent" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
-    left = jd.BinaryOperation{jd.Mult}(a, b)
+    left = dc.BinaryOperation{dc.Mult}(a, b)
 
-    @test jd.equivalent(
-        jd.BinaryOperation{jd.Mult}(a, b),
-        jd.BinaryOperation{jd.Mult}(a, b),
+    @test dc.equivalent(
+        dc.BinaryOperation{dc.Mult}(a, b),
+        dc.BinaryOperation{dc.Mult}(a, b),
     )
-    @test jd.equivalent(left, jd.BinaryOperation{jd.Mult}(a, b))
-    @test jd.equivalent(left, jd.BinaryOperation{jd.Mult}(b, a))
-    @test !jd.equivalent(left, jd.BinaryOperation{jd.Add}(a, b))
-    @test !jd.equivalent(left, jd.BinaryOperation{jd.Mult}(a, Tensor("x", Upper(1))))
+    @test dc.equivalent(left, dc.BinaryOperation{dc.Mult}(a, b))
+    @test dc.equivalent(left, dc.BinaryOperation{dc.Mult}(b, a))
+    @test !dc.equivalent(left, dc.BinaryOperation{dc.Add}(a, b))
+    @test !dc.equivalent(left, dc.BinaryOperation{dc.Mult}(a, Tensor("x", Upper(1))))
 end
 
 @testset "index hash function" begin
@@ -162,12 +162,12 @@ end
 end
 
 @testset "flip" begin
-    @test jd.flip(Lower(3)) == Upper(3)
-    @test jd.flip(Upper(3)) == Lower(3)
+    @test dc.flip(Lower(3)) == Upper(3)
+    @test dc.flip(Upper(3)) == Lower(3)
 end
 
 @testset "eliminate_indices removes correct indices" begin
-    IdxUnion = jd.LowerOrUpperIndex
+    IdxUnion = dc.LowerOrUpperIndex
 
     indicesl = IdxUnion[
         Lower(9)
@@ -185,14 +185,14 @@ end
         Lower(9)
     ]
 
-    l, r = jd.eliminate_indices(indicesl, indicesr)
+    l, r = dc.eliminate_indices(indicesl, indicesr)
 
     @test [l; r] == [Lower(2); Lower(1); Lower(2); Upper(3)]
-    @test jd.eliminate_indices(IdxUnion[], IdxUnion[]) == (IdxUnion[], IdxUnion[])
+    @test dc.eliminate_indices(IdxUnion[], IdxUnion[]) == (IdxUnion[], IdxUnion[])
 end
 
 @testset "eliminated_indices retains correct indices" begin
-    IdxUnion = jd.LowerOrUpperIndex
+    IdxUnion = dc.LowerOrUpperIndex
 
     indicesl = IdxUnion[
         Lower(9)
@@ -210,37 +210,37 @@ end
         Lower(9)
     ]
 
-    eliminated = jd.eliminated_indices(indicesl, indicesr)
+    eliminated = dc.eliminated_indices(indicesl, indicesr)
 
     @test eliminated == IdxUnion[Lower(9); Upper(9); Upper(9); Lower(9); Upper(3); Lower(3)]
-    @test jd.eliminated_indices(IdxUnion[], IdxUnion[]) == IdxUnion[]
+    @test dc.eliminated_indices(IdxUnion[], IdxUnion[]) == IdxUnion[]
 end
 
 @testset "get_free_indices with Tensor * Tensor and one matching pair" begin
     xt = Tensor("x", Lower(1)) # row vector
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = jd.BinaryOperation{jd.Mult}(xt, A)
-    op2 = jd.BinaryOperation{jd.Mult}(A, xt)
+    op1 = dc.BinaryOperation{dc.Mult}(xt, A)
+    op2 = dc.BinaryOperation{dc.Mult}(A, xt)
 
-    @test jd.get_free_indices(op1) == [Lower(2)]
-    @test jd.get_free_indices(op2) == [Lower(2)]
+    @test dc.get_free_indices(op1) == [Lower(2)]
+    @test dc.get_free_indices(op2) == [Lower(2)]
 end
 
 @testset "get_free_indices with Tensor {+-} Tensor" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Lower(2), Upper(1))
 
-    ops = (jd.BinaryOperation{jd.Add}, jd.BinaryOperation{jd.Sub})
+    ops = (dc.BinaryOperation{dc.Add}, dc.BinaryOperation{dc.Sub})
 
     for op ∈ ops
         op1 = op(A, A)
         op2 = op(A, B)
         op3 = op(B, A)
 
-        @test jd.get_free_indices(op1) == [Upper(1); Lower(2)]
-        @test jd.get_free_indices(op2) == [Upper(1); Lower(2)]
-        @test jd.get_free_indices(op3) == [Lower(2); Upper(1)]
+        @test dc.get_free_indices(op1) == [Upper(1); Lower(2)]
+        @test dc.get_free_indices(op2) == [Upper(1); Lower(2)]
+        @test dc.get_free_indices(op3) == [Lower(2); Upper(1)]
     end
 end
 
@@ -248,33 +248,33 @@ end
     x = Tensor("x", Upper(1))
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = jd.BinaryOperation{jd.Mult}(x, δ)
-    op2 = jd.BinaryOperation{jd.Mult}(δ, x)
+    op1 = dc.BinaryOperation{dc.Mult}(x, δ)
+    op2 = dc.BinaryOperation{dc.Mult}(δ, x)
 
-    @test jd.get_free_indices(op1) == [Lower(2)]
-    @test jd.get_free_indices(op2) == [Lower(2)]
+    @test dc.get_free_indices(op1) == [Lower(2)]
+    @test dc.get_free_indices(op2) == [Lower(2)]
 end
 
 @testset "get_free_indices with scalar Tensor * KrD" begin
     x = Tensor("x")
     δ = KrD(Lower(1), Lower(2))
 
-    op1 = jd.BinaryOperation{jd.Mult}(x, δ)
-    op2 = jd.BinaryOperation{jd.Mult}(δ, x)
+    op1 = dc.BinaryOperation{dc.Mult}(x, δ)
+    op2 = dc.BinaryOperation{dc.Mult}(δ, x)
 
-    @test jd.get_free_indices(op1) == [Lower(1); Lower(2)]
-    @test jd.get_free_indices(op2) == [Lower(1); Lower(2)]
+    @test dc.get_free_indices(op1) == [Lower(1); Lower(2)]
+    @test dc.get_free_indices(op2) == [Lower(1); Lower(2)]
 end
 
 @testset "get_free_indices with Tensor * Tensor and no matching pairs" begin
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(1), Lower(2))
 
-    op1 = jd.BinaryOperation{jd.Mult}(x, A)
-    op2 = jd.BinaryOperation{jd.Mult}(A, x)
+    op1 = dc.BinaryOperation{dc.Mult}(x, A)
+    op2 = dc.BinaryOperation{dc.Mult}(A, x)
 
-    @test jd.get_free_indices(op1) == [Upper(1); Lower(2)]
-    @test jd.get_free_indices(op2) == [Upper(1); Lower(2)]
+    @test dc.get_free_indices(op1) == [Upper(1); Lower(2)]
+    @test dc.get_free_indices(op2) == [Upper(1); Lower(2)]
 end
 
 @testset "multiplication with matching indices" begin
@@ -283,12 +283,12 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test jd.get_free_indices(A * x) ==
-          jd.get_free_indices(jd.BinaryOperation{jd.Mult}(A, x))
-    @test jd.get_free_indices(y * A) ==
-          jd.get_free_indices(jd.BinaryOperation{jd.Mult}(y, A))
-    @test jd.get_free_indices(A * B) ==
-          jd.get_free_indices(jd.BinaryOperation{jd.Mult}(A, B))
+    @test dc.get_free_indices(A * x) ==
+          dc.get_free_indices(dc.BinaryOperation{dc.Mult}(A, x))
+    @test dc.get_free_indices(y * A) ==
+          dc.get_free_indices(dc.BinaryOperation{dc.Mult}(y, A))
+    @test dc.get_free_indices(A * B) ==
+          dc.get_free_indices(dc.BinaryOperation{dc.Mult}(A, B))
 end
 
 @testset "multiplication with ambigous input fails" begin
@@ -312,8 +312,8 @@ end
 
     for n ∈ (z, r)
         for t ∈ (x, y, A, z)
-            @test n * t == jd.BinaryOperation{jd.Mult}(n, t)
-            @test t * n == jd.BinaryOperation{jd.Mult}(t, n)
+            @test n * t == dc.BinaryOperation{dc.Mult}(n, t)
+            @test t * n == dc.BinaryOperation{dc.Mult}(t, n)
         end
     end
 end
@@ -324,21 +324,21 @@ end
 
     op1 = A .* A
 
-    @test typeof(op1) == jd.BinaryOperation{jd.Mult}
-    @test jd.equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
-    @test jd.equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
+    @test typeof(op1) == dc.BinaryOperation{dc.Mult}
+    @test dc.equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
+    @test dc.equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
 
     op2 = A .* B
 
-    @test typeof(op2) == jd.BinaryOperation{jd.Mult}
-    @test jd.equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
-    @test jd.equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
+    @test typeof(op2) == dc.BinaryOperation{dc.Mult}
+    @test dc.equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
+    @test dc.equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
 
     op3 = A' .* B'
 
-    @test typeof(op3) == jd.BinaryOperation{jd.Mult}
-    @test jd.equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
-    @test jd.equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
+    @test typeof(op3) == dc.BinaryOperation{dc.Mult}
+    @test dc.equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
+    @test dc.equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
 end
 
 @testset "elementwise multiplication vector-vector" begin
@@ -347,21 +347,21 @@ end
 
     op1 = x .* x
 
-    @test typeof(op1) == jd.BinaryOperation{jd.Mult}
-    @test jd.equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
-    @test jd.equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
+    @test typeof(op1) == dc.BinaryOperation{dc.Mult}
+    @test dc.equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
+    @test dc.equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
 
     op2 = x .* y
 
-    @test typeof(op2) == jd.BinaryOperation{jd.Mult}
-    @test jd.equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
-    @test jd.equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
+    @test typeof(op2) == dc.BinaryOperation{dc.Mult}
+    @test dc.equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
+    @test dc.equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
 
     op3 = x' .* y'
 
-    @test typeof(op3) == jd.BinaryOperation{jd.Mult}
-    @test jd.equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
-    @test jd.equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
+    @test typeof(op3) == dc.BinaryOperation{dc.Mult}
+    @test dc.equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
+    @test dc.equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
 end
 
 @testset "elementwise multiplication with ambiguous input fails" begin
@@ -385,63 +385,63 @@ end
 @testset "update_index column vector" begin
     x = Tensor("x", Upper(3))
 
-    @test jd.update_index(x, Upper(3), Upper(3)) == x
+    @test dc.update_index(x, Upper(3), Upper(3)) == x
 
     expected_shift = KrD(Lower(3), Upper(1))
-    @test jd.update_index(x, Upper(3), Upper(1)) ==
-          jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test dc.update_index(x, Upper(3), Upper(1)) ==
+          dc.BinaryOperation{dc.Mult}(x, expected_shift)
 
     expected_shift = KrD(Lower(3), Upper(2))
-    @test jd.update_index(x, Upper(3), Upper(2)) ==
-          jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test dc.update_index(x, Upper(3), Upper(2)) ==
+          dc.BinaryOperation{dc.Mult}(x, expected_shift)
 end
 
 @testset "update_index row vector" begin
     x = Tensor("x", Lower(3))
 
-    @test jd.update_index(x, Lower(3), Lower(3)) == x
+    @test dc.update_index(x, Lower(3), Lower(3)) == x
 
     expected_shift = KrD(Upper(3), Lower(1))
-    @test jd.update_index(x, Lower(3), Lower(1)) ==
-          jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test dc.update_index(x, Lower(3), Lower(1)) ==
+          dc.BinaryOperation{dc.Mult}(x, expected_shift)
 
     expected_shift = KrD(Upper(3), Lower(2))
-    @test jd.update_index(x, Lower(3), Lower(2)) ==
-          jd.BinaryOperation{jd.Mult}(x, expected_shift)
+    @test dc.update_index(x, Lower(3), Lower(2)) ==
+          dc.BinaryOperation{dc.Mult}(x, expected_shift)
 end
 
 @testset "update_index matrix" begin
     A = Tensor("A", Upper(1), Lower(2))
 
-    @test jd.update_index(A, Lower(2), Lower(2)) == A
+    @test dc.update_index(A, Lower(2), Lower(2)) == A
 
     expected_shift = KrD(Upper(2), Lower(3))
-    @test jd.update_index(A, Lower(2), Lower(3)) ==
-          jd.BinaryOperation{jd.Mult}(A, expected_shift)
+    @test dc.update_index(A, Lower(2), Lower(3)) ==
+          dc.BinaryOperation{dc.Mult}(A, expected_shift)
 end
 
 @testset "transpose vector" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(1))
 
-    @test jd.equivalent(evaluate(x'), Tensor("x", Lower(1)))
-    @test jd.equivalent(evaluate(y'), Tensor("y", Upper(1)))
+    @test dc.equivalent(evaluate(x'), Tensor("x", Lower(1)))
+    @test dc.equivalent(evaluate(y'), Tensor("y", Upper(1)))
 end
 
 @testset "transpose KrD" begin
     d = KrD(Upper(1), Lower(2))
 
-    @test jd.equivalent(evaluate(d'), KrD(Lower(1), Upper(2)))
+    @test dc.equivalent(evaluate(d'), KrD(Lower(1), Upper(2)))
 end
 
 @testset "combined update_index and transpose vector" begin
     x = Tensor("x", Upper(2))
 
     xt = x'
-    x_indices = jd.get_free_indices(xt)
-    updated_transpose = evaluate(jd.update_index(xt, x_indices[1], Lower(1)))
+    x_indices = dc.get_free_indices(xt)
+    updated_transpose = evaluate(dc.update_index(xt, x_indices[1], Lower(1)))
 
-    @test jd.equivalent(updated_transpose, Tensor("x", Lower(1)))
+    @test dc.equivalent(updated_transpose, Tensor("x", Lower(1)))
 end
 
 @testset "transpose unary operations" begin
@@ -449,15 +449,15 @@ end
     y = Tensor("y", Lower(1))
 
     ops = (sin, cos)
-    types = (jd.Sin, jd.Cos)
+    types = (dc.Sin, dc.Cos)
 
     for (op, type) ∈ zip(ops, types)
         op1 = evaluate(op(y * x)')
         op2 = evaluate(op(x)')
 
         @test typeof(op1) == type
-        @test jd.get_free_indices(op1.arg) == jd.get_free_indices(y * x)
-        @test jd.equivalent(evaluate(op2).arg, Tensor("x", Lower(1)))
+        @test dc.get_free_indices(op1.arg) == dc.get_free_indices(y * x)
+        @test dc.equivalent(evaluate(op2).arg, Tensor("x", Lower(1)))
     end
 end
 
@@ -468,7 +468,7 @@ end
     ops = (A, x, A * x, A + A, sin(x), cos(x), tr(A))
 
     for op ∈ ops
-        @test typeof(-op) == jd.Negate
+        @test typeof(-op) == dc.Negate
         @test (-op).arg == op
     end
 end
@@ -477,21 +477,21 @@ end
     A = Tensor("A", Upper(1), Lower(2))
 
     At = evaluate(A')
-    @test jd.equivalent(At, Tensor("A", Lower(1), Upper(2)))
+    @test dc.equivalent(At, Tensor("A", Lower(1), Upper(2)))
 end
 
-@testset "transpose BinaryOperation{jd.Mult}" begin
+@testset "transpose BinaryOperation{dc.Mult}" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(2))
 
     op_t = evaluate((A * x)')
-    @test jd.equivalent(
+    @test dc.equivalent(
         evaluate(op_t),
-        jd.BinaryOperation{jd.Mult}(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
+        dc.BinaryOperation{dc.Mult}(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
     )
 end
 
-@testset "jd.Add/jd.Subtract tensors with different order fails" begin
+@testset "dc.Add/dc.Subtract tensors with different order fails" begin
     a = Tensor("a")
     x = Tensor("x", Upper(1))
     A = Tensor("A", Upper(1), Lower(2))
@@ -511,20 +511,20 @@ end
     end
 end
 
-@testset "jd.Add/jd.Subtract tensors with ambiguous indices succeeds" begin
+@testset "dc.Add/dc.Subtract tensors with ambiguous indices succeeds" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test jd.equivalent(
+    @test dc.equivalent(
         evaluate(A + B),
-        jd.BinaryOperation{jd.Add}(
+        dc.BinaryOperation{dc.Add}(
             Tensor("A", Upper(1), Lower(2)),
             Tensor("B", Upper(1), Lower(2)),
         ),
     )
 end
 
-@testset "jd.Add/jd.Subtract tensors with different indices" begin
+@testset "dc.Add/dc.Subtract tensors with different indices" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
 
@@ -557,8 +557,8 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test isempty(jd.get_free_indices(tr(A)))
-    @test isempty(jd.get_free_indices(tr(A * B)))
+    @test isempty(dc.get_free_indices(tr(A)))
+    @test isempty(dc.get_free_indices(tr(A * B)))
 end
 
 @testset "trace with non-matrix input fails" begin
@@ -579,14 +579,14 @@ end
     z = Tensor("z", Lower(1))
     d = KrD(Lower(1), Upper(3))
 
-    @test jd.can_contract(A, x)
-    @test jd.can_contract(x, A)
-    @test !jd.can_contract(A, y)
-    @test !jd.can_contract(y, A)
-    @test jd.can_contract(A, d)
-    @test jd.can_contract(d, A)
-    @test jd.can_contract(A, z)
-    @test jd.can_contract(z, A)
+    @test dc.can_contract(A, x)
+    @test dc.can_contract(x, A)
+    @test !dc.can_contract(A, y)
+    @test !dc.can_contract(y, A)
+    @test dc.can_contract(A, d)
+    @test dc.can_contract(d, A)
+    @test dc.can_contract(A, z)
+    @test dc.can_contract(z, A)
 end
 
 @testset "multiplication with non-matching indices matrix-vector" begin
@@ -595,15 +595,15 @@ end
 
     op1 = A * x
 
-    @test typeof(op1) == jd.BinaryOperation{jd.Mult}
-    @test jd.can_contract(op1.arg1, op1.arg2)
-    @test jd.get_free_indices(op1) == jd.LowerOrUpperIndex[Upper(1)]
+    @test typeof(op1) == dc.BinaryOperation{dc.Mult}
+    @test dc.can_contract(op1.arg1, op1.arg2)
+    @test dc.get_free_indices(op1) == dc.LowerOrUpperIndex[Upper(1)]
 
     op2 = x' * A
 
-    @test typeof(op2) == jd.BinaryOperation{jd.Mult}
-    @test jd.can_contract(op2.arg1, op2.arg2)
-    @test jd.get_free_indices(op2) == jd.LowerOrUpperIndex[Lower(2)]
+    @test typeof(op2) == dc.BinaryOperation{dc.Mult}
+    @test dc.can_contract(op2.arg1, op2.arg2)
+    @test dc.get_free_indices(op2) == dc.LowerOrUpperIndex[Lower(2)]
 end
 
 @testset "multiplication with non-compatible matrix-vector fails" begin
@@ -619,13 +619,13 @@ end
 
     op = A' * C
 
-    @assert typeof(op) == jd.BinaryOperation{jd.Mult}
-    op_indices = jd.get_free_indices(op)
+    @assert typeof(op) == dc.BinaryOperation{dc.Mult}
+    op_indices = dc.get_free_indices(op)
     @test length(op_indices) == 2
 
-    @test typeof(jd.get_free_indices(op.arg1)[1]) == Lower
-    @test jd.flip(jd.get_free_indices(op.arg1)[1]) == jd.get_free_indices(op.arg2)[1]
-    @test typeof(jd.get_free_indices(op.arg2)[end]) == Lower
+    @test typeof(dc.get_free_indices(op.arg1)[1]) == Lower
+    @test dc.flip(dc.get_free_indices(op.arg1)[1]) == dc.get_free_indices(op.arg2)[1]
+    @test typeof(dc.get_free_indices(op.arg2)[end]) == Lower
 end
 
 @testset "multiplication with matrix'-matrix' has correct indices" begin
@@ -634,13 +634,13 @@ end
 
     op = A' * C'
 
-    @assert typeof(op) == jd.BinaryOperation{jd.Mult}
-    op_indices = jd.get_free_indices(op)
+    @assert typeof(op) == dc.BinaryOperation{dc.Mult}
+    op_indices = dc.get_free_indices(op)
     @test length(op_indices) == 2
 
-    @test typeof(jd.get_free_indices(op.arg1)[1]) == Lower
-    @test jd.flip(jd.get_free_indices(op.arg1)[1]) == jd.get_free_indices(op.arg2)[2]
-    @test typeof(jd.get_free_indices(op.arg2)[end]) == Upper
+    @test typeof(dc.get_free_indices(op.arg1)[1]) == Lower
+    @test dc.flip(dc.get_free_indices(op.arg1)[1]) == dc.get_free_indices(op.arg2)[2]
+    @test typeof(dc.get_free_indices(op.arg2)[end]) == Upper
 end
 
 @testset "vector inner product with mismatching indices" begin
@@ -649,15 +649,15 @@ end
 
     op1 = x' * y
 
-    @test typeof(op1) == jd.BinaryOperation{jd.Mult}
-    @test jd.can_contract(op1.arg1, op1.arg2)
-    @test isempty(jd.get_free_indices(op1))
+    @test typeof(op1) == dc.BinaryOperation{dc.Mult}
+    @test dc.can_contract(op1.arg1, op1.arg2)
+    @test isempty(dc.get_free_indices(op1))
 
     op2 = y' * x
 
-    @test typeof(op2) == jd.BinaryOperation{jd.Mult}
-    @test jd.can_contract(op2.arg1, op2.arg2)
-    @test isempty(jd.get_free_indices(op2))
+    @test typeof(op2) == dc.BinaryOperation{dc.Mult}
+    @test dc.can_contract(op2.arg1, op2.arg2)
+    @test isempty(dc.get_free_indices(op2))
 end
 
 @testset "multiplication with non-matching indices scalar-matrix" begin
@@ -667,13 +667,13 @@ end
     op1 = A * z
     op2 = z * A
 
-    @test typeof(op1) == jd.BinaryOperation{jd.Mult}
-    @test !jd.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1) == dc.BinaryOperation{dc.Mult}
+    @test !dc.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == A
     @test op1.arg2 == z
 
-    @test typeof(op2) == jd.BinaryOperation{jd.Mult}
-    @test !jd.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2) == dc.BinaryOperation{dc.Mult}
+    @test !dc.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == z
     @test op2.arg2 == A
 end
@@ -685,13 +685,13 @@ end
     op1 = z * x
     op2 = x * z
 
-    @test typeof(op1) == jd.BinaryOperation{jd.Mult}
-    @test !jd.can_contract(op1.arg1, op1.arg2)
+    @test typeof(op1) == dc.BinaryOperation{dc.Mult}
+    @test !dc.can_contract(op1.arg1, op1.arg2)
     @test op1.arg1 == z
     @test op1.arg2 == x
 
-    @test typeof(op2) == jd.BinaryOperation{jd.Mult}
-    @test !jd.can_contract(op2.arg1, op2.arg2)
+    @test typeof(op2) == dc.BinaryOperation{dc.Mult}
+    @test !dc.can_contract(op2.arg1, op2.arg2)
     @test op2.arg1 == x
     @test op2.arg2 == z
 end
@@ -700,8 +700,8 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test jd.get_free_indices(x' * A') == jd.get_free_indices((A * x)')
-    @test jd.get_free_indices(x' * A) == jd.get_free_indices((A' * x)')
+    @test dc.get_free_indices(x' * A') == dc.get_free_indices((A * x)')
+    @test dc.get_free_indices(x' * A) == dc.get_free_indices((A' * x)')
 end
 
 @testset "to_string output is correct for primitive types" begin
@@ -714,31 +714,31 @@ end
     d2 = KrD(Upper(3), Lower(4))
     zero = Zero(Upper(1), Lower(3), Lower(4))
 
-    @test jd.to_string(A) == "A¹₂"
-    @test jd.to_string(B) == "B¹²³₄⁵₆₇"
-    @test jd.to_string(x) == "x²"
-    @test jd.to_string(y) == "y₁"
-    @test jd.to_string(z) == "z"
-    @test jd.to_string(d1) == "δ¹²"
-    @test jd.to_string(d2) == "δ³₄"
-    @test jd.to_string(zero) == "0¹₃₄"
+    @test dc.to_string(A) == "A¹₂"
+    @test dc.to_string(B) == "B¹²³₄⁵₆₇"
+    @test dc.to_string(x) == "x²"
+    @test dc.to_string(y) == "y₁"
+    @test dc.to_string(z) == "z"
+    @test dc.to_string(d1) == "δ¹²"
+    @test dc.to_string(d2) == "δ³₄"
+    @test dc.to_string(zero) == "0¹₃₄"
 end
 
 @testset "to_string output is correct for BinaryOperation" begin
     a = Tensor("a")
     b = Tensor("b")
 
-    mul = jd.BinaryOperation{jd.Mult}(a, b)
-    add = jd.BinaryOperation{jd.Add}(a, b)
-    sub = jd.BinaryOperation{jd.Sub}(a, b)
+    mul = dc.BinaryOperation{dc.Mult}(a, b)
+    add = dc.BinaryOperation{dc.Add}(a, b)
+    sub = dc.BinaryOperation{dc.Sub}(a, b)
 
-    @test jd.to_string(mul) == "ab"
-    @test jd.to_string(add) == "a + b"
-    @test jd.to_string(sub) == "a - b"
-    @test jd.to_string(jd.BinaryOperation{jd.Add}(mul, b)) == "ab + b"
-    @test jd.to_string(jd.BinaryOperation{jd.Add}(mul, mul)) == "ab + ab"
-    @test jd.to_string(jd.BinaryOperation{jd.Sub}(mul, mul)) == "ab - ab"
-    @test jd.to_string(jd.BinaryOperation{jd.Mult}(mul, mul)) == "abab"
-    @test jd.to_string(jd.BinaryOperation{jd.Mult}(add, add)) == "(a + b)(a + b)"
-    @test jd.to_string(jd.BinaryOperation{jd.Mult}(sub, add)) == "(a - b)(a + b)"
+    @test dc.to_string(mul) == "ab"
+    @test dc.to_string(add) == "a + b"
+    @test dc.to_string(sub) == "a - b"
+    @test dc.to_string(dc.BinaryOperation{dc.Add}(mul, b)) == "ab + b"
+    @test dc.to_string(dc.BinaryOperation{dc.Add}(mul, mul)) == "ab + ab"
+    @test dc.to_string(dc.BinaryOperation{dc.Sub}(mul, mul)) == "ab - ab"
+    @test dc.to_string(dc.BinaryOperation{dc.Mult}(mul, mul)) == "abab"
+    @test dc.to_string(dc.BinaryOperation{dc.Mult}(add, add)) == "(a + b)(a + b)"
+    @test dc.to_string(dc.BinaryOperation{dc.Mult}(sub, add)) == "(a - b)(a + b)"
 end

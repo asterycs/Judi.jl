@@ -1,10 +1,8 @@
-# Judi.jl
+# DiffMatic.jl
 
-_<ins>J</ins>ust a <ins>di</ins>fferentiation library_
-
-[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://asterycs.github.io/Judi.jl/dev)
-[![Run tests](https://github.com/asterycs/Judi.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/asterycs/Judi.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/asterycs/Judi.jl/graph/badge.svg?token=XIVXM5EPAC)](https://codecov.io/gh/asterycs/Judi.jl)
+[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://asterycs.github.io/DiffMatic.jl/dev)
+[![Run tests](https://github.com/asterycs/DiffMatic.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/asterycs/DiffMatic.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/asterycs/DiffMatic.jl/graph/badge.svg?token=XIVXM5EPAC)](https://codecov.io/gh/asterycs/DiffMatic.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 ## Symbolic differentiation of vector/matrix/tensor expressions in Julia
@@ -16,7 +14,7 @@ _<ins>J</ins>ust a <ins>di</ins>fferentiation library_
 Create a matrix and a vector:
 
 ```julia
-using Judi
+using DiffMatic
 
 @matrix A
 @vector x
@@ -61,7 +59,7 @@ standard notation.
 This library is not yet published in the general registry. To install it directly from Github:
 
 ```julia
-using Pkg; Pkg.add("https://github.com/asterycs/Judi.jl.git")
+using Pkg; Pkg.add("https://github.com/asterycs/DiffMatic.jl.git")
 ```
 
 ### Acknowledgements
