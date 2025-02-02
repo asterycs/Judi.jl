@@ -138,20 +138,20 @@ end
     @test left != dc.BinaryOperation{dc.Add}(a, b)
 end
 
-@testset "BinaryOperation dc.equivalent" begin
+@testset "BinaryOperation equivalent" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Lower(1))
 
     left = dc.BinaryOperation{dc.Mult}(a, b)
 
-    @test dc.equivalent(
+    @test equivalent(
         dc.BinaryOperation{dc.Mult}(a, b),
         dc.BinaryOperation{dc.Mult}(a, b),
     )
-    @test dc.equivalent(left, dc.BinaryOperation{dc.Mult}(a, b))
-    @test dc.equivalent(left, dc.BinaryOperation{dc.Mult}(b, a))
-    @test !dc.equivalent(left, dc.BinaryOperation{dc.Add}(a, b))
-    @test !dc.equivalent(left, dc.BinaryOperation{dc.Mult}(a, Tensor("x", Upper(1))))
+    @test equivalent(left, dc.BinaryOperation{dc.Mult}(a, b))
+    @test equivalent(left, dc.BinaryOperation{dc.Mult}(b, a))
+    @test !equivalent(left, dc.BinaryOperation{dc.Add}(a, b))
+    @test !equivalent(left, dc.BinaryOperation{dc.Mult}(a, Tensor("x", Upper(1))))
 end
 
 @testset "index hash function" begin
@@ -325,20 +325,20 @@ end
     op1 = A .* A
 
     @test typeof(op1) == dc.BinaryOperation{dc.Mult}
-    @test dc.equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
-    @test dc.equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
+    @test equivalent(evaluate(op1.arg1), Tensor("A", Upper(1), Lower(2)))
+    @test equivalent(evaluate(op1.arg2), Tensor("A", Upper(1), Lower(2)))
 
     op2 = A .* B
 
     @test typeof(op2) == dc.BinaryOperation{dc.Mult}
-    @test dc.equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
-    @test dc.equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
+    @test equivalent(evaluate(op2.arg1), Tensor("A", Upper(3), Lower(4)))
+    @test equivalent(evaluate(op2.arg2), Tensor("B", Upper(3), Lower(4)))
 
     op3 = A' .* B'
 
     @test typeof(op3) == dc.BinaryOperation{dc.Mult}
-    @test dc.equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
-    @test dc.equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
+    @test equivalent(evaluate(op3.arg1), Tensor("A", Lower(1), Upper(2)))
+    @test equivalent(evaluate(op3.arg2), Tensor("B", Lower(3), Upper(4)))
 end
 
 @testset "elementwise multiplication vector-vector" begin
@@ -348,20 +348,20 @@ end
     op1 = x .* x
 
     @test typeof(op1) == dc.BinaryOperation{dc.Mult}
-    @test dc.equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
-    @test dc.equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
+    @test equivalent(evaluate(op1.arg1), Tensor("x", Upper(1)))
+    @test equivalent(evaluate(op1.arg2), Tensor("x", Upper(1)))
 
     op2 = x .* y
 
     @test typeof(op2) == dc.BinaryOperation{dc.Mult}
-    @test dc.equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
-    @test dc.equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
+    @test equivalent(evaluate(op2.arg1), Tensor("x", Upper(2)))
+    @test equivalent(evaluate(op2.arg2), Tensor("y", Upper(2)))
 
     op3 = x' .* y'
 
     @test typeof(op3) == dc.BinaryOperation{dc.Mult}
-    @test dc.equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
-    @test dc.equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
+    @test equivalent(evaluate(op3.arg1), Tensor("x", Lower(2)))
+    @test equivalent(evaluate(op3.arg2), Tensor("y", Lower(2)))
 end
 
 @testset "elementwise multiplication with ambiguous input fails" begin
@@ -424,14 +424,14 @@ end
     x = Tensor("x", Upper(1))
     y = Tensor("y", Lower(1))
 
-    @test dc.equivalent(evaluate(x'), Tensor("x", Lower(1)))
-    @test dc.equivalent(evaluate(y'), Tensor("y", Upper(1)))
+    @test equivalent(evaluate(x'), Tensor("x", Lower(1)))
+    @test equivalent(evaluate(y'), Tensor("y", Upper(1)))
 end
 
 @testset "transpose KrD" begin
     d = KrD(Upper(1), Lower(2))
 
-    @test dc.equivalent(evaluate(d'), KrD(Lower(1), Upper(2)))
+    @test equivalent(evaluate(d'), KrD(Lower(1), Upper(2)))
 end
 
 @testset "combined update_index and transpose vector" begin
@@ -441,7 +441,7 @@ end
     x_indices = dc.get_free_indices(xt)
     updated_transpose = evaluate(dc.update_index(xt, x_indices[1], Lower(1)))
 
-    @test dc.equivalent(updated_transpose, Tensor("x", Lower(1)))
+    @test equivalent(updated_transpose, Tensor("x", Lower(1)))
 end
 
 @testset "transpose unary operations" begin
@@ -457,7 +457,7 @@ end
 
         @test typeof(op1) == type
         @test dc.get_free_indices(op1.arg) == dc.get_free_indices(y * x)
-        @test dc.equivalent(evaluate(op2).arg, Tensor("x", Lower(1)))
+        @test equivalent(evaluate(op2).arg, Tensor("x", Lower(1)))
     end
 end
 
@@ -477,7 +477,7 @@ end
     A = Tensor("A", Upper(1), Lower(2))
 
     At = evaluate(A')
-    @test dc.equivalent(At, Tensor("A", Lower(1), Upper(2)))
+    @test equivalent(At, Tensor("A", Lower(1), Upper(2)))
 end
 
 @testset "transpose BinaryOperation{dc.Mult}" begin
@@ -485,7 +485,7 @@ end
     x = Tensor("x", Upper(2))
 
     op_t = evaluate((A * x)')
-    @test dc.equivalent(
+    @test equivalent(
         evaluate(op_t),
         dc.BinaryOperation{dc.Mult}(Tensor("A", Lower(1), Lower(2)), Tensor("x", Upper(2))),
     )
@@ -515,7 +515,7 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(2), Lower(3))
 
-    @test dc.equivalent(
+    @test equivalent(
         evaluate(A + B),
         dc.BinaryOperation{dc.Add}(
             Tensor("A", Upper(1), Lower(2)),

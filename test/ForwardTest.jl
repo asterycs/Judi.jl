@@ -120,9 +120,9 @@ end
     x = Tensor("x", Upper(5))
     y = Tensor("y", Upper(6))
 
-    @test dc.equivalent(evaluate(x' * A'), evaluate((A * x)'))
-    @test dc.equivalent(evaluate(x' * A), evaluate((A' * x)'))
-    @test dc.equivalent(evaluate(x' * A * x), evaluate((A' * x)' * x))
+    @test equivalent(evaluate(x' * A'), evaluate((A * x)'))
+    @test equivalent(evaluate(x' * A), evaluate((A' * x)'))
+    @test equivalent(evaluate(x' * A * x), evaluate((A' * x)' * x))
 end
 
 @testset "evaluate BinaryOperation vector * KrD" begin
@@ -215,8 +215,8 @@ end
     op1 = (x + y) - (x + y)
     op2 = 2 * x - 2 * x
 
-    @test dc.equivalent(evaluate(op1), Zero(Upper(2)))
-    @test dc.equivalent(evaluate(op2), Zero(Upper(2)))
+    @test equivalent(evaluate(op1), Zero(Upper(2)))
+    @test equivalent(evaluate(op2), Zero(Upper(2)))
 end
 
 @testset "evaluate unary operations" begin
@@ -236,7 +236,7 @@ end
     B = Tensor("B", Upper(2), Lower(3))
 
     @test evaluate(tr(A)) == Tensor("A", Upper(2), Lower(2))
-    @test dc.equivalent(
+    @test equivalent(
         evaluate(tr(A * B)),
         dc.BinaryOperation{dc.Mult}(A, Tensor("B", Upper(2), Lower(1))),
     )
@@ -329,7 +329,7 @@ end
 
     D = dc.diff(op, Tensor("A", Upper(3), Lower(4)))
 
-    @test dc.equivalent(evaluate(D), KrD(Upper(1), Lower(2)))
+    @test equivalent(evaluate(D), KrD(Upper(1), Lower(2)))
 end
 
 @testset "diff sin" begin
@@ -339,7 +339,7 @@ end
 
     D = dc.diff(op, Tensor("x", Upper(3)))
 
-    @test dc.equivalent(D, dc.BinaryOperation{dc.Mult}(dc.Cos(x), KrD(Upper(2), Lower(3))))
+    @test equivalent(D, dc.BinaryOperation{dc.Mult}(dc.Cos(x), KrD(Upper(2), Lower(3))))
 end
 
 @testset "diff cos" begin
@@ -349,7 +349,7 @@ end
 
     D = dc.diff(op, Tensor("x", Upper(3)))
 
-    @test dc.equivalent(
+    @test equivalent(
         D,
         dc.BinaryOperation{dc.Mult}(dc.Negate(dc.Sin(x)), KrD(Upper(2), Lower(3))),
     )
@@ -362,7 +362,7 @@ end
 
     D = dc.diff(op, Tensor("x", Upper(3)))
 
-    @test dc.equivalent(D, dc.Negate(KrD(Upper(2), Lower(3))))
+    @test equivalent(D, dc.Negate(KrD(Upper(2), Lower(3))))
 end
 
 @testset "free indices constant after evaluate" begin
@@ -390,12 +390,12 @@ end
 
     expected = dc.BinaryOperation{dc.Mult}(Tensor("y", Lower(1)), Tensor("x", Lower(1)))
 
-    @test dc.equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))), expected)
+    @test equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))), expected)
 
     expected = dc.BinaryOperation{dc.Mult}(Tensor("y", Upper(1)), Tensor("x", Upper(1)))
-    @test dc.equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))'), expected)
-    @test dc.equivalent(evaluate(dc.diff(e', Tensor("z", Upper(9)))), expected)
-    @test dc.equivalent(evaluate(evaluate(dc.diff(e, Tensor("z", Upper(9))))'), expected)
+    @test equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(dc.diff(e', Tensor("z", Upper(9)))), expected)
+    @test equivalent(evaluate(evaluate(dc.diff(e, Tensor("z", Upper(9))))'), expected)
 end
 
 @testset "KrD collapsed correctly on element wise dc.Multiplications (mirrored)" begin
@@ -407,26 +407,26 @@ end
 
     expected = dc.BinaryOperation{dc.Mult}(Tensor("y", Lower(1)), Tensor("x", Lower(1)))
 
-    @test dc.equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))), expected)
+    @test equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))), expected)
 
     expected = dc.BinaryOperation{dc.Mult}(Tensor("y", Upper(1)), Tensor("x", Upper(1)))
-    @test dc.equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))'), expected)
-    @test dc.equivalent(evaluate(dc.diff(e', Tensor("z", Upper(9)))), expected)
-    @test dc.equivalent(evaluate(evaluate(dc.diff(e, Tensor("z", Upper(9))))'), expected)
+    @test equivalent(evaluate(dc.diff(e, Tensor("z", Upper(9)))'), expected)
+    @test equivalent(evaluate(dc.diff(e', Tensor("z", Upper(9)))), expected)
+    @test equivalent(evaluate(evaluate(dc.diff(e, Tensor("z", Upper(9))))'), expected)
 end
 
 @testset "Differentiate Ax" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test dc.equivalent(dc.diff(A * x, Tensor("x", Upper(5))), A)
+    @test equivalent(dc.diff(A * x, Tensor("x", Upper(5))), A)
 end
 
 @testset "Differentiate xᵀA " begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))
 
-    @test dc.equivalent(
+    @test equivalent(
         dc.diff(x' * A, Tensor("x", Upper(6))),
         Tensor("A", Lower(1), Lower(2)),
     )
@@ -438,8 +438,8 @@ end
 
     D = dc.diff(x' * A * x, Tensor("x", Upper(7)))
 
-    @test dc.equivalent(evaluate(D.arg1), evaluate(x' * A))
-    @test dc.equivalent(
+    @test equivalent(evaluate(D.arg1), evaluate(x' * A))
+    @test equivalent(
         evaluate(D.arg2),
         evaluate(dc.BinaryOperation{dc.Mult}(Tensor("A", Lower(1), Lower(3)), x)),
     )
@@ -455,7 +455,7 @@ end
 
     D = dc.diff(x * x' * x, Tensor("x", Upper(6)))
 
-    @test dc.equivalent(evaluate(D), expected)
+    @test equivalent(evaluate(D), expected)
 end
 
 @testset "Differentiate A(x + 2x)" begin
@@ -464,7 +464,7 @@ end
 
     D = dc.diff(A * (x + 2 * x), Tensor("x", Upper(5)))
 
-    @test dc.equivalent(evaluate(D), 3 * A)
+    @test equivalent(evaluate(D), 3 * A)
 end
 
 # TODO: Fails because KrD(Upper(3), Lower(3)) * Tensor("A", Upper(1), Lower(3)) isn't evaluated properly
@@ -480,7 +480,7 @@ end
 #     expected = dc.BinaryOperation{dc.Mult}(3, KrD(Upper(3), Lower(3)))
 #     expected = dc.BinaryOperation{dc.Mult}(expected, Tensor("A", Upper(1), Lower(3)))
 
-#     @test dc.equivalent(evaluate(D), expected)
+#     @test equivalent(evaluate(D), expected)
 # end
 
 @testset "Differentiate A(2x + x)" begin
@@ -489,7 +489,7 @@ end
 
     D = dc.diff(A * (x + 2 * x), Tensor("x", Upper(5)))
 
-    @test dc.equivalent(evaluate(D), 3 * A)
+    @test equivalent(evaluate(D), 3 * A)
 end
 
 @testset "evaluated derivative is equal to derivative of evaluated expression" begin

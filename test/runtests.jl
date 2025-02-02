@@ -4,6 +4,8 @@
 
 using Test
 
+include("TestUtils.jl")
+
 @testset "Aqua" begin
     include("Aqua.jl")
 end

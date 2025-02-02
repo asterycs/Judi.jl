@@ -15,27 +15,27 @@ dc = DiffMatic
     @vector y A
 
     # TODO: Find a better way to keep track of the indices and remove all "equivalent"
-    @test dc.equivalent(x, Tensor("x", Upper(1)))
-    @test dc.equivalent(y, Tensor("y", Upper(2)))
-    @test dc.equivalent(A, Tensor("A", Upper(3)))
+    @test equivalent(x, Tensor("x", Upper(1)))
+    @test equivalent(y, Tensor("y", Upper(2)))
+    @test equivalent(A, Tensor("A", Upper(3)))
 end
 
 @testset "create matrix" begin
     @matrix A
     @matrix B X
 
-    @test dc.equivalent(A, Tensor("A", Upper(4), Lower(5)))
-    @test dc.equivalent(B, Tensor("B", Upper(6), Lower(7)))
-    @test dc.equivalent(X, Tensor("X", Upper(8), Lower(9)))
+    @test equivalent(A, Tensor("A", Upper(4), Lower(5)))
+    @test equivalent(B, Tensor("B", Upper(6), Lower(7)))
+    @test equivalent(X, Tensor("X", Upper(8), Lower(9)))
 end
 
 @testset "create scalar" begin
     @scalar a
     @scalar b c
 
-    @test dc.equivalent(a, Tensor("a"))
-    @test dc.equivalent(b, Tensor("b"))
-    @test dc.equivalent(c, Tensor("c"))
+    @test equivalent(a, Tensor("a"))
+    @test equivalent(b, Tensor("b"))
+    @test equivalent(c, Tensor("c"))
 end
 
 @testset "to_std_string output is correct with scalar-tensor multiplication" begin
@@ -177,8 +177,8 @@ end
     @matrix A
     @vector x
 
-    @test dc.equivalent(derivative(x' * A * x, A), evaluate(x * x')) # scalar input works
-    @test dc.equivalent(derivative(A * x, x), A) # vector input works
+    @test equivalent(derivative(x' * A * x, A), evaluate(x * x')) # scalar input works
+    @test equivalent(derivative(A * x, x), A) # vector input works
 end
 
 @testset "gradient interface checks" begin
