@@ -138,6 +138,17 @@ end
     @test evaluate(dc.BinaryOperation{dc.Mult}(d2, d1)) == KrD(Upper(1), Lower(3))
 end
 
+@testset "evaluate fully collapsible Mult * Mult" begin
+    d1 = KrD(Upper(1), Lower(2))
+    d2 = KrD(Upper(2), Lower(3))
+    d3 = KrD(Upper(3), Lower(4))
+    A = Tensor("A", Upper(4), Lower(5))
+
+    op = dc.BinaryOperation{dc.Mult}(dc.BinaryOperation{dc.Mult}(d1, d3), dc.BinaryOperation{dc.Mult}(A, d2))
+
+    @test evaluate(op) == Tensor("A", Upper(1), Lower(5))
+end
+
 @testset "evaluate BinaryOperation with outer product" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(2))

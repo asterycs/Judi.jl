@@ -145,18 +145,6 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
     end
 end
 
-function can_collapse(arg1::Tensor, arg2::KrD)
-    return can_collapse(arg2, arg1)
-end
-
-function can_collapse(arg1::KrD, arg2::Tensor)
-    return !isempty(eliminated_indices(get_free_indices(arg1), get_free_indices(arg2)))
-end
-
-function can_collapse(arg1::Value, arg2::Value)
-    return false
-end
-
 function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
     new_args = []
 
@@ -172,7 +160,7 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mul
                 continue
             end
 
-            if can_collapse(available1[i], available2[j])
+            if can_contract(available1[i], available2[j])
                 push!(new_args, evaluate(Mult(), available1[i], available2[j]))
                 available1[i] = nothing
                 available2[j] = nothing
@@ -199,15 +187,15 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mul
             if isnothing(new_arg)
                 return args[1]
             else
-                return BinaryOperation{Mult}(new_arg, args[1])
+                return evaluate(BinaryOperation{Mult}(new_arg, args[1]))
             end
         end
 
         if isnothing(new_arg)
-            new_arg = BinaryOperation{Mult}(args[1], args[2])
+            new_arg = evaluate(BinaryOperation{Mult}(args[1], args[2]))
         else
             new_arg =
-                BinaryOperation{Mult}(new_arg, BinaryOperation{Mult}(args[1], args[2]))
+                evaluate(BinaryOperation{Mult}(new_arg, BinaryOperation{Mult}(args[1], args[2])))
         end
     end
 
