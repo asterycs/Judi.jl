@@ -77,6 +77,43 @@ end
     @test evaluate(op2) == X
 end
 
+@testset "evaluate sum of subtraction and addition" begin
+    a = Tensor("a", Upper(1))
+    b = Tensor("b", Upper(1))
+    c = Tensor("c", Upper(1))
+    d = Tensor("d", Upper(1))
+
+    # a - b + a + b
+    add_inner = dc.BinaryOperation{dc.Add}(a, b)
+    sub = dc.BinaryOperation{dc.Sub}(a, b)
+    add = dc.BinaryOperation{dc.Add}(sub, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Mult}(2, a)
+
+    # a - b + b + a
+    add_inner = dc.BinaryOperation{dc.Add}(b, a)
+    sub = dc.BinaryOperation{dc.Sub}(a, b)
+    add = dc.BinaryOperation{dc.Add}(sub, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Mult}(2, a)
+
+    # a - b + c + b
+    add_inner = dc.BinaryOperation{dc.Add}(c, b)
+    sub = dc.BinaryOperation{dc.Sub}(a, b)
+    add = dc.BinaryOperation{dc.Add}(sub, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(a, c)
+
+    # a - b + b + d
+    add_inner = dc.BinaryOperation{dc.Add}(b, d)
+    sub = dc.BinaryOperation{dc.Sub}(a, b)
+    add = dc.BinaryOperation{dc.Add}(sub, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(a, d)
+
+    # a - b + a + d
+    add_inner = dc.BinaryOperation{dc.Add}(a, d)
+    sub = dc.BinaryOperation{dc.Sub}(a, b)
+    add = dc.BinaryOperation{dc.Add}(sub, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(2, a), dc.BinaryOperation{dc.Sub}(d, b))
+end
+
 @testset "evaluate adjoint is consistent" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(3), Lower(4))

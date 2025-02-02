@@ -549,6 +549,18 @@ function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Add}
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
 end
 
+function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Sub})
+    if evaluate(arg1) == evaluate(arg2.arg1)
+        return BinaryOperation{Sub}(BinaryOperation{Mult}(2, evaluate(arg1)), evaluate(arg2.arg2))
+    end
+
+    if evaluate(arg1) == evaluate(arg2.arg2)
+        return evaluate(arg2.arg1)
+    end
+
+    return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
+end
+
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
     if evaluate(arg1) == evaluate(arg2)
         return BinaryOperation{Mult}(2, evaluate(arg1))
@@ -642,17 +654,17 @@ end
 
 function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Add})
     if arg1.arg1 == arg2.arg1
-        return BinaryOperation{Add}(
-            BinaryOperation{*}(2, arg1.arg1),
-            BinaryOperation{Sub}(arg2.arg2, arg1.arg2),
-        )
+        return evaluate(BinaryOperation{Add}(
+            evaluate(BinaryOperation{Mult}(2, arg1.arg1)),
+            evaluate(BinaryOperation{Sub}(arg2.arg2, arg1.arg2)),
+        ))
     end
 
     if arg1.arg1 == arg2.arg2
-        return BinaryOperation{Add}(
-            BinaryOperation{*}(2, arg1.arg1),
-            BinaryOperation{Sub}(arg2.arg1, arg1.arg2),
-        )
+        return evaluate(BinaryOperation{Add}(
+            evaluate(BinaryOperation{Mult}(2, arg1.arg1)),
+            evaluate(BinaryOperation{Sub}(arg2.arg1, arg1.arg2)),
+        ))
     end
 
     if arg1.arg2 == arg2.arg1
