@@ -85,6 +85,14 @@ end
     @test evaluate(op) == dc.BinaryOperation{dc.Mult}(x, y)
 end
 
+@testset "evaluate Real - Zero product" begin
+    a = 1
+    z = Zero(Upper(1), Lower(2))
+
+    @test evaluate(dc.BinaryOperation{dc.Mult}(a, z)) == z
+    @test evaluate(dc.BinaryOperation{dc.Mult}(z, a)) == z
+end
+
 @testset "evaluate sum of subtraction and addition" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Upper(1))
