@@ -56,7 +56,7 @@ function evaluate(arg::Negate)
 end
 
 function evaluate(arg::Union{Tensor,KrD,Zero,Real})
-    arg
+    return arg
 end
 
 function evaluate(arg::Sin)
@@ -305,7 +305,7 @@ function evaluate(::Mult, arg1::KrD, arg2::Tensor)
         end
     end
 
-    newarg
+    return newarg
 end
 
 function evaluate(::Mult, arg1::Negate, arg2::TensorValue)
@@ -392,7 +392,7 @@ function evaluate(::Mult, arg1::Union{Tensor,KrD}, arg2::KrD)
         end
     end
 
-    newarg
+    return newarg
 end
 
 function evaluate(
@@ -464,7 +464,7 @@ end
 function evaluate(::Add, arg1::Zero, arg2::Zero)
     @assert is_permutation(arg1, arg2)
 
-    arg1
+    return arg1
 end
 
 function evaluate(::Add, arg1::Zero, arg2::Value)
@@ -678,7 +678,7 @@ end
 function evaluate(::Sub, arg1::Zero, arg2::Zero)
     @assert is_permutation(arg1, arg2)
 
-    arg1
+    return arg1
 end
 
 function evaluate(::Sub, arg1::Zero, arg2::Value)
