@@ -1,41 +1,41 @@
 # Any copyright is dedicated to the Public Domain.
 # https://creativecommons.org/publicdomain/zero/1.0/
 
-using Judi
+using DiffMatic
 using Test
 
-using Judi: Tensor, KrD, Zero
-using Judi: evaluate
-using Judi: Upper, Lower
+using DiffMatic: Tensor, KrD, Zero
+using DiffMatic: evaluate
+using DiffMatic: Upper, Lower
 
-jd = Judi
+dc = DiffMatic
 
 @testset "create column vector" begin
     @vector x
     @vector y A
 
-    # TODO: Find a better way to keep track of the indices and remove all "jd.equivalent"
-    @test jd.equivalent(x, Tensor("x", Upper(1)))
-    @test jd.equivalent(y, Tensor("y", Upper(2)))
-    @test jd.equivalent(A, Tensor("A", Upper(3)))
+    # TODO: Find a better way to keep track of the indices and remove all "equivalent"
+    @test dc.equivalent(x, Tensor("x", Upper(1)))
+    @test dc.equivalent(y, Tensor("y", Upper(2)))
+    @test dc.equivalent(A, Tensor("A", Upper(3)))
 end
 
 @testset "create matrix" begin
     @matrix A
     @matrix B X
 
-    @test jd.equivalent(A, Tensor("A", Upper(4), Lower(5)))
-    @test jd.equivalent(B, Tensor("B", Upper(6), Lower(7)))
-    @test jd.equivalent(X, Tensor("X", Upper(8), Lower(9)))
+    @test dc.equivalent(A, Tensor("A", Upper(4), Lower(5)))
+    @test dc.equivalent(B, Tensor("B", Upper(6), Lower(7)))
+    @test dc.equivalent(X, Tensor("X", Upper(8), Lower(9)))
 end
 
 @testset "create scalar" begin
     @scalar a
     @scalar b c
 
-    @test jd.equivalent(a, Tensor("a"))
-    @test jd.equivalent(b, Tensor("b"))
-    @test jd.equivalent(c, Tensor("c"))
+    @test dc.equivalent(a, Tensor("a"))
+    @test dc.equivalent(b, Tensor("b"))
+    @test dc.equivalent(c, Tensor("c"))
 end
 
 @testset "to_std_string output is correct with scalar-tensor multiplication" begin
@@ -47,7 +47,7 @@ end
     b = Tensor("b")
 
     function mult(l, r)
-        return evaluate(jd.BinaryOperation{jd.Mult}(l, r))
+        return evaluate(dc.BinaryOperation{dc.Mult}(l, r))
     end
 
     @test to_std_string(mult(A, a)) == "aA"
@@ -70,7 +70,7 @@ end
     yt = Tensor("y", Lower(1))
 
     function contract(l, r)
-        return evaluate(jd.BinaryOperation{jd.Mult}(l, r))
+        return evaluate(dc.BinaryOperation{dc.Mult}(l, r))
     end
 
     @test to_std_string(contract(A, x)) == "Ax"
@@ -89,7 +89,7 @@ end
     y = Tensor("y", Upper(1))
 
     function contract(l, r)
-        return evaluate(jd.BinaryOperation{jd.Mult}(l, r))
+        return evaluate(dc.BinaryOperation{dc.Mult}(l, r))
     end
 
     @test to_std_string(contract(A, x)) == "xᵀAᵀ"
@@ -104,7 +104,7 @@ end
     y = Tensor("y", Lower(1))
 
     function contract(l, r)
-        return evaluate(jd.BinaryOperation{jd.Mult}(l, r))
+        return evaluate(dc.BinaryOperation{dc.Mult}(l, r))
     end
 
     @test to_std_string(contract(A, x)) == "Ax"
@@ -120,7 +120,7 @@ end
     D = Tensor("D", Lower(3), Upper(2))
 
     function contract(l, r)
-        return evaluate(jd.BinaryOperation{jd.Mult}(l, r))
+        return evaluate(dc.BinaryOperation{dc.Mult}(l, r))
     end
 
     @test to_std_string(contract(A, B)) == "AB"
@@ -139,7 +139,7 @@ end
     C = Tensor("C", Lower(2), Upper(1))
 
     function sum(l, r)
-        return evaluate(jd.BinaryOperation{jd.Add}(l, r))
+        return evaluate(dc.BinaryOperation{dc.Add}(l, r))
     end
 
     @test to_std_string(sum(A, B)) == "A + B"
@@ -154,7 +154,7 @@ end
     y = Tensor("y", Lower(2))
 
     function mul(l, r)
-        return jd.BinaryOperation{jd.Mult}(l, r)
+        return dc.BinaryOperation{dc.Mult}(l, r)
     end
 
     @test to_std_string(mul(A, x)) == "diag(x)A"
@@ -177,8 +177,8 @@ end
     @matrix A
     @vector x
 
-    @test jd.equivalent(derivative(x' * A * x, A), evaluate(x * x')) # scalar input works
-    @test jd.equivalent(derivative(A * x, x), A) # vector input works
+    @test dc.equivalent(derivative(x' * A * x, A), evaluate(x * x')) # scalar input works
+    @test dc.equivalent(derivative(A * x, x), A) # vector input works
 end
 
 @testset "gradient interface checks" begin

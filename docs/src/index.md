@@ -1,14 +1,14 @@
-# Judi.jl
+# DiffMatic.jl
 
-Documentation for Judi.jl
+Documentation for DiffMatic.jl
 
 ```@docs
 @matrix(ids...)
 @vector(ids...)
 @scalar(ids...)
-derivative(expr, wrt::Judi.Tensor)
-gradient(expr, wrt::Judi.Tensor)
-jacobian(expr, wrt::Judi.Tensor)
-hessian(expr, wrt::Judi.Tensor)
+derivative(expr, wrt::DiffMatic.Tensor)
+gradient(expr, wrt::DiffMatic.Tensor)
+jacobian(expr, wrt::DiffMatic.Tensor)
+hessian(expr, wrt::DiffMatic.Tensor)
 to_std_string(expr)
 ```

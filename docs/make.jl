@@ -1,14 +1,14 @@
 using Documenter
-using Judi
+using DiffMatic
 
-DocMeta.setdocmeta!(Judi, :DocTestSetup, :(using Judi); recursive=true)
+DocMeta.setdocmeta!(DiffMatic, :DocTestSetup, :(using DiffMatic); recursive=true)
 
 makedocs(
-    sitename = "Judi",
+    sitename = "DiffMatic",
     format = Documenter.HTML(),
-    modules = [Judi]
+    modules = [DiffMatic]
 )
 
 deploydocs(
-    repo = "https://github.com/asterycs/Judi.jl"
+    repo = "https://github.com/asterycs/DiffMatic.jl"
 )
