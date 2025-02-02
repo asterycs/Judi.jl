@@ -232,6 +232,10 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::KrD)
     elseif can_contract(arg1.arg1, arg2)
         new_arg1 = evaluate(Mult(), arg1.arg1, arg2)
         return BinaryOperation{Mult}(new_arg1, evaluate(arg1.arg2))
+    elseif arg1.arg1 isa Real
+        return BinaryOperation{Mult}(arg1.arg1, BinaryOperation{Mult}(arg1.arg2, arg2))
+    elseif arg1.arg2 isa Real
+        return BinaryOperation{Mult}(arg1.arg2, BinaryOperation{Mult}(arg1.arg1, arg2))
     else
         return BinaryOperation{Mult}(arg1, arg2)
     end
