@@ -533,8 +533,7 @@ end
 #     return _add_to_product(arg1, arg2)
 # end
 
-# TODO: Change Value to UnaryValue
-function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
+function _add_to_product(arg1::BinaryOperation{Mult}, arg2::UnaryValue)
     if evaluate(arg1) == evaluate(arg2)
         return BinaryOperation{Mult}(2, evaluate(arg1))
     end
@@ -545,6 +544,26 @@ function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
 
     if evaluate(arg1.arg2) isa Real && evaluate(arg1.arg1) == evaluate(arg2)
         return BinaryOperation{Mult}(evaluate(arg1.arg2) + 1, evaluate(arg2))
+    end
+
+    return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
+end
+
+function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Add})
+    if evaluate(arg1) == evaluate(arg2.arg1)
+        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1)), evaluate(arg2.arg2))
+    end
+
+    if evaluate(arg1) == evaluate(arg2.arg2)
+        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1)), evaluate(arg2.arg1))
+    end
+
+    return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
+end
+
+function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
+    if evaluate(arg1) == evaluate(arg2)
+        return BinaryOperation{Mult}(2, evaluate(arg1))
     end
 
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
