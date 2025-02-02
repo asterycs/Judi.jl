@@ -77,6 +77,14 @@ end
     @test evaluate(op2) == X
 end
 
+@testset "evaluate Negate - Negate product" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Upper(1))
+
+    op = dc.BinaryOperation{dc.Mult}(dc.Negate(x), dc.Negate(y))
+    @test evaluate(op) == dc.BinaryOperation{dc.Mult}(x, y)
+end
+
 @testset "evaluate sum of subtraction and addition" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Upper(1))

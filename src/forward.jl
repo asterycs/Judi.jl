@@ -424,7 +424,7 @@ function evaluate(::Mult, arg1::Value, arg2::Value)
 end
 
 function evaluate(::Mult, arg1::Negate, arg2::Negate)
-    return evaluate(Mult(), arg1.arg, arg2.arg2)
+    return evaluate(Mult(), arg1.arg, arg2.arg)
 end
 
 function evaluate(::Mult, arg1::Negate, arg2::Zero)
