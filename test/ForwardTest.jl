@@ -212,6 +212,14 @@ end
     @test evaluate(dc.BinaryOperation{dc.Mult}(A, Z)) == Zero(Upper(2), Lower(3), Lower(5))
 end
 
+@testset "evaluate BinaryOperation Negate * Zero" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    Z = Zero(Upper(2), Lower(3))
+
+    @test evaluate(dc.BinaryOperation{dc.Mult}(Z, dc.Negate(A))) == dc.Zero(Upper(1), Lower(3))
+    @test evaluate(dc.BinaryOperation{dc.Mult}(dc.Negate(A), Z)) == dc.Zero(Upper(1), Lower(3))
+end
+
 @testset "evaluate BinaryOperation KrD * KrD" begin
     d1 = KrD(Upper(1), Lower(2))
     d2 = KrD(Upper(2), Lower(3))
