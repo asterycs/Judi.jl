@@ -138,6 +138,27 @@ end
     @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(2, a), dc.BinaryOperation{dc.Sub}(d, b))
 end
 
+@testset "evaluate product of real and real - Tensor product" begin
+    a = Tensor("a", Upper(1))
+    b = Tensor("b", Upper(1))
+
+    op1 = 2 * dc.BinaryOperation{dc.Mult}(a, 2)
+    op2 = 2 * dc.BinaryOperation{dc.Mult}(2, a)
+    op3 = 2 * dc.BinaryOperation{dc.Mult}(a, b)
+
+    @test evaluate(op1) == dc.BinaryOperation{dc.Mult}(4, a)
+    @test evaluate(op2) == dc.BinaryOperation{dc.Mult}(4, a)
+    @test evaluate(op3) == op3
+
+    op4 = dc.BinaryOperation{dc.Mult}(a, 2) * 2
+    op5 = dc.BinaryOperation{dc.Mult}(2, a) * 2
+    op6 = dc.BinaryOperation{dc.Mult}(a, b) * 2
+
+    @test evaluate(op4) == dc.BinaryOperation{dc.Mult}(4, a)
+    @test evaluate(op5) == dc.BinaryOperation{dc.Mult}(4, a)
+    @test evaluate(op6) == op6
+end
+
 @testset "evaluate adjoint is consistent" begin
     A = Tensor("A", Upper(1), Lower(2))
     B = Tensor("B", Upper(3), Lower(4))
