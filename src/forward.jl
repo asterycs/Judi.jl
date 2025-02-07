@@ -82,7 +82,7 @@ function evaluate(::Mult, arg1::Real, arg2::BinaryOperation{Mult})
 end
 
 # TODO: Create separate type for elementwise products and delete this method
-function is_elementwise_multiplication(arg1::TensorValue, arg2::TensorValue)
+function is_elementwise_multiplication(arg1::TensorExpr, arg2::TensorExpr)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
@@ -240,11 +240,11 @@ function evaluate(::Mult, arg1::UnaryOperation, arg2::Zero)
     return Zero(union(arg1_free_indices, arg2_free_indices)...)
 end
 
-function evaluate(::Mult, arg1::Zero, arg2::TensorValue)
+function evaluate(::Mult, arg1::Zero, arg2::TensorExpr)
     return evaluate(Mult(), arg2, arg1)
 end
 
-function evaluate(::Mult, arg1::TensorValue, arg2::Zero)
+function evaluate(::Mult, arg1::TensorExpr, arg2::Zero)
     arg1_free_indices, arg2_free_indices =
         eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
 
@@ -308,11 +308,11 @@ function evaluate(::Mult, arg1::KrD, arg2::Tensor)
     return newarg
 end
 
-function evaluate(::Mult, arg1::Negate, arg2::TensorValue)
+function evaluate(::Mult, arg1::Negate, arg2::TensorExpr)
     return Negate(evaluate(Mult(), arg1.arg, arg2))
 end
 
-function evaluate(::Mult, arg1::TensorValue, arg2::Negate)
+function evaluate(::Mult, arg1::TensorExpr, arg2::Negate)
     return Negate(evaluate(Mult(), arg1, arg2.arg))
 end
 
@@ -336,11 +336,11 @@ function evaluate(::Mult, arg1::KrD, arg2::UnaryOp) where {UnaryOp<:UnaryOperati
     return BinaryOperation{Mult}(evaluate(arg2), evaluate(arg1))
 end
 
-function is_diag(arg1::KrD, arg2::TensorValue)
+function is_diag(arg1::KrD, arg2::TensorExpr)
     return is_diag(arg2, arg1)
 end
 
-function is_diag(arg1::TensorValue, arg2::KrD)
+function is_diag(arg1::TensorExpr, arg2::KrD)
     arg1_indices, arg2_indices = get_free_indices.((arg1, arg2))
 
     return length(arg1_indices) == 1 && !isempty(intersect(arg1_indices, arg2_indices))
@@ -428,18 +428,18 @@ function evaluate(::Mult, arg1::Negate, arg2::Negate)
 end
 
 function evaluate(::Mult, arg1::Negate, arg2::Zero)
-    return invoke(evaluate, Tuple{Mult,TensorValue,Zero}, Mult(), arg1, arg2)
+    return invoke(evaluate, Tuple{Mult,TensorExpr,Zero}, Mult(), arg1, arg2)
 end
 
 function evaluate(::Mult, arg1::Zero, arg2::Negate)
-    return invoke(evaluate, Tuple{Mult,Zero,TensorValue}, Mult(), arg1, arg2)
+    return invoke(evaluate, Tuple{Mult,Zero,TensorExpr}, Mult(), arg1, arg2)
 end
 
-function evaluate(::Mult, arg1::TensorValue, arg2::Real)
+function evaluate(::Mult, arg1::TensorExpr, arg2::Real)
     evaluate(Mult(), arg2, arg1)
 end
 
-function evaluate(::Mult, arg1::Real, arg2::TensorValue)
+function evaluate(::Mult, arg1::Real, arg2::TensorExpr)
     if arg1 == 1
         return arg2
     else

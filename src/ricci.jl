@@ -14,24 +14,24 @@ import Base.show
 
 export tr
 
-abstract type TensorValue end
+abstract type TensorExpr end
 
 # Shortcut for simpler comparison from
 # https://stackoverflow.com/questions/62336686/struct-equality-with-arrays
-function ==(a::T, b::T) where {T<:TensorValue}
+function ==(a::T, b::T) where {T<:TensorExpr}
     f = fieldnames(T)
 
     return (getfield.(Ref(a), f) == getfield.(Ref(b), f)) ||
            (reverse(getfield.(Ref(a), f)) == getfield.(Ref(b), f))
 end
 
-Value = Union{TensorValue,Real}
+Value = Union{TensorExpr,Real}
 
 function get_indices(arg::Real)
     return LowerOrUpperIndex[]
 end
 
-struct Tensor <: TensorValue
+struct Tensor <: TensorExpr
     id::String
     indices::IndexList
 
@@ -51,7 +51,7 @@ function are_unique(arg::AbstractArray)
     return length(unique(arg)) == length(arg)
 end
 
-struct KrD <: TensorValue
+struct KrD <: TensorExpr
     indices::IndexList
 
     function KrD(indices::LowerOrUpperIndex...)
@@ -68,7 +68,7 @@ struct KrD <: TensorValue
     end
 end
 
-struct Zero <: TensorValue
+struct Zero <: TensorExpr
     indices::IndexList
 
     function Zero(indices::LowerOrUpperIndex...)
@@ -82,7 +82,7 @@ struct Zero <: TensorValue
     end
 end
 
-struct BinaryOperation{Op} <: TensorValue where {Op}
+struct BinaryOperation{Op} <: TensorExpr where {Op}
     arg1::Value
     arg2::Value
 end
@@ -92,27 +92,27 @@ struct Add <: AdditiveOperation end
 struct Sub <: AdditiveOperation end
 struct Mult end
 
-abstract type UnaryOperation <: TensorValue end
+abstract type UnaryOperation <: TensorExpr end
 
 UnaryValue = Union{Tensor,KrD,Zero,UnaryOperation,Real}
 
 struct Negate <: UnaryOperation
-    arg::TensorValue
+    arg::TensorExpr
 end
 
 struct Sin <: UnaryOperation
-    arg::TensorValue
+    arg::TensorExpr
 end
 
-function sin(arg::TensorValue)
+function sin(arg::TensorExpr)
     return Sin(arg)
 end
 
 struct Cos <: UnaryOperation
-    arg::TensorValue
+    arg::TensorExpr
 end
 
-function cos(arg::TensorValue)
+function cos(arg::TensorExpr)
     return Cos(arg)
 end
 
@@ -224,7 +224,7 @@ function is_permutation(l::AbstractArray{T}, r::AbstractArray{T}) where {T}
     return true
 end
 
-function is_permutation(arg1::TensorValue, arg2::TensorValue)
+function is_permutation(arg1::TensorExpr, arg2::TensorExpr)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)
 
@@ -297,7 +297,7 @@ function can_contract(arg1::Value, arg2::Value)
     return false
 end
 
-function tr(arg::TensorValue)
+function tr(arg::TensorExpr)
     free_ids = get_free_indices(arg)
 
     de = DomainError("Trace is defined only for matrices")
@@ -313,7 +313,7 @@ function tr(arg::TensorValue)
     return BinaryOperation{Mult}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
 end
 
-function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
+function Base.broadcasted(::typeof(*), arg1::TensorExpr, arg2::TensorExpr)
     arg1_free_indices = get_free_indices(arg1)
     arg2_free_indices = get_free_indices(arg2)
 
@@ -344,11 +344,11 @@ function Base.broadcasted(::typeof(*), arg1::TensorValue, arg2::TensorValue)
     return BinaryOperation{Mult}(new_arg1, arg2)
 end
 
-function *(arg1::TensorValue, arg2::Real)
+function *(arg1::TensorExpr, arg2::Real)
     return arg2 * arg1
 end
 
-function *(arg1::Value, arg2::TensorValue)
+function *(arg1::Value, arg2::TensorExpr)
     arg1_free_indices = get_free_indices(arg1)
     arg2_free_indices = get_free_indices(arg2)
 
@@ -474,15 +474,15 @@ function get_letters(indices::IndexList)
     return [i.letter for i ∈ indices]
 end
 
-function +(arg1::TensorValue, arg2::TensorValue)
+function +(arg1::TensorExpr, arg2::TensorExpr)
     return create_additive_op(Add(), arg1, arg2)
 end
 
-function -(arg1::TensorValue, arg2::TensorValue)
+function -(arg1::TensorExpr, arg2::TensorExpr)
     return create_additive_op(Sub(), arg1, arg2)
 end
 
-function create_additive_op(op::Op, arg1::TensorValue, arg2::TensorValue) where {Op<:AdditiveOperation}
+function create_additive_op(op::Op, arg1::TensorExpr, arg2::TensorExpr) where {Op<:AdditiveOperation}
     arg1_ids, arg2_ids = get_free_indices.((arg1, arg2))
 
     if length(unique(arg1_ids)) != length(unique(arg2_ids))
@@ -524,7 +524,7 @@ function create_additive_op(op::Op, arg1::TensorValue, arg2::TensorValue) where 
 end
 
 function update_index(
-    arg::TensorValue,
+    arg::TensorExpr,
     from::LowerOrUpperIndex,
     to::LowerOrUpperIndex;
     allow_shape_change = false,
@@ -546,7 +546,7 @@ function update_index(
     return BinaryOperation{Mult}(arg, KrD(flip(from), to))
 end
 
-function -(arg::TensorValue)
+function -(arg::TensorExpr)
     return Negate(arg)
 end
 
@@ -700,6 +700,6 @@ function to_string(arg::BinaryOperation{Sub})
     return to_string(arg.arg1) * " - " * parenthesize(arg.arg2)
 end
 
-function Base.show(io::IO, expr::TensorValue)
+function Base.show(io::IO, expr::TensorExpr)
     return print(io, to_string(expr))
 end
