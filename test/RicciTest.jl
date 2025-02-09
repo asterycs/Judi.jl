@@ -144,10 +144,7 @@ end
 
     left = dc.BinaryOperation{dc.Mult}(a, b)
 
-    @test equivalent(
-        dc.BinaryOperation{dc.Mult}(a, b),
-        dc.BinaryOperation{dc.Mult}(a, b),
-    )
+    @test equivalent(dc.BinaryOperation{dc.Mult}(a, b), dc.BinaryOperation{dc.Mult}(a, b))
     @test equivalent(left, dc.BinaryOperation{dc.Mult}(a, b))
     @test equivalent(left, dc.BinaryOperation{dc.Mult}(b, a))
     @test !equivalent(left, dc.BinaryOperation{dc.Add}(a, b))

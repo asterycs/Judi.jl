@@ -135,7 +135,10 @@ end
     add_inner = dc.BinaryOperation{dc.Add}(a, d)
     sub = dc.BinaryOperation{dc.Sub}(a, b)
     add = dc.BinaryOperation{dc.Add}(sub, add_inner)
-    @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(2, a), dc.BinaryOperation{dc.Sub}(d, b))
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(
+        dc.BinaryOperation{dc.Mult}(2, a),
+        dc.BinaryOperation{dc.Sub}(d, b),
+    )
 end
 
 @testset "evaluate product of real and real - Tensor product" begin
@@ -216,8 +219,10 @@ end
     A = Tensor("A", Upper(1), Lower(2))
     Z = Zero(Upper(2), Lower(3))
 
-    @test evaluate(dc.BinaryOperation{dc.Mult}(Z, dc.Negate(A))) == dc.Zero(Upper(1), Lower(3))
-    @test evaluate(dc.BinaryOperation{dc.Mult}(dc.Negate(A), Z)) == dc.Zero(Upper(1), Lower(3))
+    @test evaluate(dc.BinaryOperation{dc.Mult}(Z, dc.Negate(A))) ==
+          dc.Zero(Upper(1), Lower(3))
+    @test evaluate(dc.BinaryOperation{dc.Mult}(dc.Negate(A), Z)) ==
+          dc.Zero(Upper(1), Lower(3))
 end
 
 @testset "evaluate BinaryOperation KrD * KrD" begin
@@ -234,7 +239,10 @@ end
     d3 = KrD(Upper(3), Lower(4))
     A = Tensor("A", Upper(4), Lower(5))
 
-    op = dc.BinaryOperation{dc.Mult}(dc.BinaryOperation{dc.Mult}(d1, d3), dc.BinaryOperation{dc.Mult}(A, d2))
+    op = dc.BinaryOperation{dc.Mult}(
+        dc.BinaryOperation{dc.Mult}(d1, d3),
+        dc.BinaryOperation{dc.Mult}(A, d2),
+    )
 
     @test evaluate(op) == Tensor("A", Upper(1), Lower(5))
 end
@@ -328,7 +336,7 @@ end
     # tree in diff() since we need to have a safe (as in unused) temporary index
     # when splitting the trace.
     # @test dc.diff(x, x) ==
-        #   dc.BinaryOperation{dc.Mult}(KrD(Upper(2), Lower(3)), KrD(Upper(3), Lower(2)))
+    #   dc.BinaryOperation{dc.Mult}(KrD(Upper(2), Lower(3)), KrD(Upper(3), Lower(2)))
     @test dc.diff(y, x) == Zero(Upper(3), Lower(2))
     @test dc.diff(A, x) == Zero(Upper(4), Lower(5), Lower(2))
 

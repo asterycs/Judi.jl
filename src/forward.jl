@@ -194,8 +194,9 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mul
         if isnothing(new_arg)
             new_arg = evaluate(BinaryOperation{Mult}(args[1], args[2]))
         else
-            new_arg =
-                evaluate(BinaryOperation{Mult}(new_arg, BinaryOperation{Mult}(args[1], args[2])))
+            new_arg = evaluate(
+                BinaryOperation{Mult}(new_arg, BinaryOperation{Mult}(args[1], args[2])),
+            )
         end
     end
 
@@ -539,11 +540,17 @@ end
 
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Add})
     if evaluate(arg1) == evaluate(arg2.arg1)
-        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1)), evaluate(arg2.arg2))
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, evaluate(arg1)),
+            evaluate(arg2.arg2),
+        )
     end
 
     if evaluate(arg1) == evaluate(arg2.arg2)
-        return BinaryOperation{Add}(BinaryOperation{Mult}(2, evaluate(arg1)), evaluate(arg2.arg1))
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, evaluate(arg1)),
+            evaluate(arg2.arg1),
+        )
     end
 
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
@@ -551,7 +558,10 @@ end
 
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Sub})
     if evaluate(arg1) == evaluate(arg2.arg1)
-        return BinaryOperation{Sub}(BinaryOperation{Mult}(2, evaluate(arg1)), evaluate(arg2.arg2))
+        return BinaryOperation{Sub}(
+            BinaryOperation{Mult}(2, evaluate(arg1)),
+            evaluate(arg2.arg2),
+        )
     end
 
     if evaluate(arg1) == evaluate(arg2.arg2)
@@ -654,17 +664,21 @@ end
 
 function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Add})
     if arg1.arg1 == arg2.arg1
-        return evaluate(BinaryOperation{Add}(
-            evaluate(BinaryOperation{Mult}(2, arg1.arg1)),
-            evaluate(BinaryOperation{Sub}(arg2.arg2, arg1.arg2)),
-        ))
+        return evaluate(
+            BinaryOperation{Add}(
+                evaluate(BinaryOperation{Mult}(2, arg1.arg1)),
+                evaluate(BinaryOperation{Sub}(arg2.arg2, arg1.arg2)),
+            ),
+        )
     end
 
     if arg1.arg1 == arg2.arg2
-        return evaluate(BinaryOperation{Add}(
-            evaluate(BinaryOperation{Mult}(2, arg1.arg1)),
-            evaluate(BinaryOperation{Sub}(arg2.arg1, arg1.arg2)),
-        ))
+        return evaluate(
+            BinaryOperation{Add}(
+                evaluate(BinaryOperation{Mult}(2, arg1.arg1)),
+                evaluate(BinaryOperation{Sub}(arg2.arg1, arg1.arg2)),
+            ),
+        )
     end
 
     if arg1.arg2 == arg2.arg1

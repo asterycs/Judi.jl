@@ -60,7 +60,9 @@ struct KrD <: TensorExpr
         # Regarding !isempty(eliminated_indices(indices)):
         # A contraction here (or trace) is not semantically wrong. However, it makes
         # it more difficult to identify traces (and vector sums) when evaluating.
-        if !are_unique(indices) || length(indices) != 2 || !isempty(eliminated_indices(indices))
+        if !are_unique(indices) ||
+           length(indices) != 2 ||
+           !isempty(eliminated_indices(indices))
             throw(DomainError(indices, "Indices of δ are invalid"))
         end
 
@@ -482,7 +484,11 @@ function -(arg1::TensorExpr, arg2::TensorExpr)
     return create_additive_op(Sub(), arg1, arg2)
 end
 
-function create_additive_op(op::Op, arg1::TensorExpr, arg2::TensorExpr) where {Op<:AdditiveOperation}
+function create_additive_op(
+    op::Op,
+    arg1::TensorExpr,
+    arg2::TensorExpr,
+) where {Op<:AdditiveOperation}
     arg1_ids, arg2_ids = get_free_indices.((arg1, arg2))
 
     if length(unique(arg1_ids)) != length(unique(arg2_ids))
