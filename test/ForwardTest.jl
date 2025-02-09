@@ -141,6 +141,33 @@ end
     )
 end
 
+@testset "evaluate sum of product and unary value 1" begin
+    A = Tensor("A", Upper(1), Lower(2))
+
+    prods = (dc.BinaryOperation{dc.Mult}(2, A), dc.BinaryOperation{dc.Mult}(A, 2))
+
+    for prod ∈ prods
+        @test evaluate(dc.BinaryOperation{dc.Add}(prod, A)) ==
+              dc.BinaryOperation{dc.Mult}(3, A)
+        @test evaluate(dc.BinaryOperation{dc.Add}(A, prod)) ==
+              dc.BinaryOperation{dc.Mult}(3, A)
+    end
+end
+
+@testset "evaluate sum of product and unary value 2" begin
+    A = Tensor("A", Upper(1), Lower(2))
+
+    prods = (dc.BinaryOperation{dc.Mult}(1, A), dc.BinaryOperation{dc.Mult}(A, 1))
+
+
+    for prod ∈ prods
+        @test evaluate(dc.BinaryOperation{dc.Add}(prod, A)) ==
+              dc.BinaryOperation{dc.Mult}(2, A)
+        @test evaluate(dc.BinaryOperation{dc.Add}(A, prod)) ==
+              dc.BinaryOperation{dc.Mult}(2, A)
+    end
+end
+
 @testset "evaluate product of real and real - Tensor product" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Upper(1))
