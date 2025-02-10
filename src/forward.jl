@@ -82,16 +82,8 @@ function evaluate(::Mult, arg1::Real, arg2::BinaryOperation{Mult})
 end
 
 function is_elementwise_multiplication(arg1::TensorExpr, arg2::TensorExpr)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
-
-    # TODO: Make symmetric and refactor
-    if typeof(arg1) == BinaryOperation{Mult}
-        if (typeof(arg1.arg1) == KrD || typeof(arg1.arg2) == KrD) &&
-           is_elementwise_multiplication(arg1.arg1, arg1.arg2)
-            return can_contract(arg1, arg2)
-        end
-    end
+    arg1_indices = get_indices(arg1)
+    arg2_indices = get_indices(arg2)
 
     return !isempty(intersect(arg1_indices, arg2_indices))
 end
