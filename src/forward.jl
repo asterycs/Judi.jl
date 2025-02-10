@@ -81,7 +81,6 @@ function evaluate(::Mult, arg1::Real, arg2::BinaryOperation{Mult})
     end
 end
 
-# TODO: Create separate type for elementwise products and delete this method
 function is_elementwise_multiplication(arg1::TensorExpr, arg2::TensorExpr)
     arg1_indices = get_free_indices(arg1)
     arg2_indices = get_free_indices(arg2)

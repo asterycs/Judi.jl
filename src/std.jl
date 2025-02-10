@@ -295,7 +295,6 @@ function _to_std_string(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
 end
 
 function _to_std_string(arg::BinaryOperation{Mult})
-    # TODO: Create separate type for elementwise
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
         arg1_indices, arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
 
@@ -335,7 +334,6 @@ function parenthesize_std(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation
 end
 
 function parenthesize_std(arg::BinaryOperation{Mult})
-    # TODO: Create separate type for elementwise
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
         return "(" * _to_std_string(arg.arg1) * " ⊙ " * _to_std_string(arg.arg2) * ")"
     end
@@ -348,7 +346,6 @@ function throw_not_std()
 end
 
 function collect_terms(arg::BinaryOperation{Mult})
-    # TODO: Create separate type for elementwise
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
         return [arg]
     end
@@ -516,7 +513,6 @@ function to_standard(
         throw_not_std()
     end
 
-    # TODO: Create separate type for elementwise
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
         upper = nothing
         lower = nothing
