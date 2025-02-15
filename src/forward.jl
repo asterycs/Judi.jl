@@ -100,7 +100,7 @@ function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Tensor)
     is_elementwise = is_elementwise_multiplication(arg1.arg1, arg1.arg2)
     arg1_indices, arg2_indices = get_free_indices.((arg1, arg2))
 
-    contracting_indices = eliminated_indices(arg1_indices, arg2_indices)
+    contracting_indices = eliminated_indices([arg1_indices; arg2_indices])
 
     if is_elementwise &&
        is_diag(arg1) &&
@@ -226,10 +226,9 @@ function evaluate(::Mult, arg1::Zero, arg2::UnaryOperation)
 end
 
 function evaluate(::Mult, arg1::UnaryOperation, arg2::Zero)
-    arg1_free_indices, arg2_free_indices =
-        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    free_indices = unique(eliminate_indices([get_indices(arg1); get_indices(arg2)]))
 
-    return Zero(union(arg1_free_indices, arg2_free_indices)...)
+    return Zero(free_indices...)
 end
 
 function evaluate(::Mult, arg1::Zero, arg2::TensorExpr)
@@ -237,10 +236,9 @@ function evaluate(::Mult, arg1::Zero, arg2::TensorExpr)
 end
 
 function evaluate(::Mult, arg1::TensorExpr, arg2::Zero)
-    arg1_free_indices, arg2_free_indices =
-        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    free_indices = unique(eliminate_indices([get_indices(arg1); get_indices(arg2)]))
 
-    return Zero(union(arg1_free_indices, arg2_free_indices)...)
+    return Zero(free_indices...)
 end
 
 function evaluate(::Mult, arg1::KrD, arg2::Zero)
@@ -257,17 +255,14 @@ function evaluate(::Mult, arg1::Zero, arg2::KrD)
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 
-    arg1_free_indices, arg2_free_indices =
-        eliminate_indices(get_free_indices(arg1), get_free_indices(arg2))
+    free_indices = unique(eliminate_indices([get_indices(arg1); get_indices(arg2)]))
 
-    return Zero(union(arg1_free_indices, arg2_free_indices)...)
+    return Zero(free_indices...)
 end
 
 function evaluate(::Mult, arg1::KrD, arg2::Tensor)
     arg2_indices = get_free_indices(arg2)
     contracting_index = eliminated_indices(get_free_indices(arg1), arg2_indices)
-
-    @assert length(eliminate_indices(get_free_indices(arg1), arg2_indices)) >= 1
 
     if is_diag(arg2, arg1)
         return BinaryOperation{Mult}(arg1, arg2)
@@ -353,8 +348,6 @@ end
 function evaluate(::Mult, arg1::Union{Tensor,KrD}, arg2::KrD)
     arg1_indices = get_free_indices(arg1)
     contracting_index = eliminated_indices(arg1_indices, get_free_indices(arg2))
-
-    @assert length(eliminate_indices(arg1_indices, get_free_indices(arg2))) >= 1
 
     if isempty(contracting_index) # Is an outer product
         return BinaryOperation{Mult}(arg1, arg2)
