@@ -223,6 +223,10 @@ end
     @test to_std_string(gradient((A' * B * x)' * A * x, x)) == "AᵀAᵀBx + BᵀAAx"
     @test to_std_string(gradient(a * sin(y)' * x, x)) == "asin(y)"
     @test to_std_string(gradient(a * sin(x)' * y, x)) == "a(y ⊙ cos(x))"
+    @test to_std_string(gradient(sin(y)' * x * a, x)) == "asin(y)"
+    @test to_std_string(gradient(sin(x)' * y * a, x)) == "a(y ⊙ cos(x))"
+    @test to_std_string(gradient(x' * sin(y) * a, x)) == "asin(y)"
+    @test to_std_string(gradient(y' * sin(x) * a, x)) == "a(y ⊙ cos(x))"
 end
 
 @testset "to_std_string of jacobian {A, A'} * x" begin
