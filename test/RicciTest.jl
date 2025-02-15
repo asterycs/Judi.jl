@@ -163,56 +163,6 @@ end
     @test dc.flip(Upper(3)) == Lower(3)
 end
 
-@testset "eliminate_indices removes correct indices" begin
-    IdxUnion = dc.LowerOrUpperIndex
-
-    indicesl = IdxUnion[
-        Lower(9)
-        Upper(9)
-        Upper(3)
-        Lower(2)
-        Lower(1)
-    ]
-
-    indicesr = IdxUnion[
-        Lower(3)
-        Lower(2)
-        Upper(3)
-        Upper(9)
-        Lower(9)
-    ]
-
-    l, r = dc.eliminate_indices(indicesl, indicesr)
-
-    @test [l; r] == [Lower(2); Lower(1); Lower(2); Upper(3)]
-    @test dc.eliminate_indices(IdxUnion[], IdxUnion[]) == (IdxUnion[], IdxUnion[])
-end
-
-@testset "eliminated_indices retains correct indices" begin
-    IdxUnion = dc.LowerOrUpperIndex
-
-    indicesl = IdxUnion[
-        Lower(9)
-        Upper(9)
-        Upper(3)
-        Lower(2)
-        Lower(1)
-    ]
-
-    indicesr = IdxUnion[
-        Lower(3)
-        Lower(2)
-        Upper(3)
-        Upper(9)
-        Lower(9)
-    ]
-
-    eliminated = dc.eliminated_indices(indicesl, indicesr)
-
-    @test eliminated == IdxUnion[Lower(9); Upper(9); Upper(9); Lower(9); Upper(3); Lower(3)]
-    @test dc.eliminated_indices(IdxUnion[], IdxUnion[]) == IdxUnion[]
-end
-
 @testset "get_free_indices with Tensor * Tensor and one matching pair" begin
     xt = Tensor("x", Lower(1)) # row vector
     A = Tensor("A", Upper(1), Lower(2))

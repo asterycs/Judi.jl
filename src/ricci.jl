@@ -118,37 +118,6 @@ function cos(arg::TensorExpr)
     return Cos(arg)
 end
 
-function _eliminate_indices(arg1::IndexList, arg2::IndexList)
-    CanBeNothing = Union{Nothing,Lower,Upper}
-    available1 = CanBeNothing[i for i ∈ unique(arg1)]
-    available2 = CanBeNothing[i for i ∈ unique(arg2)]
-    eliminated = LowerOrUpperIndex[]
-
-    for i ∈ eachindex(available1)
-        if isnothing(available1[i])
-            continue
-        end
-
-        for j ∈ eachindex(available2)
-            if isnothing(available2[j])
-                continue
-            end
-
-            if flip(available2[j]) == available1[i] # contraction
-                push!(eliminated, available1[i])
-                push!(eliminated, available2[j])
-                available1[i] = nothing
-                available2[j] = nothing
-            end
-        end
-    end
-
-    filtered1 = filter(i -> i ∈ available1, arg1)
-    filtered2 = filter(i -> i ∈ available2, arg2)
-
-    return (filtered1, filtered2), eliminated
-end
-
 function _eliminate_indices(arg::IndexList)
     CanBeNothing = Union{Nothing,Lower,Upper}
     available = CanBeNothing[i for i ∈ unique(arg)]
@@ -185,14 +154,6 @@ end
 function eliminated_indices(arg::IndexList)
     remaining = first(_eliminate_indices(arg))
     return setdiff(arg, remaining)
-end
-
-function eliminate_indices(arg1::IndexList, arg2::IndexList)
-    return first(_eliminate_indices(arg1, arg2))
-end
-
-function eliminated_indices(arg1::IndexList, arg2::IndexList)
-    return last(_eliminate_indices(arg1, arg2))
 end
 
 function count_values(input::AbstractArray{T}) where {T}
