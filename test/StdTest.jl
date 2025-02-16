@@ -163,6 +163,20 @@ end
     @test to_std_string(mul(y, A)) == "A diag(yᵀ)"
 end
 
+@testset "to_std_string output is correct with vector sum" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Lower(2))
+
+    function mul(l, r)
+        return dc.BinaryOperation{dc.Mult}(l, r)
+    end
+
+    @test to_std_string(mul(x, KrD(Upper(1), Lower(1)))) == "sum(x)"
+    @test to_std_string(mul(KrD(Upper(1), Lower(1)), x)) == "sum(x)"
+    @test to_std_string(mul(y, KrD(Upper(2), Lower(2)))) == "sum(yᵀ)"
+    @test to_std_string(mul(KrD(Upper(2), Lower(2)), y)) == "sum(yᵀ)"
+end
+
 @testset "to_std_string output is correct with complex expression" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
