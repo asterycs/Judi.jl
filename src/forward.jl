@@ -334,6 +334,10 @@ function _multiply_with_krd(arg1::Union{Tensor,KrD}, arg2::KrD)
         return BinaryOperation{Mult}(arg1, arg2)
     end
 
+    if is_trace(arg1) || is_trace(arg2)
+        return BinaryOperation{Mult}(arg1, arg2)
+    end
+
     @assert can_contract(arg1, arg2)
     @assert length(arg2.indices) == 2
 

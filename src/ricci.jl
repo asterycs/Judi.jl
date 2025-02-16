@@ -235,8 +235,8 @@ function are_indices_unique(indices::IndexList)
 end
 
 function can_contract(arg1::Value, arg2::Value)
-    arg1_indices = get_free_indices(arg1)
-    arg2_indices = get_free_indices(arg2)
+    arg1_indices = get_indices(arg1)
+    arg2_indices = get_indices(arg2)
 
     # If there is at least one matching index pair then the contraction is unambigous.
     pairs = Dict{Letter,Int}()
