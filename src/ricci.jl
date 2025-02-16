@@ -57,12 +57,7 @@ struct KrD <: TensorExpr
     function KrD(indices::LowerOrUpperIndex...)
         indices = LowerOrUpperIndex[i for i ∈ indices]
 
-        # Regarding !isempty(eliminated_indices(indices)):
-        # A contraction here (or trace) is not semantically wrong. However, it makes
-        # it more difficult to identify traces (and vector sums) when evaluating.
-        if !are_unique(indices) ||
-           length(indices) != 2 ||
-           !isempty(eliminated_indices(indices))
+        if !are_unique(indices) || length(indices) != 2
             throw(DomainError(indices, "Indices of δ are invalid"))
         end
 
