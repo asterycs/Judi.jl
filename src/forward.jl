@@ -496,10 +496,6 @@ function _add_to_product(arg1::BinaryOperation{Mult}, arg2::UnaryValue)
         return BinaryOperation{Mult}(evaluate(arg1.arg1) + 1, evaluate(arg2))
     end
 
-    if evaluate(arg1.arg2) isa Real && evaluate(arg1.arg1) == evaluate(arg2)
-        return BinaryOperation{Mult}(evaluate(arg1.arg2) + 1, evaluate(arg2))
-    end
-
     return BinaryOperation{Add}(evaluate(arg1), evaluate(arg2))
 end
 
@@ -729,10 +725,6 @@ function _sub_from_product(arg1::BinaryOperation{Mult}, arg2::Value)
 
     if evaluate(arg1.arg1) isa Real && evaluate(arg1.arg2) == evaluate(arg2)
         return evaluate(BinaryOperation{Mult}(evaluate(arg1.arg1) - 1, evaluate(arg2)))
-    end
-
-    if evaluate(arg1.arg2) isa Real && evaluate(arg1.arg1) == evaluate(arg2)
-        return evaluate(BinaryOperation{Mult}(evaluate(arg1.arg2) - 1, evaluate(arg2)))
     end
 
     return BinaryOperation{Sub}(evaluate(arg1), evaluate(arg2))
