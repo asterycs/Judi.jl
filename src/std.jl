@@ -305,6 +305,12 @@ function _to_std_string(arg::BinaryOperation{Mult})
             else # if typeof(target_indices[1]) == Lower
                 return "vec(1)ᵀ"
             end
+        elseif is_trace(arg.arg2) && length(target_indices) == 1
+            if typeof(target_indices[1]) == Upper
+                return "vec(1)"
+            else # if typeof(target_indices[1]) == Lower
+                return "vec(1)ᵀ"
+            end
         end
 
         if length(arg1_indices) == length(arg2_indices)

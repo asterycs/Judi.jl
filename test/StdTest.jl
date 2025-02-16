@@ -177,6 +177,21 @@ end
     @test to_std_string(mul(KrD(Upper(2), Lower(2)), y)) == "sum(yᵀ)"
 end
 
+@testset "to_std_string output is correct with KrD-KrD and one free index" begin
+    l = KrD(Upper(1), Lower(2))
+    u = KrD(Upper(2), Lower(1))
+    t = KrD(Upper(1), Lower(1))
+
+    function mul(l, r)
+        return dc.BinaryOperation{dc.Mult}(l, r)
+    end
+
+    @test to_std_string(mul(u, t)) == "vec(1)"
+    @test to_std_string(mul(t, u)) == "vec(1)"
+    @test to_std_string(mul(l, t)) == "vec(1)ᵀ"
+    @test to_std_string(mul(t, l)) == "vec(1)ᵀ"
+end
+
 @testset "to_std_string output is correct with complex expression" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
