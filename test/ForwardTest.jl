@@ -307,6 +307,23 @@ end
     @test equivalent(evaluate(op2), Zero(Upper(2)))
 end
 
+@testset "evaluate subtraction with product with real" begin
+    A = Tensor("A", Upper(1), Lower(2))
+
+    function mul(l, r)
+        return dc.BinaryOperation{dc.Mult}(l, r)
+    end
+
+    function sub(l, r)
+        return dc.BinaryOperation{dc.Sub}(l, r)
+    end
+
+    @test dc.evaluate(sub(mul(2, A), A)) == A
+    @test dc.evaluate(sub(mul(A, 2), A)) == A
+    # @test dc.evaluate(sub(mul(A, 2), A)) == A
+    # @test dc.evaluate(sub(mul(A, 2), A)) == A
+end
+
 @testset "evaluate unary operations" begin
     A = Tensor("A", Upper(1), Lower(2))
 
