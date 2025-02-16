@@ -322,6 +322,25 @@ end
     @test dc.evaluate(sub(mul(A, 2), A)) == A
 end
 
+@testset "evaluate subtraction with product and zero" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(2), Lower(3))
+    Z = Zero(Upper(1), Lower(3))
+
+    function mul(l, r)
+        return dc.BinaryOperation{dc.Mult}(l, r)
+    end
+
+    function sub(l, r)
+        return dc.BinaryOperation{dc.Sub}(l, r)
+    end
+
+    prod = mul(A, B)
+
+    @test dc.evaluate(sub(prod, Z)) == prod
+    @test dc.evaluate(sub(Z, prod)) == dc.Negate(prod)
+end
+
 @testset "evaluate unary operations" begin
     A = Tensor("A", Upper(1), Lower(2))
 

@@ -702,11 +702,11 @@ function evaluate(::Sub, arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::Zero, arg2::BinaryOperation{Mult})
-    return invole(evaluate, Tuple{Sub,Zero,Value}, Sub(), arg1, arg2)
+    return invoke(evaluate, Tuple{Sub,Zero,Value}, Sub(), arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::Zero)
-    return invole(evaluate, Tuple{Sub,Value,Zero}, Sub(), arg1, arg2)
+    return invoke(evaluate, Tuple{Sub,Value,Zero}, Sub(), arg1, arg2)
 end
 
 function evaluate(::Sub, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
