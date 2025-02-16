@@ -260,41 +260,6 @@ function evaluate(::Mult, arg1::Zero, arg2::KrD)
     return Zero(free_indices...)
 end
 
-function evaluate(::Mult, arg1::KrD, arg2::Tensor)
-    arg2_indices = get_free_indices(arg2)
-    contracting_index = eliminated_indices([get_indices(arg1); arg2_indices])
-
-    if is_diag(arg2, arg1)
-        return BinaryOperation{Mult}(arg1, arg2)
-    end
-
-    if isempty(contracting_index) # Is an outer product
-        return BinaryOperation{Mult}(arg1, arg2)
-    end
-
-    @assert can_contract(arg1, arg2)
-    @assert length(arg1.indices) == 2
-
-    newarg = deepcopy(arg2)
-    empty!(newarg.indices)
-
-    contracted = false
-
-    for i ∈ arg2.indices
-        if flip(i) == arg1.indices[1] && !contracted
-            push!(newarg.indices, arg1.indices[2])
-            contracted = true
-        elseif flip(i) == arg1.indices[2] && !contracted
-            push!(newarg.indices, arg1.indices[1])
-            contracted = true
-        else
-            push!(newarg.indices, i)
-        end
-    end
-
-    return newarg
-end
-
 function evaluate(::Mult, arg1::Negate, arg2::TensorExpr)
     return Negate(evaluate(Mult(), arg1.arg, arg2))
 end
@@ -345,7 +310,19 @@ function is_diag(arg1, arg2)
     return false
 end
 
-function evaluate(::Mult, arg1::Union{Tensor,KrD}, arg2::KrD)
+function evaluate(::Mult, arg1::Tensor, arg2::KrD)
+    return _multiply_with_krd(arg1, arg2)
+end
+
+function evaluate(::Mult, arg1::KrD, arg2::Tensor)
+    return _multiply_with_krd(arg2, arg1)
+end
+
+function evaluate(::Mult, arg1::KrD, arg2::KrD)
+    return _multiply_with_krd(arg1, arg2)
+end
+
+function _multiply_with_krd(arg1::Union{Tensor,KrD}, arg2::KrD)
     arg1_indices = get_free_indices(arg1)
     contracting_index = eliminated_indices([arg1_indices; get_indices(arg2)])
 
