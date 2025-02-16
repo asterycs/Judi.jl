@@ -469,7 +469,7 @@ end
     @test isempty(dc.get_free_indices(evaluate(op2)))
 end
 
-@testset "KrD collapsed correctly on element wise dc.Multiplications" begin
+@testset "KrD collapsed correctly on element wise multiplications" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
     z = Tensor("z", Upper(3))
@@ -486,7 +486,7 @@ end
     @test equivalent(evaluate(evaluate(dc.diff(e, Tensor("z", Upper(9))))'), expected)
 end
 
-@testset "KrD collapsed correctly on element wise dc.Multiplications (mirrored)" begin
+@testset "KrD collapsed correctly on element wise multiplications (mirrored)" begin
     x = Tensor("x", Upper(1))
     y = Tensor("y", Upper(2))
     z = Tensor("z", Upper(3))
