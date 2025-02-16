@@ -320,8 +320,6 @@ end
 
     @test dc.evaluate(sub(mul(2, A), A)) == A
     @test dc.evaluate(sub(mul(A, 2), A)) == A
-    # @test dc.evaluate(sub(mul(A, 2), A)) == A
-    # @test dc.evaluate(sub(mul(A, 2), A)) == A
 end
 
 @testset "evaluate unary operations" begin
