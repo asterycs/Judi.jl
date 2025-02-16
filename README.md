@@ -52,7 +52,7 @@ standard notation.
 
 ### Supported operators
 
-`tr`, `sin`, `cos`, `+`, `-`, `*`, `'`, `.*`
+`tr`, `sum`, `sin`, `cos`, `+`, `-`, `*`, `'`, `.*`
 
 ### Installation
 

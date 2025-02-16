@@ -13,6 +13,7 @@ import Base.cos
 import Base.show
 
 export tr
+export sum
 
 abstract type TensorExpr end
 
@@ -269,6 +270,23 @@ function tr(arg::TensorExpr)
     end
 
     return BinaryOperation{Mult}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
+end
+
+function sum(arg::TensorExpr)
+    free_ids = get_free_indices(arg)
+
+    if length(free_ids) != 1
+        throw(DomainError("Sum is defined only for vectors"))
+    end
+
+    next_letter = get_next_letter(arg)
+
+    return tr(
+        BinaryOperation{Mult}(
+            arg,
+            KrD(first(free_ids), flip_to(first(free_ids), next_letter)),
+        ),
+    )
 end
 
 function Base.broadcasted(::typeof(*), arg1::TensorExpr, arg2::TensorExpr)

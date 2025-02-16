@@ -296,12 +296,23 @@ end
 
 function _to_std_string(arg::BinaryOperation{Mult})
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
-        arg1_indices, arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
+        arg1_indices, arg2_indices = get_indices.((arg.arg1, arg.arg2))
+        target_indices = eliminate_indices([arg1_indices; arg2_indices])
+
+        if is_trace(arg.arg1) && length(target_indices) == 1
+            if typeof(target_indices[1]) == Upper
+                return "vec(1)"
+            else # if typeof(target_indices[1]) == Lower
+                return "vec(1)ᵀ"
+            end
+        end
 
         if length(arg1_indices) == length(arg2_indices)
             return parenthesize_std(arg.arg1) * " ⊙ " * parenthesize_std(arg.arg2)
         elseif length(arg1_indices) == 1 && length(arg2_indices) == 2
-            if typeof(arg1_indices[1]) == Upper
+            if is_trace(arg.arg2)
+                return "sum(" * _to_std_string(arg.arg1) * ")"
+            elseif typeof(arg1_indices[1]) == Upper
                 return "diag(" * _to_std_string(arg.arg1) * ")" * parenthesize_std(arg.arg2)
             else # typeof(arg1_indices[1]) == Lower
                 return parenthesize_std(arg.arg2) *
@@ -310,7 +321,9 @@ function _to_std_string(arg::BinaryOperation{Mult})
                        ")"
             end
         elseif length(arg1_indices) == 2 && length(arg2_indices) == 1
-            if typeof(arg2_indices[1]) == Upper
+            if is_trace(arg.arg1)
+                return "sum(" * _to_std_string(arg.arg2) * ")"
+            elseif typeof(arg2_indices[1]) == Upper
                 return "diag(" * _to_std_string(arg.arg2) * ")" * parenthesize_std(arg.arg1)
             else # typeof(arg2_indices[1]) == Lower
                 return parenthesize_std(arg.arg1) *
@@ -532,8 +545,25 @@ function to_standard(
                 lower = target_indices[2].letter
             end
         end
+        if isempty(target_indices) # is a sum
+            return arg
+        end
 
-        arg1_indices, arg2_indices = get_free_indices.((arg.arg1, arg.arg2))
+        arg1_indices, arg2_indices = get_indices.((arg.arg1, arg.arg2))
+
+        if is_trace(arg.arg1) && typeof(arg.arg2) == KrD
+            return BinaryOperation{Mult}(
+                to_standard(arg.arg1, upper, lower),
+                to_standard(arg.arg2, upper, lower),
+            )
+        end
+
+        if is_trace(arg.arg2) && typeof(arg.arg1) == KrD
+            return BinaryOperation{Mult}(
+                to_standard(arg.arg1, upper, lower),
+                to_standard(arg.arg2, upper, lower),
+            )
+        end
 
         if length(arg1_indices) == length(arg2_indices)
             return BinaryOperation{Mult}(
