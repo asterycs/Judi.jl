@@ -74,8 +74,6 @@ end
 function evaluate(::Mult, arg1::Real, arg2::BinaryOperation{Mult})
     if arg2.arg1 isa Real
         return BinaryOperation{Mult}(arg1 * arg2.arg1, arg2.arg2)
-    elseif arg2.arg2 isa Real
-        return BinaryOperation{Mult}(arg1 * arg2.arg2, arg2.arg1)
     else
         return BinaryOperation{Mult}(arg1, evaluate(arg2))
     end
