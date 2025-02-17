@@ -13,7 +13,6 @@ import Base.cos
 import Base.show
 
 export tr
-export sum
 
 abstract type TensorExpr end
 
@@ -272,7 +271,7 @@ function tr(arg::TensorExpr)
     return BinaryOperation{Mult}(arg, KrD(flip(free_ids[2]), flip(free_ids[1])))
 end
 
-function sum(arg::TensorExpr)
+function Base.sum(arg::TensorExpr)
     free_ids = get_free_indices(arg)
 
     if length(free_ids) != 1
