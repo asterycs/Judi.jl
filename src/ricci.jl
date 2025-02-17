@@ -2,16 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import Base.==
-import Base.*
-import Base.+
-import Base.-
-import Base.adjoint
-import Base.broadcast
-import Base.sin
-import Base.cos
-import Base.show
-
 import LinearAlgebra.tr
 
 export tr
@@ -20,7 +10,7 @@ abstract type TensorExpr end
 
 # Shortcut for simpler comparison from
 # https://stackoverflow.com/questions/62336686/struct-equality-with-arrays
-function ==(a::T, b::T) where {T<:TensorExpr}
+function Base.:(==)(a::T, b::T) where {T<:TensorExpr}
     f = fieldnames(T)
 
     return (getfield.(Ref(a), f) == getfield.(Ref(b), f)) ||
@@ -103,7 +93,7 @@ struct Sin <: UnaryOperation
     arg::TensorExpr
 end
 
-function sin(arg::TensorExpr)
+function Base.sin(arg::TensorExpr)
     return Sin(arg)
 end
 
@@ -111,7 +101,7 @@ struct Cos <: UnaryOperation
     arg::TensorExpr
 end
 
-function cos(arg::TensorExpr)
+function Base.cos(arg::TensorExpr)
     return Cos(arg)
 end
 
@@ -321,11 +311,11 @@ function Base.broadcasted(::typeof(*), arg1::TensorExpr, arg2::TensorExpr)
     return BinaryOperation{Mult}(new_arg1, arg2)
 end
 
-function *(arg1::TensorExpr, arg2::Real)
+function Base.:(*)(arg1::TensorExpr, arg2::Real)
     return arg2 * arg1
 end
 
-function *(arg1::Value, arg2::TensorExpr)
+function Base.:(*)(arg1::Value, arg2::TensorExpr)
     arg1_free_indices = get_free_indices(arg1)
     arg2_free_indices = get_free_indices(arg2)
 
@@ -451,11 +441,11 @@ function get_letters(indices::IndexList)
     return [i.letter for i ∈ indices]
 end
 
-function +(arg1::TensorExpr, arg2::TensorExpr)
+function Base.:(+)(arg1::TensorExpr, arg2::TensorExpr)
     return create_additive_op(Add(), arg1, arg2)
 end
 
-function -(arg1::TensorExpr, arg2::TensorExpr)
+function Base.:(-)(arg1::TensorExpr, arg2::TensorExpr)
     return create_additive_op(Sub(), arg1, arg2)
 end
 
@@ -527,19 +517,19 @@ function update_index(
     return BinaryOperation{Mult}(arg, KrD(flip(from), to))
 end
 
-function -(arg::TensorExpr)
+function Base.:(-)(arg::TensorExpr)
     return Negate(arg)
 end
 
-function adjoint(arg::T) where {T<:UnaryOperation}
+function Base.adjoint(arg::T) where {T<:UnaryOperation}
     return T(arg.arg')
 end
 
-function adjoint(arg::BinaryOperation{Mult})
+function Base.adjoint(arg::BinaryOperation{Mult})
     return BinaryOperation{Mult}(adjoint(arg.arg2), adjoint(arg.arg1))
 end
 
-function adjoint(arg::BinaryOperation{Op}) where {Op}
+function Base.adjoint(arg::BinaryOperation{Op}) where {Op}
     arg1_ids = unique(get_free_indices(arg.arg1))
     arg2_ids = unique(get_free_indices(arg.arg2))
 
@@ -567,7 +557,7 @@ function adjoint(arg::BinaryOperation{Op}) where {Op}
     return BinaryOperation{Op}(arg1_t, arg2_t)
 end
 
-function adjoint(arg::Union{Tensor,KrD,Zero})
+function Base.adjoint(arg::Union{Tensor,KrD,Zero})
     free_indices = unique(get_free_indices(arg))
 
     if length(free_indices) > 2
