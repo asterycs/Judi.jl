@@ -12,6 +12,8 @@ import Base.sin
 import Base.cos
 import Base.show
 
+import LinearAlgebra.tr
+
 export tr
 
 abstract type TensorExpr end
