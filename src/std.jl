@@ -354,7 +354,7 @@ end
 
 function parenthesize_std(arg::BinaryOperation{Mult})
     if is_elementwise_multiplication(arg.arg1, arg.arg2)
-        return "(" * _to_std_string(arg.arg1) * " ⊙ " * _to_std_string(arg.arg2) * ")"
+        return "(" * _to_std_string(arg) * ")"
     end
 
     return _to_std_string(arg)
