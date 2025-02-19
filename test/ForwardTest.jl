@@ -211,15 +211,6 @@ end
     @test evaluate(dc.BinaryOperation{dc.Mult}(x, d2)) == Tensor("x", Upper(3))
 end
 
-# TODO: Triggers an assertion for now
-# @testset "evaluate BinaryOperation vector * KrD with ambiguous indices fails" begin
-#     x = Tensor("x", Upper(2))
-#     d = KrD(Upper(2), Lower(2))
-
-#     @test_throws DomainError evaluate(dc.BinaryOperation{dc.Mult}(d, x))
-#     @test_throws DomainError evaluate(dc.BinaryOperation{dc.Mult}(x, d))
-# end
-
 @testset "evaluate BinaryOperation matrix * KrD" begin
     A = Tensor("A", Upper(2), Lower(4))
     d1 = KrD(Lower(2), Upper(3))
