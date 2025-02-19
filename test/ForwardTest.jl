@@ -141,6 +141,37 @@ end
     )
 end
 
+@testset "evaluate sum of subtraction and addition" begin
+    a = Tensor("a", Upper(1))
+    b = Tensor("b", Upper(1))
+    c = Tensor("c", Upper(1))
+    d = Tensor("d", Upper(1))
+
+    # 2 * a + (a + b)
+    add_inner = dc.BinaryOperation{dc.Add}(a, b)
+    prod = dc.BinaryOperation{dc.Mult}(2, a)
+    add = dc.BinaryOperation{dc.Add}(prod, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(3, a), b)
+
+    # 2 * a + (b + a)
+    add_inner = dc.BinaryOperation{dc.Add}(b, a)
+    prod = dc.BinaryOperation{dc.Mult}(2, a)
+    add = dc.BinaryOperation{dc.Add}(prod, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(3, a), b)
+
+    # 2 * a + (2 * a + b)
+    prod = dc.BinaryOperation{dc.Mult}(2, a)
+    add_inner = dc.BinaryOperation{dc.Add}(prod, b)
+    add = dc.BinaryOperation{dc.Add}(prod, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(4, a), b)
+
+    # 2 * a + (b + 2 * a)
+    prod = dc.BinaryOperation{dc.Mult}(2, a)
+    add_inner = dc.BinaryOperation{dc.Add}(b, prod)
+    add = dc.BinaryOperation{dc.Add}(prod, add_inner)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(4, a), b)
+end
+
 @testset "evaluate sum of product and unary value 1" begin
     A = Tensor("A", Upper(1), Lower(2))
 

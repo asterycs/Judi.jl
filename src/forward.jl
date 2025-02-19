@@ -506,15 +506,37 @@ end
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Add})
     if evaluate(arg1) == evaluate(arg2.arg1)
         return BinaryOperation{Add}(
-            BinaryOperation{Mult}(2, evaluate(arg1)),
+            evaluate(BinaryOperation{Mult}(2, evaluate(arg1))),
             evaluate(arg2.arg2),
         )
     end
 
     if evaluate(arg1) == evaluate(arg2.arg2)
         return BinaryOperation{Add}(
-            BinaryOperation{Mult}(2, evaluate(arg1)),
+            evaluate(BinaryOperation{Mult}(2, evaluate(arg1))),
             evaluate(arg2.arg1),
+        )
+    end
+
+    if evaluate(arg1.arg1) isa Real && evaluate(arg1.arg2) == evaluate(arg2.arg1)
+        return evaluate(
+            BinaryOperation{Add}(
+                evaluate(
+                    BinaryOperation{Mult}(evaluate(arg1.arg1) + 1, evaluate(arg1.arg2)),
+                ),
+                evaluate(arg2.arg2),
+            ),
+        )
+    end
+
+    if evaluate(arg1.arg1) isa Real && evaluate(arg1.arg2) == evaluate(arg2.arg2)
+        return evaluate(
+            BinaryOperation{Add}(
+                evaluate(
+                    BinaryOperation{Mult}(evaluate(arg1.arg1) + 1, evaluate(arg1.arg2)),
+                ),
+                evaluate(arg2.arg1),
+            ),
         )
     end
 
