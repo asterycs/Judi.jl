@@ -467,12 +467,20 @@ function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult
     return _add_to_product(arg1, arg2)
 end
 
-function evaluate(::Add, arg1::UnaryValue, arg2::BinaryOperation{Mult})
+function evaluate(::Add, arg1::Value, arg2::BinaryOperation{Mult})
     return _add_to_product(arg2, arg1)
 end
 
-function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::UnaryValue)
+function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::Value)
     return _add_to_product(arg1, arg2)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Sub})
+    return _add_to_product(arg1, arg2)
+end
+
+function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Mult})
+    return _add_to_product(arg2, arg1)
 end
 
 # function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Mult})
@@ -483,7 +491,7 @@ end
 #     return _add_to_product(arg1, arg2)
 # end
 
-function _add_to_product(arg1::BinaryOperation{Mult}, arg2::UnaryValue)
+function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
     if evaluate(arg1) == evaluate(arg2)
         return BinaryOperation{Mult}(2, evaluate(arg1))
     end

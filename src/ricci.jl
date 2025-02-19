@@ -83,8 +83,6 @@ struct Mult end
 
 abstract type UnaryOperation <: TensorExpr end
 
-UnaryValue = Union{Tensor,KrD,Zero,UnaryOperation,Real}
-
 struct Negate <: UnaryOperation
     arg::TensorExpr
 end
