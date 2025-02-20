@@ -648,21 +648,17 @@ end
     @test equivalent(evaluate(D), 3 * A)
 end
 
-# TODO: Fails because KrD(Upper(3), Lower(3)) * Tensor("A", Upper(1), Lower(3)) isn't evaluated properly
-# Making this work would require passing a list of all indices down the
-# tree in diff() since we need to have a safe (as in unused) temporary index
-# when splitting the trace.
-# @testset "Differentiate A(x + 2x)" begin
-#     A = Tensor("A", Upper(1), Lower(2))
-#     x = Tensor("x", Upper(3))
+@testset "Differentiate A(x + 2x)" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    x = Tensor("x", Upper(3))
 
-#     D = dc.diff(A * (x + 2 * x), Tensor("x", Upper(3)))
+    D = dc.diff(A * (x + 2 * x), Tensor("x", Upper(3)))
 
-#     expected = dc.BinaryOperation{dc.Mult}(3, KrD(Upper(3), Lower(3)))
-#     expected = dc.BinaryOperation{dc.Mult}(expected, Tensor("A", Upper(1), Lower(3)))
+    expected = dc.BinaryOperation{dc.Mult}(3, KrD(Upper(3), Lower(3)))
+    expected = dc.BinaryOperation{dc.Mult}(expected, Tensor("A", Upper(1), Lower(3)))
 
-#     @test equivalent(evaluate(D), expected)
-# end
+    @test_broken equivalent(evaluate(D), expected)
+end
 
 @testset "Differentiate A(2x + x)" begin
     A = Tensor("A", Upper(1), Lower(2))
