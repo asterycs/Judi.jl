@@ -101,6 +101,16 @@ end
     @test evaluate(dc.BinaryOperation{dc.Mult}(z, a)) == z
 end
 
+@testset "evaluate sum of Zero and difference" begin
+    x = Tensor("x", Upper(1))
+    y = Tensor("y", Upper(1))
+    z = Zero(Upper(1))
+
+    d = dc.BinaryOperation{dc.Sub}(x, y)
+
+    @test evaluate(dc.BinaryOperation{dc.Add}(z, d)) == d
+end
+
 @testset "evaluate sum of subtraction and addition" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Upper(1))
