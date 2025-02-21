@@ -689,3 +689,13 @@ end
     @test dc.to_string(dc.BinaryOperation{dc.Mult}(add, add)) == "(a + b)(a + b)"
     @test dc.to_string(dc.BinaryOperation{dc.Mult}(sub, add)) == "(a - b)(a + b)"
 end
+
+@testset "to_string output is correct for negated values" begin
+    x = Tensor("x", Upper(1))
+    a = Tensor("a")
+    c = 2
+
+    @test dc.to_string(dc.Negate(x)) == "-x¹"
+    @test dc.to_string(dc.Negate(a)) == "-a"
+    @test_broken dc.to_string(dc.Negate(c)) == "-2"
+end
