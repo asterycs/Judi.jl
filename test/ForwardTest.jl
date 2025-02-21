@@ -211,14 +211,17 @@ end
     add = dc.BinaryOperation{dc.Add}(prod, add_inner)
     @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(3, a), b)
 
-    # 2 * a + (b + 2 * a)
+    # 2 * a + (2 * b + 2 * a)
     add_inner = dc.BinaryOperation{dc.Add}(
         dc.BinaryOperation{dc.Mult}(2, b),
         dc.BinaryOperation{dc.Mult}(2, a),
     )
     prod = dc.BinaryOperation{dc.Mult}(2, a)
     add = dc.BinaryOperation{dc.Add}(prod, add_inner)
-    @test evaluate(add) == dc.BinaryOperation{dc.Add}(dc.BinaryOperation{dc.Mult}(4, a), b)
+    @test evaluate(add) == dc.BinaryOperation{dc.Add}(
+        dc.BinaryOperation{dc.Mult}(4, a),
+        dc.BinaryOperation{dc.Mult}(2, b),
+    )
 
     # 2 * a + (2 * a + b)
     prod = dc.BinaryOperation{dc.Mult}(2, a)
