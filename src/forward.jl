@@ -484,10 +484,6 @@ function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Mult}
 end
 
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
-    if evaluate(arg1) == evaluate(arg2)
-        return BinaryOperation{Mult}(2, evaluate(arg1))
-    end
-
     if evaluate(arg1.arg1) isa Real && evaluate(arg1.arg2) == evaluate(arg2)
         return BinaryOperation{Mult}(evaluate(arg1.arg1) + 1, evaluate(arg2))
     end
