@@ -224,6 +224,44 @@ end
     @test dc.get_free_indices(op2) == [Upper(1); Lower(2)]
 end
 
+@testset "multiplication of matrices" begin
+    A = Tensor("A", Upper(1), Lower(2))
+    B = Tensor("B", Upper(1), Lower(2))
+
+    p1 = dc.evaluate(A * B)
+    p2 = dc.evaluate(A' * B)
+    p3 = dc.evaluate(A * B')
+    p4 = dc.evaluate(A' * B')
+
+    @test length(dc.get_free_indices(p1)) == 2
+    @test p1.arg1.indices[2].letter == p1.arg2.indices[1].letter
+    @test typeof(p1.arg1.indices[1]) == Upper
+    @test typeof(p1.arg1.indices[2]) == Lower
+    @test typeof(p1.arg2.indices[1]) == Upper
+    @test typeof(p1.arg2.indices[2]) == Lower
+
+    @test length(dc.get_free_indices(p2)) == 2
+    @test p2.arg1.indices[1].letter == p2.arg2.indices[1].letter
+    @test typeof(p2.arg1.indices[1]) == Lower
+    @test typeof(p2.arg1.indices[2]) == Upper
+    @test typeof(p2.arg2.indices[1]) == Upper
+    @test typeof(p2.arg2.indices[2]) == Lower
+
+    @test length(dc.get_free_indices(p3)) == 2
+    @test p3.arg1.indices[2].letter == p3.arg2.indices[2].letter
+    @test typeof(p3.arg1.indices[1]) == Upper
+    @test typeof(p3.arg1.indices[2]) == Lower
+    @test typeof(p3.arg2.indices[1]) == Lower
+    @test typeof(p3.arg2.indices[2]) == Upper
+
+    @test length(dc.get_free_indices(p4)) == 2
+    @test p4.arg1.indices[1].letter == p4.arg2.indices[2].letter
+    @test typeof(p4.arg1.indices[1]) == Lower
+    @test typeof(p4.arg1.indices[2]) == Upper
+    @test typeof(p4.arg2.indices[1]) == Lower
+    @test typeof(p4.arg2.indices[2]) == Upper
+end
+
 @testset "multiplication with matching indices" begin
     x = Tensor("x", Upper(2))
     y = Tensor("y", Lower(1))
