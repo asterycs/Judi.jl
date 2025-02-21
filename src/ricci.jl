@@ -451,9 +451,9 @@ function create_additive_op(
     arg1_ids, arg2_ids = get_free_indices.((arg1, arg2))
 
     if length(unique(arg1_ids)) != length(unique(arg2_ids))
-        op_text = if typeof(Op) == Add
+        op_text = if Op == Add
             "add"
-        elseif typeof(Op) == Sub
+        elseif Op == Sub
             "subtract"
         end
 
