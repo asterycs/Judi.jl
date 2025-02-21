@@ -111,6 +111,44 @@ end
     @test evaluate(dc.BinaryOperation{dc.Add}(z, d)) == d
 end
 
+@testset "evaluate sum of addition and addition" begin
+    a = Tensor("a", Upper(1))
+    b = Tensor("b", Upper(1))
+    c = Tensor("c", Upper(1))
+    d = Tensor("d", Upper(1))
+
+    l = dc.BinaryOperation{dc.Add}(a, b)
+    r = dc.BinaryOperation{dc.Add}(a, c)
+    s = dc.BinaryOperation{dc.Add}(l, r)
+
+    @test dc.evaluate(s) == dc.evaluate(2 * a + (b + c))
+
+    l = dc.BinaryOperation{dc.Add}(a, b)
+    r = dc.BinaryOperation{dc.Add}(c, a)
+    s = dc.BinaryOperation{dc.Add}(l, r)
+
+    @test dc.evaluate(s) == dc.evaluate(2 * a + (b + c))
+
+    l = dc.BinaryOperation{dc.Add}(b, a)
+    r = dc.BinaryOperation{dc.Add}(a, c)
+    s = dc.BinaryOperation{dc.Add}(l, r)
+
+    @test dc.evaluate(s) == dc.evaluate(2 * a + (b + c))
+
+    l = dc.BinaryOperation{dc.Add}(b, a)
+    r = dc.BinaryOperation{dc.Add}(c, a)
+    s = dc.BinaryOperation{dc.Add}(l, r)
+
+    @test dc.evaluate(s) == dc.evaluate(2 * a + (b + c))
+
+    l = dc.BinaryOperation{dc.Add}(a, b)
+    r = dc.BinaryOperation{dc.Add}(c, d)
+    s = dc.BinaryOperation{dc.Add}(l, r)
+
+    @test dc.evaluate(s) == dc.evaluate((a + b) + (c + d))
+end
+
+
 @testset "evaluate sum of subtraction and addition" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Upper(1))

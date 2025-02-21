@@ -577,8 +577,35 @@ function _add_to_product(arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Add})
-    # TODO: extend and change the below overload to (BinaryOp{Add}, UnaryValue)
-    return invoke(evaluate, Tuple{Add,BinaryOperation{Add},Value}, Add(), arg1, arg2)
+    if arg1.arg1 == arg2.arg1
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, arg1.arg1),
+            evaluate(BinaryOperation{Add}(arg1.arg2, arg2.arg2)),
+        )
+    end
+
+    if arg1.arg1 == arg2.arg2
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, arg1.arg1),
+            evaluate(BinaryOperation{Add}(arg1.arg2, arg2.arg1)),
+        )
+    end
+
+    if arg1.arg2 == arg2.arg1
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, arg1.arg2),
+            evaluate(BinaryOperation{Add}(arg1.arg1, arg2.arg2)),
+        )
+    end
+
+    if arg1.arg2 == arg2.arg2
+        return BinaryOperation{Add}(
+            BinaryOperation{Mult}(2, arg1.arg2),
+            evaluate(BinaryOperation{Add}(arg1.arg1, arg2.arg1)),
+        )
+    end
+
+    return BinaryOperation{Add}(arg1, arg2)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::Zero)
