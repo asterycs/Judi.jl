@@ -483,14 +483,6 @@ function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Mult}
     return _add_to_product(arg2, arg1)
 end
 
-# function evaluate(::Add, arg1::BinaryOperation{Add}, arg2::BinaryOperation{Mult})
-#     return _add_to_product(arg2, arg1)
-# end
-
-# function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Sub})
-#     return _add_to_product(arg1, arg2)
-# end
-
 function _add_to_product(arg1::BinaryOperation{Mult}, arg2::Value)
     if evaluate(arg1) == evaluate(arg2)
         return BinaryOperation{Mult}(2, evaluate(arg1))
