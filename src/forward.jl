@@ -463,7 +463,6 @@ function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::Zero)
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Mult})
-    # TODO: extend
     return _add_to_product(arg1, arg2)
 end
 
@@ -625,7 +624,6 @@ function evaluate(::Add, arg1::Value, arg2::BinaryOperation{Add})
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Mult}, arg2::BinaryOperation{Add})
-    # TODO: extend
     return _add_to_product(arg1, arg2)
 end
 
