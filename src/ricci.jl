@@ -215,10 +215,6 @@ function get_free_indices(arg)
     return unique(eliminate_indices(get_indices(evaluate(arg))))
 end
 
-function are_indices_unique(indices::IndexList)
-    return length(unique(indices)) == length(indices)
-end
-
 function can_contract(arg1::Value, arg2::Value)
     arg1_indices = get_indices(arg1)
     arg2_indices = get_indices(arg2)
