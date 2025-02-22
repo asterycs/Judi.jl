@@ -187,6 +187,12 @@ end
         dc.BinaryOperation{dc.Mult}(2, a),
         dc.BinaryOperation{dc.Sub}(d, b),
     )
+
+    # a - b + c + d
+    add_inner = dc.BinaryOperation{dc.Add}(c, d)
+    sub = dc.BinaryOperation{dc.Sub}(a, b)
+    add = dc.BinaryOperation{dc.Add}(sub, add_inner)
+    @test evaluate(add) == add
 end
 
 @testset "evaluate sum of product and addition" begin
