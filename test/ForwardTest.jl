@@ -195,6 +195,58 @@ end
     @test evaluate(add) == add
 end
 
+@testset "evaluate sum of subtraction and subtraction" begin
+    a = Tensor("a", Upper(1))
+    b = Tensor("b", Upper(1))
+    c = Tensor("c", Upper(1))
+    d = Tensor("d", Upper(1))
+
+    # a - b + a - b
+    l = dc.BinaryOperation{dc.Sub}(a, b)
+    r = dc.BinaryOperation{dc.Sub}(a, b)
+    add = dc.BinaryOperation{dc.Add}(l, r)
+    @test evaluate(add) == dc.BinaryOperation{dc.Sub}(
+        dc.BinaryOperation{dc.Mult}(2, a),
+        dc.BinaryOperation{dc.Mult}(2, b),
+    )
+
+    # a - b + a - c
+    l = dc.BinaryOperation{dc.Sub}(a, b)
+    r = dc.BinaryOperation{dc.Sub}(a, c)
+    add = dc.BinaryOperation{dc.Add}(l, r)
+    @test evaluate(add) == dc.BinaryOperation{dc.Sub}(
+        dc.BinaryOperation{dc.Mult}(2, a),
+        dc.BinaryOperation{dc.Add}(b, c),
+    )
+
+    # a - b + c - a
+    l = dc.BinaryOperation{dc.Sub}(a, b)
+    r = dc.BinaryOperation{dc.Sub}(c, a)
+    add = dc.BinaryOperation{dc.Add}(l, r)
+    @test evaluate(add) == dc.BinaryOperation{dc.Sub}(c, b)
+
+    # b - a + a - c
+    l = dc.BinaryOperation{dc.Sub}(b, a)
+    r = dc.BinaryOperation{dc.Sub}(a, c)
+    add = dc.BinaryOperation{dc.Add}(l, r)
+    @test evaluate(add) == dc.BinaryOperation{dc.Sub}(b, c)
+
+    # b - a + c - a
+    l = dc.BinaryOperation{dc.Sub}(b, a)
+    r = dc.BinaryOperation{dc.Sub}(c, a)
+    add = dc.BinaryOperation{dc.Add}(l, r)
+    @test evaluate(add) == dc.BinaryOperation{dc.Sub}(
+        dc.BinaryOperation{dc.Add}(b, c),
+        dc.BinaryOperation{dc.Mult}(2, a),
+    )
+
+    # a - b + c - d
+    l = dc.BinaryOperation{dc.Sub}(a, b)
+    r = dc.BinaryOperation{dc.Sub}(c, d)
+    add = dc.BinaryOperation{dc.Add}(l, r)
+    @test evaluate(add) == add
+end
+
 @testset "evaluate sum of product and addition" begin
     a = Tensor("a", Upper(1))
     b = Tensor("b", Upper(1))
@@ -710,6 +762,11 @@ end
     @test equivalent(evaluate(D), 3 * A)
 end
 
+# TODO: Differentiation w.r.t. to an existing index requires knowledge of the "global"
+# context during evaluation and leads to madness:
+# https://physics.stackexchange.com/questions/252714/indicating-that-indices-are-equal-in-einstein-notation
+# Contextual evaluation is not implemented currently, but it is also not needed for computing
+# gradients or hessians.
 @testset "Differentiate A(x + 2x)" begin
     A = Tensor("A", Upper(1), Lower(2))
     x = Tensor("x", Upper(3))

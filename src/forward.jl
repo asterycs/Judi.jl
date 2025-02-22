@@ -707,7 +707,32 @@ function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Add})
 end
 
 function evaluate(::Add, arg1::BinaryOperation{Sub}, arg2::BinaryOperation{Sub})
-    # TODO: extend
+    if arg1.arg1 == arg2.arg1
+        return evaluate(
+            BinaryOperation{Sub}(
+                evaluate(BinaryOperation{Mult}(2, arg1.arg1)),
+                evaluate(BinaryOperation{Add}(arg1.arg2, arg2.arg2)),
+            ),
+        )
+    end
+
+    if arg1.arg1 == arg2.arg2
+        return evaluate(BinaryOperation{Sub}(arg2.arg1, arg1.arg2))
+    end
+
+    if arg1.arg2 == arg2.arg1
+        return evaluate(BinaryOperation{Sub}(arg1.arg1, arg2.arg2))
+    end
+
+    if arg1.arg2 == arg2.arg2
+        return evaluate(
+            BinaryOperation{Sub}(
+                evaluate(BinaryOperation{Add}(arg1.arg1, arg2.arg1)),
+                evaluate(BinaryOperation{Mult}(2, arg1.arg2)),
+            ),
+        )
+    end
+
     return BinaryOperation{Add}(arg1, arg2)
 end
 
