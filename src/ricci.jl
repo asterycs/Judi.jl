@@ -80,6 +80,7 @@ abstract type AdditiveOperation end
 struct Add <: AdditiveOperation end
 struct Sub <: AdditiveOperation end
 struct Mult end
+struct Pow end
 
 abstract type UnaryOperation <: TensorExpr end
 
@@ -201,6 +202,10 @@ function get_indices(arg::BinaryOperation{Mult})
     return [get_indices(arg.arg1); get_indices(arg.arg2)]
 end
 
+function get_indices(arg::BinaryOperation{Pow})
+    return get_indices(arg.arg1)
+end
+
 function get_indices(arg::BinaryOperation{Op}) where {Op<:AdditiveOperation}
     arg1_free_ids, arg2_free_ids = get_free_indices.((arg.arg1, arg.arg2))
 
@@ -303,6 +308,19 @@ function Base.broadcasted(::typeof(*), arg1::TensorExpr, arg2::TensorExpr)
     end
 
     return BinaryOperation{Mult}(new_arg1, arg2)
+end
+
+function Base.broadcasted(
+    ::typeof(Base.literal_pow),
+    f::Function,
+    arg1::TensorExpr,
+    arg2::Val{P},
+) where {P}
+    return Base.broadcasted(f, arg1, P)
+end
+
+function Base.broadcasted(::typeof(^), arg1::Tensor, arg2::Int)
+    return BinaryOperation{Pow}(arg1, arg2)
 end
 
 function Base.:(*)(arg1::TensorExpr, arg2::Real)
@@ -651,6 +669,10 @@ end
 
 function parenthesize(arg::BinaryOperation{Sub})
     return "(" * to_string(arg) * ")"
+end
+
+function to_string(arg::BinaryOperation{Pow})
+    return to_string(arg.arg1) * ".^" * parenthesize(arg.arg2)
 end
 
 function to_string(arg::BinaryOperation{Mult})

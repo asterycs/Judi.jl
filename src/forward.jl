@@ -40,6 +40,13 @@ function diff(arg::Cos, wrt::Tensor)
     return BinaryOperation{Mult}(Negate(Sin(arg.arg)), diff(arg.arg, wrt))
 end
 
+function diff(arg::BinaryOperation{Pow}, wrt::Tensor)
+    return BinaryOperation{Mult}(
+        BinaryOperation{Mult}(arg.arg2, BinaryOperation{Pow}(arg.arg1, arg.arg2 - 1)),
+        diff(arg.arg1, wrt),
+    )
+end
+
 function diff(arg::BinaryOperation{Mult}, wrt::Tensor)
     return BinaryOperation{Add}(
         BinaryOperation{Mult}(arg.arg1, diff(arg.arg2, wrt)),
@@ -65,6 +72,14 @@ end
 
 function evaluate(arg::Cos)
     return Cos(evaluate(arg.arg))
+end
+
+function evaluate(::Mult, arg1::BinaryOperation{Pow}, arg2::KrD)
+    if !is_elementwise_multiplication(arg1.arg1, arg2)
+        return BinaryOperation{Pow}(evaluate(Mult(), arg1.arg1, arg2), arg1.arg2)
+    end
+
+    return BinaryOperation{Mult}(arg1, arg2)
 end
 
 function evaluate(::Mult, arg1::BinaryOperation{Mult}, arg2::Real)
@@ -802,6 +817,14 @@ function _sub_from_product(arg1::BinaryOperation{Mult}, arg2::Value)
     end
 
     return BinaryOperation{Sub}(evaluate(arg1), evaluate(arg2))
+end
+
+function evaluate(op::BinaryOperation{Pow})
+    if op.arg2 == 1
+        return evaluate(op.arg1)
+    end
+
+    return BinaryOperation{Pow}(evaluate(op.arg1), op.arg2)
 end
 
 function evaluate(op::BinaryOperation{Mult})
